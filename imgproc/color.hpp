@@ -17,26 +17,26 @@ namespace imgproc {
 namespace ublas = boost::numeric::ublas;
 namespace gil = boost::gil;
 
-class YCCColor_t;
+class YCCColor;
 
-class RGBColor_t: public ublas::vector<float> {
+class RGBColor: public ublas::vector<float> {
 
 public :
-    RGBColor_t( float r = 0, float g = 0, float b = 0 );
-    RGBColor_t( const ublas::vector<float> & c );
-    RGBColor_t( const YCCColor_t & c );
-    RGBColor_t( const gil::rgb8_pixel_t & p );
+    RGBColor( float r = 0, float g = 0, float b = 0 );
+    RGBColor( const ublas::vector<float> & c );
+    RGBColor( const YCCColor & c );
+    RGBColor( const gil::rgb8_pixel_t & p );
     gil::rgb8_pixel_t rgbpixel() const;
 };
 
-class YCCColor_t : public ublas::vector<float> {
+class YCCColor : public ublas::vector<float> {
 
 public :
-    YCCColor_t( float y = 0, float cb = 0, float cr = 0 );
-    YCCColor_t( const ublas::vector<float> & c );
-    YCCColor_t( const RGBColor_t & c );
-    YCCColor_t( const gil::rgb8_pixel_t & yccpixel );
-    YCCColor_t( const gil::rgb32f_pixel_t & yccpixel );
+    YCCColor( float y = 0, float cb = 0, float cr = 0 );
+    YCCColor( const ublas::vector<float> & c );
+    YCCColor( const RGBColor & c );
+    YCCColor( const gil::rgb8_pixel_t & yccpixel );
+    YCCColor( const gil::rgb32f_pixel_t & yccpixel );
     gil::rgb8_pixel_t yccpixel() const;
 };
 
@@ -44,7 +44,7 @@ public :
  * Return an indication of chromatic difference between two YCCColors
  */
 
-float ccDiff( const YCCColor_t & color1, const YCCColor_t & color2 );
+float ccDiff( const YCCColor & color1, const YCCColor & color2 );
 
 
 } // namespace imgproc

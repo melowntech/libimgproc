@@ -8,7 +8,12 @@
 #ifndef IMGPROC_HISTOGRAM_HPP
 #define IMGPROC_HISTOGRAM_HPP
 
+#include <boost/gil/gil_all.hpp>
+
 namespace imgproc {
+
+
+namespace gil = boost::gil;
 
 /* Obtain image histogram from a single channel view (gil based) */
 
@@ -16,7 +21,7 @@ template <typename View_t>
 class Histogram {
 
 public:
-    Histogram_t( const View_t & view ) {
+    Histogram( const View_t & view ) {
 
         std::fill( values, values + 256, 0 ); total = 0;
         for ( typename View_t::iterator it = view.begin();

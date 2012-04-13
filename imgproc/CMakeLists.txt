@@ -1,5 +1,5 @@
 
-set(geometry_SOURCES
+set(imgproc_SOURCES
 	color.cpp
 )
 

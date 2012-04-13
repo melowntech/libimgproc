@@ -3,23 +3,24 @@
  */
 
 #include "color.hpp"
-#include "utils.hpp"
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <cmath>
 
 
-/* class RGBColor_t */
+namespace imgproc {
 
-RGBColor_t::RGBColor_t( float r, float g, float b )
+/* class RGBColor */
+
+RGBColor::RGBColor( float r, float g, float b )
     : ublas::vector<float>(3) {
     (*this)(0) = r; (*this)(1) = g; (*this)(2) = b;
 }
 
-RGBColor_t::RGBColor_t( const ublas::vector<float> & c )
+RGBColor::RGBColor( const ublas::vector<float> & c )
     : ublas::vector<float>( c ) {}
 
-RGBColor_t::RGBColor_t( const YCCColor_t & c )
+RGBColor::RGBColor( const YCCColor & c )
     : ublas::vector<float>(3) {
 
     //assert( c(0) <= 1.0 && c(0) >= 0.0 );
@@ -29,7 +30,7 @@ RGBColor_t::RGBColor_t( const YCCColor_t & c )
     a( 1, 0 ) = 1.0; a( 1, 1 ) =  -0.34370; a( 1, 2 ) = -0.7142;
     a( 2, 0 ) = 1.0; a( 2, 1 ) = 1.7722; a( 2, 2 ) = 9.9022E-4;
 
-    *this = RGBColor_t( ublas::prod( a, c ) );
+    *this = RGBColor( ublas::prod( a, c ) );
 
     // clip to fit into rgb gamut
     ublas::vector<float> yccnochroma( 3 );
@@ -39,42 +40,42 @@ RGBColor_t::RGBColor_t( const YCCColor_t & c )
     if ( (*this)(0) < 0.0 ) {
         ublas::vector<float> diff = *this - nochroma;
         float u = ( 0.0 - nochroma(0) ) / ( (*this)(0) - nochroma(0) );
-        *this = RGBColor_t( nochroma + u * diff );
+        *this = RGBColor( nochroma + u * diff );
     }
 
     if ( (*this)(0) > 1.0 ) {
         ublas::vector<float> diff = *this - nochroma;
         float u = ( 1.0 - nochroma(0) ) / ( (*this)(0) - nochroma(0) );
-        *this = RGBColor_t( nochroma + u * diff );
+        *this = RGBColor( nochroma + u * diff );
     }
 
     if ( (*this)(1) < 0.0 ) {
         ublas::vector<float> diff = *this - nochroma;
         float u = ( 0.0 - nochroma(1) ) / ( (*this)(1) - nochroma(1) );
-        *this = RGBColor_t( nochroma + u * diff );
+        *this = RGBColor( nochroma + u * diff );
     }
 
     if ( (*this)(1) > 1.0 ) {
         ublas::vector<float> diff = *this - nochroma;
         float u = ( 1.0 - nochroma(1) ) / ( (*this)(1) - nochroma(1) );
-        *this = RGBColor_t( nochroma + u * diff );
+        *this = RGBColor( nochroma + u * diff );
     }
 
     if ( (*this)(2) < 0.0 ) {
         ublas::vector<float> diff = *this - nochroma;
         float u = ( 0.0 - nochroma(2) ) / ( (*this)(2) - nochroma(2) );
-        *this = RGBColor_t( nochroma + u * diff );
+        *this = RGBColor( nochroma + u * diff );
     }
 
     if ( (*this)(2) > 1.0 ) {
         ublas::vector<float> diff = *this - nochroma;
         float u = ( 1.0 - nochroma(2) ) / ( (*this)(2) - nochroma(2) );
-        *this = RGBColor_t( nochroma + u * diff );
+        *this = RGBColor( nochroma + u * diff );
     }
 }
 
 
-gil::rgb8_pixel_t RGBColor_t::rgbpixel() const {
+gil::rgb8_pixel_t RGBColor::rgbpixel() const {
 
     return gil::rgb8_pixel_t(
         round( 0xff * (*this)(0) ),
@@ -82,7 +83,7 @@ gil::rgb8_pixel_t RGBColor_t::rgbpixel() const {
         round( 0xff * (*this)(2) ) );
 }
 
-RGBColor_t::RGBColor_t( const gil::rgb8_pixel_t & p )
+RGBColor::RGBColor( const gil::rgb8_pixel_t & p )
     : ublas::vector<float>(3) {
 
     (*this)(0) = (float) p[0] / 0xff;
@@ -90,17 +91,17 @@ RGBColor_t::RGBColor_t( const gil::rgb8_pixel_t & p )
     (*this)(2) = (float) p[2] / 0xff;
 }
 
-/* class YCCColor_t */
+/* class YCCColor */
 
-YCCColor_t::YCCColor_t( float y, float cb, float cr )
+YCCColor::YCCColor( float y, float cb, float cr )
     : ublas::vector<float>(3) {
     (*this)(0) = y; (*this)(1) = cb; (*this)(2) = cr;
 }
 
-YCCColor_t::YCCColor_t( const ublas::vector<float> & c )
+YCCColor::YCCColor( const ublas::vector<float> & c )
     : ublas::vector<float>( c ) {}
 
-YCCColor_t::YCCColor_t( const RGBColor_t & c )
+YCCColor::YCCColor( const RGBColor & c )
     : ublas::vector<float>(3) {
 
     /*assert( c(0) <= 1.0 && c(0) >= 0.0 );
@@ -114,12 +115,12 @@ YCCColor_t::YCCColor_t( const RGBColor_t & c )
 
     //std::cout << ublas::prod( a, c );
 
-    *this = YCCColor_t( ublas::prod( a, c ) );
+    *this = YCCColor( ublas::prod( a, c ) );
 
     //std::cout << " =? " << *this << std::endl;
 }
 
-YCCColor_t::YCCColor_t( const gil::rgb8_pixel_t & yccpixel )
+YCCColor::YCCColor( const gil::rgb8_pixel_t & yccpixel )
     : ublas::vector<float>(3) {
 
     (*this)(0) = ( (float) yccpixel[0] / 0xff ) - 0.5;
@@ -127,7 +128,7 @@ YCCColor_t::YCCColor_t( const gil::rgb8_pixel_t & yccpixel )
     (*this)(2) = ( (float) yccpixel[2] / 0xff ) - 0.5;
 }
 
-YCCColor_t::YCCColor_t( const gil::rgb32f_pixel_t & yccpixel )
+YCCColor::YCCColor( const gil::rgb32f_pixel_t & yccpixel )
     : ublas::vector<float>(3) {
 
     (*this)(0) = ( yccpixel[0] / 0xff ) - 0.5;
@@ -136,7 +137,7 @@ YCCColor_t::YCCColor_t( const gil::rgb32f_pixel_t & yccpixel )
 }
 
 
-gil::rgb8_pixel_t YCCColor_t::yccpixel() const {
+gil::rgb8_pixel_t YCCColor::yccpixel() const {
 
     return gil::rgb8_pixel_t(
         (int) round( 0xff * (*this)(0) ),
@@ -144,7 +145,7 @@ gil::rgb8_pixel_t YCCColor_t::yccpixel() const {
         (int) round( 0xff * ( (*this)(2) + 0.5 ) ) );
 }
 
-float ccDiff( const YCCColor_t & color1, const YCCColor_t & color2 ) {
+float ccDiff( const YCCColor & color1, const YCCColor & color2 ) {
 
     float hue1, hue2;
 
@@ -156,3 +157,5 @@ float ccDiff( const YCCColor_t & color1, const YCCColor_t & color2 ) {
 
     //return sqr( color2( 1 ) - color1( 1 ) ) + sqr( color2( 2 ) - color1( 2 ) );
 }
+
+} // namespace imgproc 
