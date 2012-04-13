@@ -7,5 +7,6 @@
  
 #include "color.hpp"
 #include "histogram.hpp"
+#include "filtering.hpp"
 
 
