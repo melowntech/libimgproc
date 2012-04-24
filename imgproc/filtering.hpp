@@ -49,12 +49,16 @@ typename SrcView::value_type reconstruct( const SrcView & view,
 
     gil::point2<int> ll, ur;
 
-    ll.x = std::max( 0, (int) floor( pos.x - filter.halfwindowX() ) );
+    /*ll.x = std::max( 0, (int) floor( pos.x - filter.halfwindowX() ) );
     ll.y = std::max( 0, (int) floor( pos.y - filter.halfwindowY() ) );
     ur.x = std::min( (int) view.width() - 1,
                      (int) ceil( pos.x + filter.halfwindowX() ) );
     ur.y = std::min( (int) view.height() - 1,
-                     (int) ceil( pos.y + filter.halfwindowY() ) );
+                     (int) ceil( pos.y + filter.halfwindowY() ) );*/
+    ll.x = (int) floor( pos.x - filter.halfwindowX() );
+    ll.y = (int) floor( pos.y - filter.halfwindowY() );
+    ur.x = (int) ceil( pos.x + filter.halfwindowX() );
+    ur.y = (int) ceil( pos.y + filter.halfwindowY() );
 
     typename SrcView::xy_locator cpos = view.xy_at( ll.x, ll.y );
 
@@ -64,21 +68,23 @@ typename SrcView::value_type reconstruct( const SrcView & view,
         valueSum[i] = 0.0;
     
     
-    for ( int i = ll.y; i < ur.y; i++ ) {
-        for ( int j = ll.x; j < ur.x; j++ ) {
+    for ( int i = ll.y; i <= ur.y; i++ ) {
+        for ( int j = ll.x; j <= ur.x; j++ ) {
 
             double weight = filter( j - pos.x, i - pos.y );
 
             for ( int k = 0; k < gil::num_channels<SrcView>::value; k++ ) {
 
-                valueSum[k] += weight * cpos(0,0)[k];
-                weightSum += weight;
+                if ( math::ccinterval( 0, (int) view.width() - 1, j ) &&
+                     math::ccinterval( 0, (int) view.height() - 1, i ) )
+                    valueSum[k] += weight * cpos(0,0)[k];
             }
 
+            weightSum += weight;
             cpos.x()++;
         }
 
-        cpos += gil::point2<std::ptrdiff_t>( - view.width(), 1 );
+        cpos += gil::point2<std::ptrdiff_t>( - ( ur.x - ll.x + 1 ), 1 );
     }
 
     typename SrcView::value_type retval;
