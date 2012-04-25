@@ -8,6 +8,8 @@
 #ifndef IMGPROC_FILTERING_HPP
 #define IMGPROC_FILTERING_HPP
 
+#include <dbglog/dbglog.hpp>
+
 #include <math/filters.hpp>
 #include <boost/gil/gil_all.hpp>
 
@@ -43,22 +45,16 @@ void rowFilter(
  * Reconstruct a value within an image with a continuous time filter.
  */
 
-template <class SrcView>
+template <class SrcView, class Filter2>
 typename SrcView::value_type reconstruct( const SrcView & view,
-    const math::Filter2_t & filter, const gil::point2<double>  pos ) {
+    const Filter2 & filter, const gil::point2<double>  pos ) {
 
     gil::point2<int> ll, ur;
 
-    /*ll.x = std::max( 0, (int) floor( pos.x - filter.halfwindowX() ) );
-    ll.y = std::max( 0, (int) floor( pos.y - filter.halfwindowY() ) );
-    ur.x = std::min( (int) view.width() - 1,
-                     (int) ceil( pos.x + filter.halfwindowX() ) );
-    ur.y = std::min( (int) view.height() - 1,
-                     (int) ceil( pos.y + filter.halfwindowY() ) );*/
-    ll.x = (int) floor( pos.x - filter.halfwindowX() );
-    ll.y = (int) floor( pos.y - filter.halfwindowY() );
-    ur.x = (int) ceil( pos.x + filter.halfwindowX() );
-    ur.y = (int) ceil( pos.y + filter.halfwindowY() );
+    ll.x = (int) floor( pos.x - filter.halfwinx() );
+    ll.y = (int) floor( pos.y - filter.halfwiny() );
+    ur.x = (int) ceil( pos.x + filter.halfwinx() );
+    ur.y = (int) ceil( pos.y + filter.halfwiny() );
 
     typename SrcView::xy_locator cpos = view.xy_at( ll.x, ll.y );
 
@@ -67,17 +63,21 @@ typename SrcView::value_type reconstruct( const SrcView & view,
     for ( int i = 0; i < gil::num_channels<SrcView>::value; i++ )
         valueSum[i] = 0.0;
     
-    
     for ( int i = ll.y; i <= ur.y; i++ ) {
         for ( int j = ll.x; j <= ur.x; j++ ) {
 
             double weight = filter( j - pos.x, i - pos.y );
 
-            for ( int k = 0; k < gil::num_channels<SrcView>::value; k++ ) {
+            if ( math::ccinterval( 0, (int) view.width() - 1, j ) &&
+                 math::ccinterval( 0, (int) view.height() - 1, i ) ) {
 
-                if ( math::ccinterval( 0, (int) view.width() - 1, j ) &&
-                     math::ccinterval( 0, (int) view.height() - 1, i ) )
+                for ( int k = 0; k < gil::num_channels<SrcView>::value; k++ )
                     valueSum[k] += weight * cpos(0,0)[k];
+
+                /*LOG( debug ) << "[" << j << "," << i << "]: weight= "
+                             << weight << ", value= "
+                             << (int) cpos(0,0)[0];*/
+
             }
 
             weightSum += weight;
@@ -87,14 +87,24 @@ typename SrcView::value_type reconstruct( const SrcView & view,
         cpos += gil::point2<std::ptrdiff_t>( - ( ur.x - ll.x + 1 ), 1 );
     }
 
+    typename SrcView::value_type black, white;
+    gil::color_convert( gil::gray8_pixel_t( 0 ), black );
+    gil::color_convert( gil::gray8_pixel_t( 0xff ), white );
+    
     typename SrcView::value_type retval;
 
     for ( int i = 0; i < gil::num_channels<SrcView>::value; i++ )
         if ( weightSum > 1E-15 )
-            retval[i] = valueSum[i] / weightSum;
+            retval[i] = std::min( std::max(
+                            valueSum[i] / weightSum,
+                            (double) black[i] ), (double) white[i] );
         else
-            retval[i] = 0;
+            retval[i] = black[i];
 
+    /*LOG( debug ) << pos.x << ", " << pos.y << ": ["
+                 << ll.x << "," << ll.y << "]->[" << ur.x << "," << ur.y << "] : "
+                 << (int) retval[0] << "(=" << valueSum[0] << "/" << weightSum << ")";*/
+        
     return retval;
 }
 
