@@ -51,6 +51,33 @@ private:
     uint total;
 };
 
+template <typename SrcView>
+void stretchValues( SrcView & src,
+               const typename gil::channel_type<SrcView>::type & lb,
+               const typename gil::channel_type<SrcView>::type & ub ) {
+
+    typedef typename gil::channel_type<SrcView>::type Result;
+    
+    for ( int i = 0; i < src.height(); i++ ) {
+
+        typename SrcView::x_iterator sit = src.row_begin( i );
+        
+        for ( int j = 0; j < src.width(); j++ ) {
+            
+            for ( int k = 0; k < gil::num_channels<SrcView>::value; k++ ) {
+
+                if ( (*sit)[k] < lb ) { (*sit)[k] = 0; continue; }
+                if ( (*sit)[k] > ub ) { (*sit)[k] = 255; continue; }
+                
+                (*sit)[k] = (Result) 255
+                    * ( (float) (*sit)[k] - lb ) / ( ub -lb );
+            }
+
+            sit++;
+        }
+    }
+}
+
 
 } // namespace imgproc
 
