@@ -8,5 +8,6 @@
 #include "color.hpp"
 #include "histogram.hpp"
 #include "filtering.hpp"
+#include "transformation.hpp"
 
 

@@ -113,9 +113,5 @@ typename SrcView::value_type reconstruct( const SrcView & view,
 } // namespace imgproc
 
 
-
-
-
-
 #endif 
 
