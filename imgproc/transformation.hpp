@@ -47,8 +47,7 @@ public:
     }
 
     
-    math::Point2 derivatives( const math::Point2i & ) const {
-
+    math::Point2 derivatives( const math::Point2i & op) const {
         (void) op;
         return math::Point2( scaleX_, scaleY_ );
     }
