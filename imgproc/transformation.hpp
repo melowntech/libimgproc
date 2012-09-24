@@ -58,36 +58,46 @@ private:
 };
 
 
+typedef math::SincHamming2 DefaultFilter;
+
 /*
  * Transform between two views using a generic reverse mapping function
  */ 
-template <typename SrcView, typename DstView,
-          typename Mapping2,
-          typename LowPassFilter2 = math::SincHamming2>
+template <typename LowPassFilter2, typename Mapping2
+          , typename SrcView, typename DstView>
 inline void transform(
         const Mapping2 & mapping,
         const SrcView & view1, DstView & view2 );
 
-template <typename SrcView, typename DstView,
-          typename LowPassFilter2 = math::SincHamming2>
+/** Same as above, use DefaultFilter.
+ */
+template <typename Mapping2, typename SrcView, typename DstView>
+inline void transform(
+        const Mapping2 & mapping,
+        const SrcView & view1, DstView & view2 );
+
+template <typename LowPassFilter2, typename SrcView, typename DstView>
 inline void scale( const SrcView & view1, DstView & view2 );
 
+/** Same as above, use DefaultFilter.
+ */
+template <typename SrcView, typename DstView>
+inline void scale(const SrcView &view1, DstView &view2);
 
 /* implementation */
 
-template <typename SrcView, typename DstView,
-          typename Mapping2,
-          typename LowPassFilter2 = math::SincHamming2>
+template <typename LowPassFilter2, typename Mapping2
+          , typename SrcView, typename DstView>
 inline void transform(
         const Mapping2 & mapping,
         const SrcView & view1,
         DstView & view2 ) {
 
-    for ( int i = 0; i < view2.height(); i++ ) {
+    for ( int i = 0, ei(view2.height()); i < ei; i++ ) {
 
         typename DstView::x_iterator dstit = view2.row_begin( i );
 
-        for( int j = 0; j < view2.width(); j++ ) {
+        for ( int j = 0, ej(view2.width()); j < ej; j++ ) {
 
             math::Point2i dstpos( j, i );
             
@@ -103,16 +113,12 @@ inline void transform(
     }    
 }
 
-
-template <typename SrcView, typename DstView,
-          typename LowPassFilter2 = math::SincHamming2>
-inline void scale( const SrcView & view1, DstView & view2 ) {
-    
-    Scaling2 scaling( math::Size2( view2.width(), view2.height() ),
-              math::Size2( view1.width(), view1.height() ) );
-
-    transform<SrcView, DstView, Scaling2, LowPassFilter2>(
-        scaling, view1, view2 );
+template <typename Mapping2, typename SrcView, typename DstView>
+inline void transform(
+        const Mapping2 & mapping,
+        const SrcView & view1, DstView & view2 )
+{
+    return transform<DefaultFilter>(mapping, view1, view2);
 }
 
 template <typename LowPassFilter2, typename SrcView, typename DstView>
@@ -120,9 +126,12 @@ inline void scale( const SrcView & view1, DstView & view2 ) {
     Scaling2 scaling( math::Size2( view2.width(), view2.height() ),
               math::Size2( view1.width(), view1.height() ) );
 
-    transform<SrcView, DstView, Scaling2, LowPassFilter2>(
-        scaling, view1, view2 );
+    transform<LowPassFilter2>(scaling, view1, view2);
+}
 
+template <typename SrcView, typename DstView>
+inline void scale(const SrcView &view1, DstView &view2) {
+    return scale<DefaultFilter>(view1, view2);
 }
 
 } // namespace imgproc
