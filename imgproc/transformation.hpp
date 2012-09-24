@@ -95,7 +95,7 @@ inline void transform(
             math::Point2 deriv = mapping.derivatives( dstpos );
             
             LowPassFilter2 filter(
-                std::max( 2.0, deriv(0) ), std::max( 2.0, deriv(1) ) );
+                std::max( 2.0, 2.0 * deriv(0) ), std::max( 2.0, 2.0 * deriv(1) ) );
 
             *dstit++ = imgproc::reconstruct( view1, filter,
                 gil::point2<double>( srcpos(0), srcpos(1) ) );
