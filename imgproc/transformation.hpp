@@ -64,13 +64,13 @@ private:
 template <typename SrcView, typename DstView,
           typename Mapping2,
           typename LowPassFilter2 = math::SincHamming2>
-static void transform(
+inline void transform(
         const Mapping2 & mapping,
         const SrcView & view1, DstView & view2 );
 
 template <typename SrcView, typename DstView,
           typename LowPassFilter2 = math::SincHamming2>
-static void scale( const SrcView & view1, DstView & view2 );
+inline void scale( const SrcView & view1, DstView & view2 );
 
 
 /* implementation */
@@ -78,7 +78,7 @@ static void scale( const SrcView & view1, DstView & view2 );
 template <typename SrcView, typename DstView,
           typename Mapping2,
           typename LowPassFilter2 = math::SincHamming2>
-static void transform(
+inline void transform(
         const Mapping2 & mapping,
         const SrcView & view1,
         DstView & view2 ) {
@@ -106,7 +106,7 @@ static void transform(
 
 template <typename SrcView, typename DstView,
           typename LowPassFilter2 = math::SincHamming2>
-static void scale( const SrcView & view1, DstView & view2 ) {
+inline void scale( const SrcView & view1, DstView & view2 ) {
     
     Scaling2 scaling( math::Size2( view2.width(), view2.height() ),
               math::Size2( view1.width(), view1.height() ) );
@@ -115,9 +115,17 @@ static void scale( const SrcView & view1, DstView & view2 ) {
         scaling, view1, view2 );
 }
 
+template <typename LowPassFilter2, typename SrcView, typename DstView>
+inline void scale( const SrcView & view1, DstView & view2 ) {
+    Scaling2 scaling( math::Size2( view2.width(), view2.height() ),
+              math::Size2( view1.width(), view1.height() ) );
+
+    transform<SrcView, DstView, Scaling2, LowPassFilter2>(
+        scaling, view1, view2 );
+
+}
 
 } // namespace imgproc
 
 
 #endif
-

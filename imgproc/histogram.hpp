@@ -52,7 +52,7 @@ private:
 };
 
 template <typename SrcView>
-void stretchValues( SrcView & src,
+inline void stretchValues( SrcView & src,
                const typename gil::channel_type<SrcView>::type & lb,
                const typename gil::channel_type<SrcView>::type & ub ) {
 

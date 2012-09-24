@@ -22,7 +22,7 @@ namespace gil = boost::gil;
   * Filter a grayscale image (in x direction). GIL image views should be used.
   */
 template <typename SrcView_t, typename DstView_t>
-void rowFilter(
+inline void rowFilter(
     const math::FIRFilter_t & filter,
     const SrcView_t & srcView,
     const DstView_t & dstView ) {
@@ -46,7 +46,7 @@ void rowFilter(
  */
 
 template <class SrcView, class Filter2>
-typename SrcView::value_type reconstruct( const SrcView & view,
+inline typename SrcView::value_type reconstruct( const SrcView & view,
     const Filter2 & filter, const gil::point2<double>  pos ) {
 
     gil::point2<int> ll, ur;
