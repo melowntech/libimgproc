@@ -51,6 +51,12 @@ private:
     uint total;
 };
 
+template <typename View>
+Histogram<View> histogram(const View &v)
+{
+    return Histogram<View>(v);
+}
+
 template <typename SrcView>
 inline void stretchValues( SrcView & src,
                const typename gil::channel_type<SrcView>::type & lb,
