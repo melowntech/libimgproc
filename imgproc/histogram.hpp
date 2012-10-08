@@ -58,7 +58,7 @@ Histogram<View> histogram(const View &v)
 }
 
 template <typename SrcView>
-inline void stretchValues( SrcView & src,
+inline void stretchValues(const SrcView &src,
                const typename gil::channel_type<SrcView>::type & lb,
                const typename gil::channel_type<SrcView>::type & ub ) {
 
