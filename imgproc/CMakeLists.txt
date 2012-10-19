@@ -1,4 +1,4 @@
-define_module(LIBRARY imgproc DEPENDS math dbglog Boost_HEADERS)
+define_module(LIBRARY imgproc DEPENDS math dbglog Boost)
 
 set(imgproc_SOURCES
 	color.cpp
