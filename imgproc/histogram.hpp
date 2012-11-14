@@ -8,6 +8,9 @@
 #ifndef IMGPROC_HISTOGRAM_HPP
 #define IMGPROC_HISTOGRAM_HPP
 
+#include <cmath>
+#include <limits>
+
 #include <boost/gil/gil_all.hpp>
 
 namespace imgproc {
@@ -17,69 +20,87 @@ namespace gil = boost::gil;
 
 /* Obtain image histogram from a single channel view (gil based) */
 
-template <typename View_t>
+template <typename View>
 class Histogram {
-
 public:
-    Histogram( const View_t & view ) {
+    typedef typename gil::channel_type<View>::type channel_type;
+    static const channel_type max = std::numeric_limits<channel_type>::max();
 
-        std::fill( values, values + 256, 0 ); total = 0;
-        for ( typename View_t::iterator it = view.begin();
-             it < view.end(); ++it ) {
-
-            values[ (unsigned char) round( (*it)[0] ) ]++; total++;
-             }
+    Histogram(const View &view, channel_type lowerBound = 0
+              , channel_type upperBound = max)
+        : values{0}, total(0)
+    {
+        // TODO: work with Y channel, using Y or G so far
+        const int channel((view.num_channels() == 3) ? 1 : 0);
+        for (const auto &pixel : view) {
+            auto value(pixel[channel]);
+            if ((value >= lowerBound) && (value <= upperBound)) {
+                values[value]++;
+                ++total;
+            }
+        }
     }
 
     /**
-     * Return the least threshold value such that given share  of
-     * pixels is less or equal to it
+     * Return the least threshold value such that given share of pixels is less
+     * or equal to it
      */
-    unsigned char threshold( const float ratio ) const {
-
+    channel_type threshold( const float ratio ) const {
         const float thresholdCount = ratio * total;
         uint count = 0;
-        for ( uint i = 0; i < 256; i++ ) {
+        for ( uint i = 0; i <= std::numeric_limits<channel_type>::max(); i++ )
+        {
             count += values[ i ];
             if ( count >= thresholdCount ) return i;
         }
-        return 255;
+        return std::numeric_limits<channel_type>::max();
     }
 
 private:
-    uint values[ 256 ];
+    uint values[std::numeric_limits<channel_type>::max() + 1ul];
     uint total;
 };
 
 template <typename View>
-Histogram<View> histogram(const View &v)
+Histogram<View>
+histogram(const View &v
+          , typename Histogram<View>::channel_type lowerBound = 0
+          , typename Histogram<View>::channel_type upperBound
+          = Histogram<View>::max)
 {
-    return Histogram<View>(v);
+    return Histogram<View>(v, lowerBound, upperBound);
 }
 
 template <typename SrcView>
-inline void stretchValues(const SrcView &src,
-               const typename gil::channel_type<SrcView>::type & lb,
-               const typename gil::channel_type<SrcView>::type & ub ) {
+void stretchValues(const SrcView &src
+                   , const typename gil::channel_type<SrcView>::type &lb
+                   , const typename gil::channel_type<SrcView>::type &ub)
+{
+    typedef typename gil::channel_type<SrcView>::type channel_type;
 
-    typedef typename gil::channel_type<SrcView>::type Result;
-    
+    const float max(std::numeric_limits<channel_type>::max());
+    const float fmax(max);
+
+    // TODO: work with YUV
     for ( int i = 0; i < src.height(); i++ ) {
 
         typename SrcView::x_iterator sit = src.row_begin( i );
-        
+
         for ( int j = 0; j < src.width(); j++ ) {
-            
+
             for ( int k = 0; k < gil::num_channels<SrcView>::value; k++ ) {
 
-                if ( (*sit)[k] < lb ) { (*sit)[k] = 0; continue; }
-                if ( (*sit)[k] > ub ) { (*sit)[k] = 255; continue; }
-                
-                (*sit)[k] = (Result) 255
-                    * ( (float) (*sit)[k] - lb ) / ( ub -lb );
+                if ( (*sit)[k] < lb ) {
+                    (*sit)[k] = 0;
+                } else if ( (*sit)[k] > ub ) {
+                    (*sit)[k] = max;
+                } else {
+                    (*sit)[k] = channel_type((fmax * ((*sit)[k] - lb))
+                                             / ( ub - lb ));
+                }
             }
 
-            sit++;
+            ++sit;
         }
     }
 }
