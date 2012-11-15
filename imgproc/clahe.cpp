@@ -9,6 +9,7 @@
 #include "clahe.hpp"
 
 #include <dbglog/dbglog.hpp>
+#include <math/math_all.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -73,7 +74,7 @@ void CLAHE( const cv::Mat & src, cv::Mat & dst, const int regionSize,
         retval = detail::CLAHE<unsigned short>(
             reinterpret_cast<unsigned short *>( rawscn.data ),
             rawscn.cols, rawscn.rows,
-            0, 0xffff, divx, divy, 0x10000, clipLimit );
+            0, 0xffff, divx, divy, std::min( 0x10000, math::sqr( regionSize ) ), clipLimit );
     }
 
     if ( retval != 0 ) {
