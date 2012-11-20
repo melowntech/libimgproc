@@ -18,13 +18,33 @@ namespace imgproc {
 
 namespace gil = boost::gil;
 
+namespace detail {
+    template<typename T> struct numeric_limits;
+
+    template<> struct numeric_limits<signed char> {
+        static const signed char max = CHAR_MAX;
+    };
+
+    template<> struct numeric_limits<unsigned char> {
+        static const unsigned char max = SCHAR_MAX;
+    };
+
+    template<> struct numeric_limits<short> {
+        static const short max = SHRT_MAX;
+    };
+
+    template<> struct numeric_limits<unsigned short> {
+        static const unsigned short max = USHRT_MAX;
+    };
+} // namespace detail
+
 /* Obtain image histogram from a single channel view (gil based) */
 
 template <typename View>
 class Histogram {
 public:
     typedef typename gil::channel_type<View>::type channel_type;
-    static const channel_type max = std::numeric_limits<channel_type>::max();
+    static const channel_type max = detail::numeric_limits<channel_type>::max;
 
     Histogram(const View &view, channel_type lowerBound = 0
               , channel_type upperBound = max)
@@ -53,11 +73,11 @@ public:
             count += values[ i ];
             if ( count >= thresholdCount ) return i;
         }
-        return std::numeric_limits<channel_type>::max();
+        return max;
     }
 
 private:
-    uint values[std::numeric_limits<channel_type>::max() + 1ul];
+    uint values[max + 1ul];
     uint total;
 };
 
