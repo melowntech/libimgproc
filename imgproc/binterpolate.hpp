@@ -46,6 +46,12 @@ bool insideImage(const math::Point2_<T> &point, const math::Size2_<Q> &size)
     return insideImage(point(0), point(1), size.width, size.height);
 }
 
+template <typename T, typename Q>
+bool insideImage(const math::Point2_<T> &point, Q width, Q height)
+{
+    return insideImage(point(0), point(1), width, height);
+}
+
 /** NB: Adds interpolated values to the result. Set result to zero prior calling
  *  this function if this behaviour is not desired.
  */
