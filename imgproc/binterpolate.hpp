@@ -69,8 +69,8 @@ void bilinearInterpolate(const T *data, size_t pitch, size_t width
 
     for (int m(0); m <= 1; ++m) {
         for (int n(0); n <= 1; ++n) {
-            int u(detail::clamp(floor(0), width - 1) + m);
-            int v(detail::clamp(floor(1), height - 1) + n);
+            int u(detail::clamp(floor(0) + m, width - 1));
+            int v(detail::clamp(floor(1) + n, height - 1));
 
             size_t offset(v * pitch + u * channels);
             double s(fabs(1 - m - dpoint(0)) * fabs(1 - n - dpoint(1)));
