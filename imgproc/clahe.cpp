@@ -2,8 +2,7 @@
  * clahe.cpp
  */
 
-#ifndef IMGPROC_CLAHE_HPP
-#define IMGPROC_CLAHE_HPP
+#include <stdexcept>
 
 
 #include "clahe.hpp"
@@ -22,6 +21,11 @@ namespace imgproc {
 
 void CLAHE( const cv::Mat & src, cv::Mat & dst, const int regionSize,
             float clipLimit = -1.0 ) {
+
+    if (!src.cols || !src.rows) {
+        LOGTHROW(err2, std::runtime_error)
+            << "CLAHE: Empty input image.";
+    }
 
     cv::Mat srcsc, rawscn, dstsc;
     std::vector<cv::Mat> srcsplit;
@@ -110,5 +114,3 @@ void CLAHE( const cv::Mat & src, cv::Mat & dst, const int regionSize,
 
 
 } // namespace imgproc
-
-#endif // IMGPROC_CLAHE_HPP
