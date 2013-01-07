@@ -20,7 +20,7 @@
 namespace imgproc {
 
 void CLAHE( const cv::Mat & src, cv::Mat & dst, const int regionSize,
-            float clipLimit = -1.0 ) {
+            float clipLimit ) {
 
     if (!src.cols || !src.rows) {
         LOGTHROW(err2, std::runtime_error)
