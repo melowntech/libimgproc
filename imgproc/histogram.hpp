@@ -26,7 +26,7 @@ namespace detail {
     };
 
     template<> struct numeric_limits<unsigned char> {
-        static const unsigned char max = SCHAR_MAX;
+        static const unsigned char max = UCHAR_MAX;
     };
 
     template<> struct numeric_limits<short> {
