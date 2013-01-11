@@ -34,6 +34,12 @@ public:
     /** initialize a mask of the same order, optionally copying mask. */
     RasterMask& operator=(const RasterMask &o);
 
+    RasterMask& create(const math::Size2 &size, InitMode mode);
+
+    RasterMask& create(std::size_t width, std::size_t height, InitMode mode) {
+        return create(math::Size2(width, height), mode);
+    }
+
     /** return size of mask */
     std::size_t size() const { return count_; }
 
@@ -49,7 +55,8 @@ public:
                        , mask_.get(), [](std::uint8_t b) { return ~b; });
     }
 
-    /** FIXME: implement! do a set difference with two masks. */
+    /** FIXME: IMPLEMENT ME
+     *  do a set difference with two masks. */
     void subtract( const RasterMask & op );
 
     /** implement! obtain mask value at given pos. */
@@ -58,7 +65,8 @@ public:
     /** set mask value at given pos. */
     void set(int x, int y, bool value = true);
 
-    /** FIXME: test if a given pixel is a boundary pixel (neighboring unset
+    /** FIXME: IMPLEMENT ME
+     *  test if a given pixel is a boundary pixel (neighboring unset
      *  pixel in mask */
     bool onBoundary( int x, int y ) const;
 
@@ -90,8 +98,8 @@ inline RasterMask::RasterMask(const math::Size2 &size, InitMode mode)
     resetTrail();
 }
 
-    inline RasterMask::RasterMask(std::size_t width, std::size_t height
-                                  , InitMode mode)
+inline RasterMask::RasterMask(std::size_t width, std::size_t height
+                              , InitMode mode)
     : size_(width, height), bytes_((height * width + 7) >> 3)
     , mask_(new std::uint8_t[bytes_])
     , count_((mode == EMPTY) ? 0 : height * width)
@@ -127,6 +135,17 @@ inline RasterMask& RasterMask::operator=(const RasterMask &o) {
     // deep copy
     std::memcpy(mask_.get(), o.mask_.get(), bytes_);
     count_ = o.count_;
+    return *this;
+}
+
+inline RasterMask& RasterMask::create(const math::Size2 &size, InitMode mode)
+{
+    size_ = size;
+    bytes_ = (size.height * size.width + 7) >> 3;
+    mask_.reset(new std::uint8_t[bytes_]);
+    count_ = ((mode == EMPTY) ? 0 : size.height * size.width);
+    std::memset(mask_.get(), (mode == EMPTY) ? 0x00 : 0xff, bytes_);
+    resetTrail();
     return *this;
 }
 
