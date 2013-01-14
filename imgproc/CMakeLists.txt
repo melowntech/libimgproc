@@ -3,7 +3,9 @@ define_module(LIBRARY imgproc DEPENDS math dbglog Boost)
 set(imgproc_SOURCES
   color.cpp
   clahe.cpp
+  rastermask.hpp
   rastermask.cpp
+  georeferencing.hpp
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES})
