@@ -8,6 +8,8 @@
 #ifndef imgproc_georeferencing_hpp_included_
 #define imgproc_georeferencing_hpp_included_
 
+#include <cstddef>
+
 #include "math/geometry_core.hpp"
 
 namespace imgproc {
@@ -148,6 +150,10 @@ inline math::Extents3_<T> extents(const Georeferencing3_<T> &ge)
 template <typename T>
 struct detail::GeoreferencingIterator {
     typedef typename T::point_type value_type;
+    typedef std::ptrdiff_t difference_type;
+    typedef value_type* pointer;
+    typedef value_type& reference;
+    typedef std::random_access_iterator_tag iterator_category;
 
     GeoreferencingIterator() : gr_(), index_(4) {}
 
