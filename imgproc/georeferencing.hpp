@@ -9,8 +9,10 @@
 #define imgproc_georeferencing_hpp_included_
 
 #include <cstddef>
+#include <iostream>
 
 #include "math/geometry_core.hpp"
+#include "utility/streams.hpp"
 
 namespace imgproc {
 
@@ -100,8 +102,10 @@ struct Georeferencing2_
 
     iterator begin();
     const_iterator begin() const;
+    const_iterator cbegin();
     iterator end();
     const_iterator end() const;
+    const_iterator cend();
 };
 
 template <typename T>
@@ -154,8 +158,10 @@ struct Georeferencing3_
 
     iterator begin();
     const_iterator begin() const;
+    const_iterator cbegin();
     iterator end();
     const_iterator end() const;
+    const_iterator cend();
 };
 
 template <typename T>
@@ -283,6 +289,13 @@ Georeferencing2_<T>::const_iterator Georeferencing2_<T>::begin() const
 }
 
 template <typename T>
+inline typename
+Georeferencing2_<T>::const_iterator Georeferencing2_<T>::cbegin()
+{
+    return Georeferencing2_<T>::const_iterator(this);
+}
+
+template <typename T>
 inline typename Georeferencing2_<T>::iterator Georeferencing2_<T>::end()
 {
     return Georeferencing2_<T>::iterator(this, 4);
@@ -291,6 +304,13 @@ inline typename Georeferencing2_<T>::iterator Georeferencing2_<T>::end()
 template <typename T>
 inline typename
 Georeferencing2_<T>::const_iterator Georeferencing2_<T>::end() const
+{
+    return Georeferencing2_<T>::const_iterator(this, 4);
+}
+
+template <typename T>
+inline typename
+Georeferencing2_<T>::const_iterator Georeferencing2_<T>::cend()
 {
     return Georeferencing2_<T>::const_iterator(this, 4);
 }
@@ -310,6 +330,13 @@ Georeferencing3_<T>::const_iterator Georeferencing3_<T>::begin() const
 }
 
 template <typename T>
+inline typename
+Georeferencing3_<T>::const_iterator Georeferencing3_<T>::cbegin()
+{
+    return Georeferencing3_<T>::const_iterator(this);
+}
+
+template <typename T>
 inline typename Georeferencing3_<T>::iterator Georeferencing3_<T>::end()
 {
     return Georeferencing3_<T>::iterator(this, 4);
@@ -318,6 +345,13 @@ inline typename Georeferencing3_<T>::iterator Georeferencing3_<T>::end()
 template <typename T>
 inline typename
 Georeferencing3_<T>::const_iterator Georeferencing3_<T>::end() const
+{
+    return Georeferencing3_<T>::const_iterator(this, 4);
+}
+
+template <typename T>
+inline typename
+Georeferencing3_<T>::const_iterator Georeferencing3_<T>::cend()
 {
     return Georeferencing3_<T>::const_iterator(this, 4);
 }
@@ -334,8 +368,8 @@ template<typename CharT, typename Traits, typename T>
 inline std::basic_istream<CharT, Traits>&
 operator>>(std::basic_istream<CharT, Traits> &is, Georeferencing2_<T> &e)
 {
-    (void) e;
-    return is;
+    auto comma(utility::expect(','));
+    return is >> e.ul >> comma >> e.ur >> comma >> e.lr >> comma >> e.ll;
 }
 
 template<typename CharT, typename Traits, typename T>
@@ -349,8 +383,8 @@ template<typename CharT, typename Traits, typename T>
 inline std::basic_istream<CharT, Traits>&
 operator>>(std::basic_istream<CharT, Traits> &is, Georeferencing3_<T> &e)
 {
-    (void) e;
-    return is;
+    auto comma(utility::expect(','));
+    return is >> e.ul >> comma >> e.ur >> comma >> e.lr >> comma >> e.ll;
 }
 
 } // namespace imgproc
