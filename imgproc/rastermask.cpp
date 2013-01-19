@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <numeric>
 
 #include "dbglog/dbglog.hpp"
 
