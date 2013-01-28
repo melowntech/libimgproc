@@ -60,6 +60,7 @@ operator>>(std::basic_istream<CharT, Traits> &os
 
 namespace detail {
     template <typename T> struct GeoreferencingIterator;
+    template <typename T> struct ConstGeoreferencingIterator;
 } // namespace detail
 
 template <typename T>
@@ -97,7 +98,7 @@ struct Georeferencing2_
 
     typedef detail::GeoreferencingIterator<Georeferencing2_<T>> iterator;
 
-    typedef detail::GeoreferencingIterator<const Georeferencing2_<T>>
+    typedef detail::ConstGeoreferencingIterator<Georeferencing2_<T>>
         const_iterator;
 
     iterator begin();
@@ -153,7 +154,7 @@ struct Georeferencing3_
 
     typedef detail::GeoreferencingIterator<Georeferencing3_<T>> iterator;
 
-    typedef detail::GeoreferencingIterator<const Georeferencing3_<T>>
+    typedef detail::ConstGeoreferencingIterator<Georeferencing3_<T>>
         const_iterator;
 
     iterator begin();
@@ -224,6 +225,59 @@ struct detail::GeoreferencingIterator {
 
 private:
     T *gr_;
+    int index_;
+};
+
+template <typename T>
+struct detail::ConstGeoreferencingIterator {
+    typedef typename T::value_type value_type;
+    typedef std::ptrdiff_t difference_type;
+    typedef typename T::pointer pointer;
+    typedef typename T::const_reference reference;
+    typedef std::random_access_iterator_tag iterator_category;
+
+    ConstGeoreferencingIterator(const T *gr, int index = 0) : gr_(gr), index_(index) {}
+
+    const value_type& operator*() const {
+        return (*gr_)[index_];
+    }
+
+    const value_type* operator->() const {
+        return (*gr_)[index_];
+    }
+
+    ConstGeoreferencingIterator operator++() {
+        ++index_;
+        return *this;
+    }
+
+    ConstGeoreferencingIterator operator++(int) {
+        auto i(*this);
+        ++index_;
+        return i;
+    }
+
+    ConstGeoreferencingIterator operator--() {
+        --index_;
+        return *this;
+    }
+
+    ConstGeoreferencingIterator operator--(int) {
+        auto i(*this);
+        --index_;
+        return i;
+    }
+
+    bool operator==(const ConstGeoreferencingIterator &o) {
+        return (gr_ == o.gr_) && (index_ == o.index_);
+    }
+
+    bool operator!=(const ConstGeoreferencingIterator &o) {
+        return !operator==(o);
+    }
+
+private:
+    const T *gr_;
     int index_;
 };
 
