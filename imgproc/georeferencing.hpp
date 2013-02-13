@@ -223,6 +223,10 @@ struct detail::GeoreferencingIterator {
         return !operator==(o);
     }
 
+    difference_type operator-(const GeoreferencingIterator &o) {
+        return index_ - o.index_;
+    }
+
 private:
     T *gr_;
     int index_;
@@ -274,6 +278,10 @@ struct detail::ConstGeoreferencingIterator {
 
     bool operator!=(const ConstGeoreferencingIterator &o) {
         return !operator==(o);
+    }
+
+    difference_type operator-(const ConstGeoreferencingIterator &o) {
+        return index_ - o.index_;
     }
 
 private:
