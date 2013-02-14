@@ -13,6 +13,8 @@
 #include <math/math_all.hpp>
 #include <boost/gil/gil_all.hpp>
 
+#include "filtering.hpp"
+
 namespace imgproc {
 
 /**
