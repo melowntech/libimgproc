@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <iostream>
+#include <string>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -20,6 +21,17 @@
 
 
 namespace imgproc {
+    
+void PrintMatrix(std::stringstream &ss, const cv::Mat &m, const int prec){
+    ss << std::setprecision(prec) << std::setw(8) << std::fixed;
+    int i = 0;
+    ss << "\nDCT histogram matrix:\n";
+    for(auto el = m.begin<float>(); el < m.end<float>(); el++,i++){
+        if(i && !(i % m.cols)) ss << "\n";
+        ss << std::setw(8) << *el;
+    }
+    ss << "\n\n";
+}
 
 void EffectiveScale(const cv::Mat & img, float &hscale, float &vscale, float threshold = 0.1){
     
@@ -55,9 +67,20 @@ void EffectiveScale(const cv::Mat & img, float &hscale, float &vscale, float thr
         *el = (*el-*minel)*255/(*maxel-*minel);
     }
     
+    //compute std of pixels
+    double x = 0, x2 = 0;
+    for(auto el = src.begin<float>();el < src.end<float>();el++){
+        x += *el;
+        x2 += (*el) * (*el);
+    }
+    double cap = src.cols*src.rows;
+    LOG(info1) << x << ", " << x2 << ", cap: "<< cap;
+    double std = sqrt(x2/cap - (x*x)/(cap*cap));
+    
+    
     //compute 8x8 cumulative histogram from dct blocks
     const int dctSize = 8;
-    const float tr = 8;         //recommended threshold
+    const float tr = std/5;         //experimental threashold
     src = src(cv::Rect(0, 0, (src.cols/dctSize)*dctSize, (src.rows/dctSize)*dctSize)); //shrink image to multiple of dctSize
     
     cv::Mat cumulHist = cv::Mat::zeros(dctSize,dctSize,CV_32F), 
@@ -97,6 +120,13 @@ void EffectiveScale(const cv::Mat & img, float &hscale, float &vscale, float thr
     //numerator = where exactly it cuts threshold
     if(i == dctSize-1){ hscale = 1.0; }
     else{ hscale = (i+ (threshold- *it) / (*(it+1) - *it))/(dctSize-1); }
+    
+    //Print cumulHit to log
+    cumulHist /= cumulHist.at<float>(0,0);
+    std::stringstream ss;
+    PrintMatrix(ss,cumulHist,5);
+    std::string histStr(ss.str());
+    LOG(info1) << histStr << "DCT threshold: " << tr;
 }
 
 } //namespace imgproc
