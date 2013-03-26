@@ -32,7 +32,7 @@ void CLAHE( const cv::Mat & src, cv::Mat & dst, const int regionSize,
     
     if ( src.type() != CV_8UC1 && src.type() != CV_16UC1
         && src.type() != CV_8UC3 && src.type() != CV_16UC3 )
-        LOGTHROW( err3, std::runtime_error ) << "CLAHE does not support "
+        LOGTHROW( err2, std::runtime_error ) << "CLAHE does not support "
             " image type " << src.type() << ".";
 
     // convert channels
@@ -83,8 +83,8 @@ void CLAHE( const cv::Mat & src, cv::Mat & dst, const int regionSize,
 
     if ( retval != 0 ) {
 
-        LOGTHROW( err3, std::runtime_error ) << "CLAHE returned error code "
-            << "retval. See imgproc/detail/clahe.hpp for details.";
+        LOGTHROW( err2, std::runtime_error ) << "CLAHE returned error code "
+            << retval << ". See imgproc/detail/clahe.hpp for details.";
     }
     
     // convert dimensions
