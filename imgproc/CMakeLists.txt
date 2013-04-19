@@ -1,12 +1,14 @@
 set(imgproc_DEPENDS math utility dbglog Boost)
 
 if(EXIF_FOUND)
-  message(STATUS "improc: compiling in EXIF support")
+  message(STATUS "imgproc: compiling in EXIF support")
 
   list(APPEND imgproc_DEPENDS EXIF)
 
   set(imgproc_EXIF_SOURCES
     exif.hpp exif.cpp)
+else()
+  message(STATUS "imgproc: compiling without EXIF support")
 endif()
 
 define_module(LIBRARY imgproc DEPENDS ${imgproc_DEPENDS})
