@@ -15,7 +15,7 @@
 
 namespace imgproc {
 
-namespace gil = boost::gil;
+//namespace gil = boost::gil;
 
 namespace detail {
     template <typename T, typename Q>
