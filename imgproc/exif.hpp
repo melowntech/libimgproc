@@ -20,6 +20,7 @@ typedef boost::rational<long> Rational;
 
 const Rational inch(254, 10000);
 const Rational centimeter(1, 100);
+const Rational millimeter(1, 1000);
 
 #define DECLARE_EXCEPTION(type, base) \
     struct type : public base { type(const std::string &msg) : base(msg) {} }
