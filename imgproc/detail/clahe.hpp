@@ -70,8 +70,8 @@ static void Interpolate (kz_pixel_t*, int, unsigned long*, unsigned long*,
 /**************  Start of actual code **************/
 #include <stdlib.h>                      /* To get prototypes of malloc() and free() */
 
-const static unsigned int uiMAX_REG_X = 256;      /* max. # contextual regions in x-direction */
-const static unsigned int uiMAX_REG_Y = 256;      /* max. # contextual regions in y-direction */
+const static unsigned int uiMAX_REG_X = 1024;      /* max. # contextual regions in x-direction */
+const static unsigned int uiMAX_REG_Y = 1024;      /* max. # contextual regions in y-direction */
 
 /************************** main function CLAHE ******************/
 
