@@ -22,6 +22,5 @@ set(imgproc_SOURCES
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES} ${imgproc_EXIF_SOURCES})
-set_target_properties(imgproc PROPERTIES ARCHIVE_OUTPUT_DIRECTORY
-  ${CMAKE_SOURCE_DIR}/lib)
+buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
