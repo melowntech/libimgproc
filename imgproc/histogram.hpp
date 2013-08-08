@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include <limits>
+#include <algorithm>
 
 #include <boost/gil/gil_all.hpp>
 
@@ -74,6 +75,19 @@ public:
             if ( count >= thresholdCount ) return i;
         }
         return max;
+    }
+
+    channel_type prevalentValue() const {
+        channel_type index(0);
+        uint value(0);
+        for (unsigned int i(0); i < (max + 1ul); ++i) {
+            if (values[i] > value) {
+                value = values[i];
+                index = i;
+            }
+        }
+
+        return index;
     }
 
 private:
