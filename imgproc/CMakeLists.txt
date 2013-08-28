@@ -19,6 +19,8 @@ set(imgproc_SOURCES
   rastermask.hpp
   rastermask.cpp
   georeferencing.hpp
+  scanconversion.hpp
+  scanconversion.cpp
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES} ${imgproc_EXIF_SOURCES})
