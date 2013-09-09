@@ -47,8 +47,10 @@ inline void rowFilter(
 
 template <class SrcView, class Filter2>
 inline typename SrcView::value_type reconstruct( const SrcView & view,
-    const Filter2 & filter, const gil::point2<double>  pos ) {
-
+    const Filter2 & filter, const gil::point2<double> pos,
+    const typename SrcView::value_type defaultColor
+            = typename SrcView::value_type() )
+{
     gil::point2<int> ll, ur;
 
     ll.x = (int) floor( pos.x - filter.halfwinx() );
@@ -58,9 +60,11 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
 
     typename SrcView::xy_locator cpos = view.xy_at( ll.x, ll.y );
 
+    auto numChannels = gil::num_channels<SrcView>::value;
+
     double weightSum( 0.0 ), valueSum[10];
 
-    for ( int i = 0; i < gil::num_channels<SrcView>::value; i++ )
+    for ( int i = 0; i < numChannels; i++ )
         valueSum[i] = 0.0;
     
     for ( int i = ll.y; i <= ur.y; i++ ) {
@@ -71,13 +75,17 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
             if ( math::ccinterval( 0, (int) view.width() - 1, j ) &&
                  math::ccinterval( 0, (int) view.height() - 1, i ) ) {
 
-                for ( int k = 0; k < gil::num_channels<SrcView>::value; k++ )
+                for ( int k = 0; k < numChannels; k++ )
                     valueSum[k] += weight * cpos(0,0)[k];
 
                 /*LOG( debug ) << "[" << j << "," << i << "]: weight= "
                              << weight << ", value= "
                              << (int) cpos(0,0)[0];*/
+            }
+            else {
 
+                for ( int k = 0; k < numChannels; k++ )
+                    valueSum[k] += weight * defaultColor[k];
             }
 
             weightSum += weight;
@@ -93,7 +101,7 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
     
     typename SrcView::value_type retval;
 
-    for ( int i = 0; i < gil::num_channels<SrcView>::value; i++ )
+    for ( int i = 0; i < numChannels; i++ )
         if ( weightSum > 1E-15 )
             retval[i] = std::min( std::max(
                             valueSum[i] / weightSum,
