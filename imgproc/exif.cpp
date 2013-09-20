@@ -47,7 +47,26 @@ Rational Exif::getFPResolutionUnit(ExifIfd ifd) const
     default:
         LOGTHROW(err1, InvalidValue)
             << "Invalid value of Focal plane resolution unit: <"
-            << value << ">.";
+            << value << "> in file " << path_ << ".";
+    }
+    throw;
+}
+
+Orientation Exif::getOrientation(ExifIfd ifd) const
+{
+    switch (auto value = getEntry(EXIF_TAG_ORIENTATION, ifd).as<short>()) {
+    case 1: return Orientation::top_left;
+    case 2: return Orientation::top_right;
+    case 3: return Orientation::bottom_right;
+    case 4: return Orientation::bottom_left;
+    case 5: return Orientation::left_top;
+    case 6: return Orientation::right_top;
+    case 7: return Orientation::right_bottom;
+    case 8: return Orientation::left_bottom;
+    default:
+        LOGTHROW(warn1, InvalidValue)
+            << "Invalid value of Orientation: <" << value << "> in file "
+            << path_ << ".";
     }
     throw;
 }

@@ -32,6 +32,17 @@ DECLARE_EXCEPTION(InvalidValue, Error);
 
 #undef DECLARE_EXCEPTION
 
+enum class Orientation {
+    top_left
+    , top_right
+    , bottom_right
+    , bottom_left
+    , left_top
+    , right_top
+    , right_bottom
+    , left_bottom
+};
+
 class Exif {
 public:
     Exif(const boost::filesystem::path &path)
@@ -43,6 +54,8 @@ public:
     Entry getEntry(ExifTag tag, ExifIfd ifd = EXIF_IFD_COUNT) const;
 
     Rational getFPResolutionUnit(ExifIfd ifd = EXIF_IFD_COUNT) const;
+
+    Orientation getOrientation(ExifIfd ifd = EXIF_IFD_COUNT) const;
 
 private:
     friend class Entry;
