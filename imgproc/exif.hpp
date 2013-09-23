@@ -138,6 +138,56 @@ inline std::string Exif::Entry::str() const
     return boost::lexical_cast<std::string>(*this);
 }
 
+template <typename E, typename T>
+inline std::basic_ostream<E, T>&
+operator<<(std::basic_ostream<E, T> &os, const Orientation &o)
+{
+    switch (o) {
+    case Orientation::top_left: return os << "top-left";
+    case Orientation::top_right: return os << "top-right";
+    case Orientation::bottom_right: return os << "bottom-right";
+    case Orientation::bottom_left: return os << "bottom-left";
+    case Orientation::left_top: return os << "left-top";
+    case Orientation::right_top: return os << "right-top";
+    case Orientation::right_bottom: return os << "right-bottom";
+    case Orientation::left_bottom: return os << "left-bottom";
+    }
+
+    os.setstate(std::ios::failbit);
+    return os;
+}
+
+template <typename E, typename T>
+inline std::basic_istream<E, T>&
+operator>>(std::basic_istream<E, T> &is, Orientation &o)
+{
+    std::string s;
+    is >> s;
+
+    if (s == "top-left") {
+        o = Orientation::top_left;
+    } else if (s == "top-right") {
+        o = Orientation::top_right;
+    } else if (s == "bottom-right") {
+        o = Orientation::bottom_right;
+    } else if (s == "bottom-left") {
+        o = Orientation::bottom_left;
+    } else if (s == "left-top") {
+        o = Orientation::left_top;
+    } else if (s == "right-top") {
+        o = Orientation::right_top;
+    } else if (s == "right-bottom") {
+        o = Orientation::right_bottom;
+    } else if (s == "left-bottom") {
+        o = Orientation::left_bottom;
+    } else {
+        o = {}; // because of boost::lexical_cast bug
+        is.setstate(std::ios::failbit);
+    }
+
+    return is;
+}
+
 namespace detail {
 
 template <typename T, class Enable = void> T convert(const Exif::Entry &e);
