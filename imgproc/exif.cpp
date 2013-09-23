@@ -6,7 +6,7 @@ Exif::Handle Exif::open(const boost::filesystem::path &path)
 {
     auto ed(::exif_data_new_from_file(path.string().c_str()));
     if (!ed) {
-        LOGTHROW(err2, std::runtime_error)
+        LOGTHROW(err1, std::runtime_error)
             << "Failed to read exif from file " << path << ".";
     }
 
