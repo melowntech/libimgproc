@@ -204,7 +204,7 @@ bool RasterMask::onBoundary( int x, int y ) const {
     return false;
 }
 
-void RasterMask::dump( std::ofstream & f ) const
+void RasterMask::dump( std::ostream & f ) const
 {
     write(f, QT_RASTERMASK_IO_MAGIC); // 5 bytes
     write(f, uint8_t(0)); // reserved
@@ -217,10 +217,9 @@ void RasterMask::dump( std::ofstream & f ) const
     f.write( reinterpret_cast<const char *>( & count ), sizeof( uint ) );
 
     root.dump( f );
-
 }
 
-void RasterMask::load( std::ifstream & f )
+void RasterMask::load( std::istream & f )
 {
     char magic[5];
     read(f, magic);
@@ -379,7 +378,7 @@ RasterMask::Node_t & RasterMask::Node_t::operator = (
     return * this;
 }
 
-void RasterMask::Node_t::dump( std::ofstream & f ) const
+void RasterMask::Node_t::dump( std::ostream & f ) const
 {
     f.write( reinterpret_cast<const char *>( & type ), sizeof( NodeType_t ) );
 
@@ -392,7 +391,7 @@ void RasterMask::Node_t::dump( std::ofstream & f ) const
     }
 }
 
-void RasterMask::Node_t::load( std::ifstream & f ) {
+void RasterMask::Node_t::load( std::istream & f ) {
 
     f.read( reinterpret_cast<char *>( & type ), sizeof( NodeType_t ) );
 

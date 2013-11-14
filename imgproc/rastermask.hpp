@@ -256,10 +256,10 @@ public :
     bool empty() const;
 
     /** dump mask to stream */
-    void dump( std::ofstream & f ) const;
+    void dump( std::ostream & f ) const;
 
     /** load mask from stream */
-    void load( std::ifstream & f );
+    void load( std::istream & f );
 
     /** dump mask to bitfield mask */
     imgproc::bitfield::RasterMask asMask() const;
@@ -280,8 +280,8 @@ private :
         Node_t & operator = ( const Node_t & s );
         ~Node_t();
 
-        void dump( std::ofstream & f ) const;
-        void load( std::ifstream & f );
+        void dump( std::ostream & f ) const;
+        void load( std::istream & f );
 
         void dump( imgproc::bitfield::RasterMask &m, ushort x, ushort y
                    , ushort size ) const;
