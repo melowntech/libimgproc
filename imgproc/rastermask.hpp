@@ -19,6 +19,10 @@
 
 namespace imgproc {
 
+/**** bit-field version of rastermask ****/
+
+namespace bitfield {
+
 class RasterMask {
 public:
     enum InitMode { EMPTY = 0, FULL = 1, SOURCE = 2 };
@@ -190,6 +194,113 @@ inline void RasterMask::resetTrail()
     mask_[bytes_ - 1] &=
         (std::uint8_t(0xffu) >> ((bytes_ << 3) - size_.height * size_.width));
 }
+
+} // namespace bitfield
+
+
+/**** quad-tree version of rastermask ****/
+
+namespace quadtree {
+
+class RasterMask {
+public :
+    enum InitMode_t {
+        EMPTY = 0,
+        FULL = 1,
+        SOURCE = 2
+    };
+
+    RasterMask() : sizeX( 1 ), sizeY( 1 ), count( 0 ), root( *this ) {}
+
+    /** initialize mask */
+    RasterMask( uint sizeX, uint sizeY, const InitMode_t mode );
+
+    /** intialize mask */
+    RasterMask( const math::Size2 & size, const InitMode_t mode );
+
+    /** initialize a mask of the same order, optionally copying mask. */
+    RasterMask( const RasterMask & mask, const InitMode_t mode = SOURCE );
+
+    /** return size of mask */
+    math::Size2 size() { return math::Size2( sizeX, sizeY ); }
+
+    /** assignment operator */
+    RasterMask & operator = ( const RasterMask & );
+
+    /** destroy */
+    ~RasterMask() {};
+
+    /** invert a mask (negate pixels) */
+    void invert();
+
+    /** do a set difference with two masks. */
+    void subtract( const RasterMask & op );
+
+    /** obtain mask value at given pos. */
+    bool get( int x, int y ) const;
+
+    /** set mask value at given pos. */
+    void set( int x, int y, bool value = true );
+
+    /** test if a given pixel is a boundary pixel (neighboring unset
+        pixel in mask */
+    bool onBoundary( int x, int y ) const;
+
+    /** return mask size (number of white pixels) */
+    uint size() const { return count; }
+
+    /** return total number of pixels */
+    uint capacity() const { return sizeX * sizeY; }
+
+    /** test mask for emptiness */
+    bool empty() const;
+
+    /** dump mask to stream */
+    void dump( std::ofstream & f );
+
+    /** load mask from stream */
+    void load( std::ifstream & f );
+
+    /** dump mask to bitfield mask */
+    imgproc::bitfield::RasterMask asMask() const;
+
+    math::Size2 dims() const { return {sizeX, sizeY}; }
+
+private :
+
+    enum NodeType_t { WHITE, BLACK, GRAY };
+
+    class Node_t {
+    public :
+
+        Node_t( RasterMask & mask ) : type( BLACK ), mask( mask ) {};
+        bool get( ushort x, ushort y, ushort size ) const;
+        void set( ushort x, ushort y, bool value, ushort size );
+
+        Node_t & operator = ( const Node_t & s );
+        ~Node_t();
+
+        void dump( std::ofstream & f );
+        void load( std::ifstream & f );
+
+        void dump( imgproc::bitfield::RasterMask &m, ushort x, ushort y
+                   , ushort size ) const;
+
+        NodeType_t type;
+        Node_t * ul, * ur, * ll, *lr;
+        RasterMask & mask;
+    };
+
+    uint sizeX, sizeY;
+    uint quadSize;
+    uint  count;
+    Node_t root;
+};
+
+} // namespace quadtree
+
+// the default rastermask is the bit-field based one
+typedef bitfield::RasterMask RasterMask;
 
 } // namespace imgproc
 
