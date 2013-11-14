@@ -11,6 +11,17 @@ else()
   message(STATUS "imgproc: compiling without EXIF support")
 endif()
 
+if(TIFF_FOUND)
+  message(STATUS "imgproc: compiling in TIFF support")
+
+  list(APPEND imgproc_DEPENDS TIFF)
+
+  set(imgproc_TIFF_SOURCES
+    tiff.hpp tiff.cpp)
+else()
+  message(STATUS "imgproc: compiling without TIFF support")
+endif()
+
 define_module(LIBRARY imgproc DEPENDS ${imgproc_DEPENDS})
 
 set(imgproc_SOURCES
@@ -23,7 +34,10 @@ set(imgproc_SOURCES
   scanconversion.cpp
 )
 
-add_library(imgproc STATIC ${imgproc_SOURCES} ${imgproc_EXIF_SOURCES})
+add_library(imgproc STATIC ${imgproc_SOURCES}
+  ${imgproc_EXIF_SOURCES}
+  ${imgproc_TIFF_SOURCES}
+  )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
 
