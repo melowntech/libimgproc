@@ -75,7 +75,7 @@ public:
     bool onBoundary( int x, int y ) const;
 
     /** dump mask to stream */
-    void dump(std::ostream &f);
+    void dump(std::ostream &f) const;
 
     /** load mask from stream */
     void load(std::istream &f);
@@ -256,7 +256,7 @@ public :
     bool empty() const;
 
     /** dump mask to stream */
-    void dump( std::ofstream & f );
+    void dump( std::ofstream & f ) const;
 
     /** load mask from stream */
     void load( std::ifstream & f );
@@ -280,7 +280,7 @@ private :
         Node_t & operator = ( const Node_t & s );
         ~Node_t();
 
-        void dump( std::ofstream & f );
+        void dump( std::ofstream & f ) const;
         void load( std::ifstream & f );
 
         void dump( imgproc::bitfield::RasterMask &m, ushort x, ushort y

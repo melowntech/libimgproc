@@ -25,7 +25,7 @@ namespace {
     using utility::binaryio::write;
 }
 
-void RasterMask::dump(std::ostream &f)
+void RasterMask::dump(std::ostream &f) const
 {
     write(f, BF_RASTERMASK_IO_MAGIC); // 5 bytes
     write(f, uint8_t(0)); // reserved
@@ -204,17 +204,17 @@ bool RasterMask::onBoundary( int x, int y ) const {
     return false;
 }
 
-void RasterMask::dump( std::ofstream & f )
+void RasterMask::dump( std::ofstream & f ) const
 {
     write(f, QT_RASTERMASK_IO_MAGIC); // 5 bytes
     write(f, uint8_t(0)); // reserved
     write(f, uint8_t(0)); // reserved
     write(f, uint8_t(0)); // reserved
 
-    f.write( reinterpret_cast<char *>( & sizeX ), sizeof( uint ) );
-    f.write( reinterpret_cast<char *>( & sizeY ), sizeof( uint ) );
-    f.write( reinterpret_cast<char *>( & quadSize ), sizeof( uint ) );
-    f.write( reinterpret_cast<char *>( & count ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & sizeX ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & sizeY ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & quadSize ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & count ), sizeof( uint ) );
 
     root.dump( f );
 
@@ -379,9 +379,9 @@ RasterMask::Node_t & RasterMask::Node_t::operator = (
     return * this;
 }
 
-void RasterMask::Node_t::dump( std::ofstream & f ) {
-
-    f.write( reinterpret_cast<char *>( & type ), sizeof( NodeType_t ) );
+void RasterMask::Node_t::dump( std::ofstream & f ) const
+{
+    f.write( reinterpret_cast<const char *>( & type ), sizeof( NodeType_t ) );
 
     if ( type == GRAY ) {
 
