@@ -26,3 +26,8 @@ set(imgproc_SOURCES
 add_library(imgproc STATIC ${imgproc_SOURCES} ${imgproc_EXIF_SOURCES})
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
+
+# test stuff
+if (COMPILE_TESTS)
+  add_subdirectory(test-tiff)
+endif()
