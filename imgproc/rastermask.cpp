@@ -94,16 +94,13 @@ namespace {
 }
 
 
-bool RasterMask::empty() const {
-
-    return ( count_ == 0 );
-}
-
 RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
     : sizeX_( sizeX ), sizeY_( sizeY ), root_( *this )
 {
-    quadSize_ = std::max( 1 << uint( ceil( log( sizeX ) / log( 2 ) ) ),
-       1 << uint( ceil( log( sizeY ) / log( 2 ) ) ) );
+    quadSize_ = 1;
+    while (quadSize_ < sizeX_ || quadSize_ < sizeY_) {
+        quadSize_ *= 2;
+    }
 
     switch ( mode ) {
 
@@ -121,10 +118,12 @@ RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
 }
 
 RasterMask::RasterMask( const math::Size2 & size, const InitMode mode )
-    : sizeX_( size.width ), sizeY_( size.height ), root_( * this ) {
-
-    quadSize_ = std::max( 1 << uint( ceil( log( sizeX_ ) / log( 2 ) ) ),
-       1 << uint( ceil( log( sizeY_ ) / log( 2 ) ) ) );
+    : sizeX_( size.width ), sizeY_( size.height ), root_( * this )
+{
+    quadSize_ = 1;
+    while (quadSize_ < sizeX_ || quadSize_ < sizeY_) {
+        quadSize_ *= 2;
+    }
 
     switch ( mode ) {
 
@@ -412,9 +411,9 @@ void RasterMask::Node::load( std::istream & f )
     }
 }
 
-imgproc::bitfield::RasterMask RasterMask::asMask() const
+imgproc::bitfield::RasterMask RasterMask::asBitfield() const
 {
-    LOG(info4) << "Loading raster mask from quad-tree based representation";
+    LOG(info4) << "Converting raster mask from quad-tree based representation";
     imgproc::bitfield::RasterMask m(sizeX_, sizeY_, imgproc::RasterMask::EMPTY);
     root_.dump(m, 0, 0, quadSize_);
     LOG(info4) << "RasterMask: " << m.size() << " vs " << count_;

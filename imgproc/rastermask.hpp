@@ -210,10 +210,10 @@ public :
         SOURCE = 2
     };
 
-    RasterMask() : sizeX_( 1 ), sizeY_( 1 ), count_( 0 ), root_( *this ) {}
+    RasterMask() : sizeX_(0), sizeY_(0), count_(0), root_(*this) {}
 
     /** initialize mask */
-    RasterMask( uint sizeX_, uint sizeY_, const InitMode mode );
+    RasterMask( uint sizeX, uint sizeY, const InitMode mode );
 
     /** intialize mask */
     RasterMask( const math::Size2 & size, const InitMode mode );
@@ -253,7 +253,10 @@ public :
     uint capacity() const { return sizeX_ * sizeY_; }
 
     /** test mask for emptiness */
-    bool empty() const;
+    bool empty() const { return count_ == 0; }
+
+    /** test mask for zero size */
+    bool zeroSize() const { return !capacity(); }
 
     /** dump mask to stream */
     void dump( std::ostream & f ) const;
@@ -262,7 +265,7 @@ public :
     void load( std::istream & f );
 
     /** dump mask to bitfield mask */
-    imgproc::bitfield::RasterMask asMask() const;
+    imgproc::bitfield::RasterMask asBitfield() const;
 
     math::Size2 dims() const { return {sizeX_, sizeY_}; }
 
