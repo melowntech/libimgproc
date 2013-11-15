@@ -273,7 +273,7 @@ void BinTiff::write(const std::string &data)
     writer.flush();
 
     // write directory
-    if (!::TIFFWriteDirectory(TH(handle_))) {
+    if (!::TIFFRewriteDirectory(TH(handle_))) {
         LOGTHROW(err1, Error)
             << "Unable to write directory (" << detail::getLastError() << ").";
     }
@@ -315,9 +315,6 @@ int findFile(TIFF *h, const std::string &filename)
         }
         ++dir;
     } while (::TIFFReadDirectory(h));
-
-    LOG(info4) << "setting dir: " << dir;
-    ::TIFFSetDirectory(h, dir);
 
     return -1;
 }
