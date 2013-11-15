@@ -4,11 +4,17 @@
 #include <boost/lexical_cast.hpp>
 
 #include "dbglog/dbglog.hpp"
-#include "imgproc/tiff.hpp"
+#include "imgproc/bintiff.hpp"
 #include "utility/streams.hpp"
+
+void dump(std::ostream &os, const std::string &data)
+{
+    os.write(data.data(), data.size());
+}
 
 int main(int argc, char *argv[])
 {
+    dbglog::set_mask("ALL");
     if (argc != 3) {
         std::cerr << "usage: " << argv[0] << "tiff-file data-file"
                   << std::endl;
@@ -16,11 +22,8 @@ int main(int argc, char *argv[])
     }
 
     auto tiff(imgproc::tiff::openAppend(argv[1]));
-    auto data(utility::read(argv[2]));
+    auto filename(argv[2]);
+    auto data(utility::read(filename));
 
-    auto dir(tiff.readDirectory());
-
-    tiff.writeDirectory();
-
-    LOG(info4) << "dir: " << dir;
+    dump(tiff.ostream(filename), data);
 }

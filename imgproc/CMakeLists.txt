@@ -17,7 +17,7 @@ if(TIFF_FOUND)
   list(APPEND imgproc_DEPENDS TIFF)
 
   set(imgproc_TIFF_SOURCES
-    tiff.hpp tiff.cpp)
+    bintiff.hpp bintiff.cpp)
 else()
   message(STATUS "imgproc: compiling without TIFF support")
 endif()
