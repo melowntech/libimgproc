@@ -33,12 +33,6 @@ public:
     friend BinTiff openWrite(const boost::filesystem::path &file);
     friend BinTiff openAppend(const boost::filesystem::path &file);
 
-    Dir currentDirectory();
-    void setDirectory(Dir dirnum);
-    Dir readDirectory();
-    void writeDirectory();
-    bool isLastDirectory();
-
     class OBinStream; friend class OBinStream;
     class IBinStream; friend class IBinStream;
 

@@ -98,43 +98,6 @@ BinTiff::BinTiff(const Handle &handle)
     : handle_(handle)
 {}
 
-Dir BinTiff::readDirectory()
-{
-    if (!::TIFFReadDirectory(TH(handle_))) {
-        LOGTHROW(err1, Error)
-            << "Unable to read directory (" << detail::getLastError() << ").";
-
-    }
-    return currentDirectory();
-}
-
-void BinTiff::writeDirectory()
-{
-    if (!::TIFFWriteDirectory(TH(handle_))) {
-        LOGTHROW(err1, Error)
-            << "Unable to write directory (" << detail::getLastError() << ").";
-    }
-}
-
-Dir BinTiff::currentDirectory()
-{
-    return ::TIFFCurrentDirectory(TH(handle_));
-}
-
-bool BinTiff::isLastDirectory()
-{
-    return ::TIFFLastDirectory(TH(handle_));
-}
-
-void BinTiff::setDirectory(std::uint32_t dirnum)
-{
-    if (!::TIFFSetDirectory(TH(handle_), dirnum)) {
-        LOGTHROW(err1, Error)
-            << "Unable to set directory <" << dirnum << "> ("
-            << detail::getLastError() << ").";
-    }
-}
-
 namespace {
 template <typename Handle, typename ...Args>
 void setField(Handle &&handle, ttag_t tag, Args &&...args)
@@ -310,7 +273,10 @@ void BinTiff::write(const std::string &data)
     writer.flush();
 
     // write directory
-    writeDirectory();
+    if (!::TIFFWriteDirectory(TH(handle_))) {
+        LOGTHROW(err1, Error)
+            << "Unable to write directory (" << detail::getLastError() << ").";
+    }
 }
 
 std::string BinTiff::read()
@@ -329,40 +295,48 @@ std::string BinTiff::read()
 
 namespace {
 
-bool findFile(TIFF *h, const std::string &filename)
+int findFile(TIFF *h, const std::string &filename)
 {
     LOG(info4) << "Rewind";
+    int dir(0);
     if (!::TIFFSetDirectory(h, 0)) {
         // no directory at all
         LOG(info4) << "No directory 0.";
-        return false;
+        return -1;
     }
 
-    LOG(info4) << "Scanning";
-    while (::TIFFReadDirectory(h)) {
+    LOG(info4) << "Scanning: " << ::TIFFCurrentDirectory(h);
+    do {
         LOG(info4) << "Inside: " << ::TIFFCurrentDirectory(h);
         const char *fname;
-        if (!::TIFFGetField(h, BINTIFFTAG_FILENAME, &fname)) {
-            continue;
+        if (::TIFFGetField(h, BINTIFFTAG_FILENAME, &fname)) {
+            LOG(info4) << "Found filename: " << fname;
+            if (filename == fname) { return dir; }
         }
+        ++dir;
+    } while (::TIFFReadDirectory(h));
 
-        LOG(info4) << "Found filename: " << fname;
-        if (filename == fname) { return true; }
-    }
+    LOG(info4) << "setting dir: " << dir;
+    ::TIFFSetDirectory(h, dir);
 
-    return false;
+    return -1;
 }
 
 } // namespace
 
 void BinTiff::create(const std::string &filename)
 {
+    // seek to the file (if exists)
+    auto dir(findFile(TH(handle_), filename));
+    if (dir < 0) {
+        // not found, flush directory -- how?
+    }
     setField(handle_, BINTIFFTAG_FILENAME, filename.c_str());
 }
 
 void BinTiff::seek(const std::string &filename)
 {
-    if (!findFile(TH(handle_), filename)) {
+    if (findFile(TH(handle_), filename) < 0) {
         LOGTHROW(err1, Error)
             << "No such file " << filename << " in tiff.";
     }
