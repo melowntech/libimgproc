@@ -204,31 +204,31 @@ namespace quadtree {
 
 class RasterMask {
 public :
-    enum InitMode_t {
+    enum InitMode {
         EMPTY = 0,
         FULL = 1,
         SOURCE = 2
     };
 
-    RasterMask() : sizeX( 1 ), sizeY( 1 ), count( 0 ), root( *this ) {}
+    RasterMask() : sizeX_( 1 ), sizeY_( 1 ), count_( 0 ), root_( *this ) {}
 
     /** initialize mask */
-    RasterMask( uint sizeX, uint sizeY, const InitMode_t mode );
+    RasterMask( uint sizeX_, uint sizeY_, const InitMode mode );
 
     /** intialize mask */
-    RasterMask( const math::Size2 & size, const InitMode_t mode );
+    RasterMask( const math::Size2 & size, const InitMode mode );
 
     /** initialize a mask of the same order, optionally copying mask. */
-    RasterMask( const RasterMask & mask, const InitMode_t mode = SOURCE );
+    RasterMask( const RasterMask & mask, const InitMode mode = SOURCE );
 
     /** return size of mask */
-    math::Size2 size() { return math::Size2( sizeX, sizeY ); }
+    math::Size2 size() const { return {sizeX_, sizeY_}; }
 
     /** assignment operator */
     RasterMask & operator = ( const RasterMask & );
 
     /** destroy */
-    ~RasterMask() {};
+    ~RasterMask() {}
 
     /** invert a mask (negate pixels) */
     void invert();
@@ -247,10 +247,10 @@ public :
     bool onBoundary( int x, int y ) const;
 
     /** return mask size (number of white pixels) */
-    uint size() const { return count; }
+    uint count() const { return count_; }
 
     /** return total number of pixels */
-    uint capacity() const { return sizeX * sizeY; }
+    uint capacity() const { return sizeX_ * sizeY_; }
 
     /** test mask for emptiness */
     bool empty() const;
@@ -264,21 +264,20 @@ public :
     /** dump mask to bitfield mask */
     imgproc::bitfield::RasterMask asMask() const;
 
-    math::Size2 dims() const { return {sizeX, sizeY}; }
+    math::Size2 dims() const { return {sizeX_, sizeY_}; }
 
 private :
 
-    enum NodeType_t { WHITE, BLACK, GRAY };
+    enum NodeType { WHITE, BLACK, GRAY };
 
-    class Node_t {
-    public :
-
-        Node_t( RasterMask & mask ) : type( BLACK ), mask( mask ) {};
+    struct Node
+    {
+        Node( RasterMask & mask ) : type( BLACK ), mask( mask ) {};
         bool get( ushort x, ushort y, ushort size ) const;
         void set( ushort x, ushort y, bool value, ushort size );
 
-        Node_t & operator = ( const Node_t & s );
-        ~Node_t();
+        Node & operator = ( const Node & s );
+        ~Node();
 
         void dump( std::ostream & f ) const;
         void load( std::istream & f );
@@ -286,15 +285,15 @@ private :
         void dump( imgproc::bitfield::RasterMask &m, ushort x, ushort y
                    , ushort size ) const;
 
-        NodeType_t type;
-        Node_t * ul, * ur, * ll, *lr;
+        NodeType type;
+        Node * ul, * ur, * ll, *lr;
         RasterMask & mask;
     };
 
-    uint sizeX, sizeY;
-    uint quadSize;
-    uint  count;
-    Node_t root;
+    uint sizeX_, sizeY_;
+    uint quadSize_;
+    uint  count_;
+    Node root_;
 };
 
 } // namespace quadtree

@@ -96,97 +96,97 @@ namespace {
 
 bool RasterMask::empty() const {
 
-    return ( count == 0 );
+    return ( count_ == 0 );
 }
 
-RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode_t mode )
-    : sizeX( sizeX ), sizeY( sizeY ), root( *this )
+RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
+    : sizeX_( sizeX ), sizeY_( sizeY ), root_( *this )
 {
-    quadSize = std::max( 1 << uint( ceil( log( sizeX ) / log( 2 ) ) ),
+    quadSize_ = std::max( 1 << uint( ceil( log( sizeX ) / log( 2 ) ) ),
        1 << uint( ceil( log( sizeY ) / log( 2 ) ) ) );
 
     switch ( mode ) {
 
         case EMPTY :
-            root.type = BLACK;
-            count = 0;
+            root_.type = BLACK;
+            count_ = 0;
             break;
 
         case FULL :
         default :
-            root.type = WHITE;
-            count = sizeX * sizeY;
+            root_.type = WHITE;
+            count_ = sizeX * sizeY;
             break;
     }
 }
 
-RasterMask::RasterMask( const math::Size2 & size, const InitMode_t mode )
-    : sizeX( size.width ), sizeY( size.height ), root( * this ) {
+RasterMask::RasterMask( const math::Size2 & size, const InitMode mode )
+    : sizeX_( size.width ), sizeY_( size.height ), root_( * this ) {
 
-    quadSize = std::max( 1 << uint( ceil( log( sizeX ) / log( 2 ) ) ),
-       1 << uint( ceil( log( sizeY ) / log( 2 ) ) ) );
+    quadSize_ = std::max( 1 << uint( ceil( log( sizeX_ ) / log( 2 ) ) ),
+       1 << uint( ceil( log( sizeY_ ) / log( 2 ) ) ) );
 
     switch ( mode ) {
 
         case EMPTY :
-            root.type = BLACK;
-            count = 0;
+            root_.type = BLACK;
+            count_ = 0;
             break;
 
         case FULL :
         default :
-            root.type = WHITE;
-            count = sizeX * sizeY;
+            root_.type = WHITE;
+            count_ = sizeX_ * sizeY_;
             break;
     }
 }
 
-RasterMask::RasterMask( const RasterMask & mask, const InitMode_t mode )
-    : sizeX( mask.sizeX ), sizeY( mask.sizeY ), quadSize( mask.quadSize),
-      root( *this )
+RasterMask::RasterMask( const RasterMask & mask, const InitMode mode )
+    : sizeX_( mask.sizeX_ ), sizeY_( mask.sizeY_ ), quadSize_( mask.quadSize_ ),
+      root_( *this )
 {
     switch ( mode ) {
 
         case EMPTY:
-            root.type = BLACK;
+            root_.type = BLACK;
             break;
 
         case FULL:
-            root.type = WHITE;
+            root_.type = WHITE;
             break;
 
         case SOURCE:
         default:
-            count = mask.count;
-            root = mask.root;
+            count_ = mask.count_;
+            root_ = mask.root_;
             break;
     }
 }
 
 void RasterMask::subtract( const RasterMask & op ) {
 
-    for ( uint i = 0; i < sizeX; i++ )
-        for ( uint j = 0; j < sizeY; j++ )
+    for ( uint i = 0; i < sizeX_; i++ )
+        for ( uint j = 0; j < sizeY_; j++ )
             if ( op.get( i, j ) ) set( i, j, false );
 }
 
 void RasterMask::invert() {
 
-    for ( uint i = 0; i < sizeX; i++ )
-        for ( uint j = 0; j < sizeY; j++ )
+    for ( uint i = 0; i < sizeX_; i++ )
+        for ( uint j = 0; j < sizeY_; j++ )
             set( i, j, ! get( i, j ) );
 }
 
 bool RasterMask::get( int x, int y ) const {
 
-    if ( x < 0 || x >= (int) sizeX || y < 0 || y >= (int) sizeY ) return false;
-    return root.get( (ushort) x, (ushort) y, quadSize );
+    if ( x < 0 || x >= (int) sizeX_ || y < 0 || y >= (int) sizeY_ ) return false;
+    return root_.get( (ushort) x, (ushort) y, quadSize_ );
 }
 
 void RasterMask::set( int x, int y, bool value ) {
 
-    if ( x < 0 || x >= (int) sizeX || y < 0 || y >= (int) sizeY ) return;
-    root.set( (ushort) x, (ushort ) y, value, quadSize );
+    if ( x < 0 || x >= (int) sizeX_ || y < 0 || y >= (int) sizeY_ ) return;
+    root_.set( (ushort) x, (ushort ) y, value, quadSize_ );
 }
 
 bool RasterMask::onBoundary( int x, int y ) const {
@@ -197,7 +197,7 @@ bool RasterMask::onBoundary( int x, int y ) const {
         for ( int j = -1; j <= 1; j++ ) {
 
         if ( ! ( i == 0 && j == 0 ) && x + i >= 0 && y +j >= 0
-            && x + i <= (int) sizeX - 1 && y + j <= (int) sizeY - 1 )
+            && x + i <= (int) sizeX_ - 1 && y + j <= (int) sizeY_ - 1 )
             if ( ! get( x + i , y + j ) ) return true;
     }
 
@@ -211,12 +211,12 @@ void RasterMask::dump( std::ostream & f ) const
     write(f, uint8_t(0)); // reserved
     write(f, uint8_t(0)); // reserved
 
-    f.write( reinterpret_cast<const char *>( & sizeX ), sizeof( uint ) );
-    f.write( reinterpret_cast<const char *>( & sizeY ), sizeof( uint ) );
-    f.write( reinterpret_cast<const char *>( & quadSize ), sizeof( uint ) );
-    f.write( reinterpret_cast<const char *>( & count ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & sizeX_ ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & sizeY_ ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & quadSize_ ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & count_ ), sizeof( uint ) );
 
-    root.dump( f );
+    root_.dump( f );
 }
 
 void RasterMask::load( std::istream & f )
@@ -234,38 +234,38 @@ void RasterMask::load( std::istream & f )
     read(f, reserved2); // reserved
     read(f, reserved3); // reserved
 
-    f.read( reinterpret_cast<char *>( & sizeX ), sizeof( uint ) );
-    f.read( reinterpret_cast<char *>( & sizeY ), sizeof( uint ) );
-    f.read( reinterpret_cast<char *>( & quadSize ), sizeof( uint ) );
-    f.read( reinterpret_cast<char *>( & count ), sizeof( uint ) );
+    f.read( reinterpret_cast<char *>( & sizeX_ ), sizeof( uint ) );
+    f.read( reinterpret_cast<char *>( & sizeY_ ), sizeof( uint ) );
+    f.read( reinterpret_cast<char *>( & quadSize_ ), sizeof( uint ) );
+    f.read( reinterpret_cast<char *>( & count_ ), sizeof( uint ) );
 
-    root.load( f );
+    root_.load( f );
 }
 
 RasterMask & RasterMask::operator = ( const RasterMask & op )
 {
     if ( & op == this ) return *this;
 
-    sizeX = op.sizeX;
-    sizeY = op.sizeY;
-    quadSize = op.quadSize;
-    root = op.root;
-    count = op.count;
+    sizeX_ = op.sizeX_;
+    sizeY_ = op.sizeY_;
+    quadSize_ = op.quadSize_;
+    root_ = op.root_;
+    count_ = op.count_;
 
     return *this;
 }
 
 
-/* class RasterMask::Node_t */
+/* class RasterMask::Node */
 
-RasterMask::Node_t::~Node_t() {
+RasterMask::Node::~Node() {
 
     if ( type == GRAY ) {
         delete ul; delete ll; delete ur; delete lr;
     }
 }
 
-bool RasterMask::Node_t::get( ushort x, ushort y, ushort size ) const {
+bool RasterMask::Node::get( ushort x, ushort y, ushort size ) const {
 
     ushort split = size >> 1;
 
@@ -294,7 +294,7 @@ bool RasterMask::Node_t::get( ushort x, ushort y, ushort size ) const {
     }
 }
 
-void RasterMask::Node_t::set( ushort x, ushort y, bool value, ushort size )
+void RasterMask::Node::set( ushort x, ushort y, bool value, ushort size )
 {
     ushort split = size >> 1;
 
@@ -302,20 +302,20 @@ void RasterMask::Node_t::set( ushort x, ushort y, bool value, ushort size )
     if ( ( ( type == BLACK && value ) || ( type == WHITE && ! value  ) )
         && size > 1 ) {
 
-        ul = new Node_t( mask ); ul->type = type;
-        ll = new Node_t( mask ); ll->type = type;
-        ur = new Node_t( mask ); ur->type = type;
-        lr = new Node_t( mask ); lr->type = type;
+        ul = new Node( mask ); ul->type = type;
+        ll = new Node( mask ); ll->type = type;
+        ur = new Node( mask ); ur->type = type;
+        lr = new Node( mask ); lr->type = type;
 
         type = GRAY;
     }
 
     // process
     if ( type == BLACK )
-        if ( value ) { type = WHITE; mask.count++; }
+        if ( value ) { type = WHITE; mask.count_++; }
 
     if ( type == WHITE )
-        if ( ! value ) { type = BLACK; mask.count--; }
+        if ( ! value ) { type = BLACK; mask.count_--; }
 
     if ( type == GRAY ) {
 
@@ -350,8 +350,8 @@ void RasterMask::Node_t::set( ushort x, ushort y, bool value, ushort size )
     }
 }
 
-RasterMask::Node_t & RasterMask::Node_t::operator = (
-    const RasterMask::Node_t & s ) {
+RasterMask::Node & RasterMask::Node::operator = (
+    const RasterMask::Node & s ) {
 
     // no self-assignment
     if ( this == &s ) return *this;
@@ -366,10 +366,10 @@ RasterMask::Node_t & RasterMask::Node_t::operator = (
 
     if ( type == GRAY ) {
 
-        ul = new Node_t( mask );
-        ll = new Node_t( mask );
-        ur = new Node_t( mask );
-        lr = new Node_t( mask );
+        ul = new Node( mask );
+        ll = new Node( mask );
+        ur = new Node( mask );
+        lr = new Node( mask );
 
         *ul = *(s.ul); *ll = *(s.ll); *ur = *(s.ur); *lr = *(s.lr);
     }
@@ -378,9 +378,10 @@ RasterMask::Node_t & RasterMask::Node_t::operator = (
     return * this;
 }
 
-void RasterMask::Node_t::dump( std::ostream & f ) const
+void RasterMask::Node::dump( std::ostream & f ) const
 {
-    f.write( reinterpret_cast<const char *>( & type ), sizeof( NodeType_t ) );
+    uint8_t c = type;
+    write(f, c);
 
     if ( type == GRAY ) {
 
@@ -391,16 +392,18 @@ void RasterMask::Node_t::dump( std::ostream & f ) const
     }
 }
 
-void RasterMask::Node_t::load( std::istream & f ) {
-
-    f.read( reinterpret_cast<char *>( & type ), sizeof( NodeType_t ) );
+void RasterMask::Node::load( std::istream & f )
+{
+    uint8_t c;
+    read(f, c);
+    type = static_cast<NodeType>(c);
 
     if ( type == GRAY ) {
 
-        ul = new Node_t( mask );
-        ur = new Node_t( mask );
-        ll = new Node_t( mask );
-        lr = new Node_t( mask );
+        ul = new Node( mask );
+        ur = new Node( mask );
+        ll = new Node( mask );
+        lr = new Node( mask );
 
         ul->load( f );
         ur->load( f );
@@ -412,14 +415,14 @@ void RasterMask::Node_t::load( std::istream & f ) {
 imgproc::bitfield::RasterMask RasterMask::asMask() const
 {
     LOG(info4) << "Loading raster mask from quad-tree based representation";
-    imgproc::bitfield::RasterMask m(sizeX, sizeY, imgproc::RasterMask::EMPTY);
-    root.dump(m, 0, 0, quadSize);
-    LOG(info4) << "RasterMask: " << m.size() << " vs " << count;
+    imgproc::bitfield::RasterMask m(sizeX_, sizeY_, imgproc::RasterMask::EMPTY);
+    root_.dump(m, 0, 0, quadSize_);
+    LOG(info4) << "RasterMask: " << m.size() << " vs " << count_;
 
     return m;
 }
 
-void RasterMask::Node_t::dump(imgproc::bitfield::RasterMask &m
+void RasterMask::Node::dump(imgproc::bitfield::RasterMask &m
                               , ushort x, ushort y, ushort size)
     const
 {
@@ -431,8 +434,8 @@ void RasterMask::Node_t::dump(imgproc::bitfield::RasterMask &m
             // fill in quad
             ushort ex(x + size);
             ushort ey(y + size);
-            if (ex > mask.sizeX) { ex = mask.sizeX; };
-            if (ey > mask.sizeY) { ey = mask.sizeY; };
+            if (ex > mask.sizeX_) { ex = mask.sizeX_; };
+            if (ey > mask.sizeY_) { ey = mask.sizeY_; };
 
             for (ushort j(y); j < ey; ++j) {
                 for (ushort i(x); i < ex; ++i) {
