@@ -23,22 +23,29 @@ namespace imgproc { namespace tiff {
 namespace detail {
 
 boost::thread_specific_ptr<std::string> lastError_;
-const std::string empty;
 
-void setLastError(std::string module, const char *message)
+void setLastError(const char *module, const char *message)
 {
-    module.append(message);
-
-    if (!lastError_.get()) {
-        lastError_.reset(new std::string(module));
-    } else {
-        lastError_.get()->assign(module);
-    }
+    lastError_.reset(new std::string(module));
+    lastError_->append(message);
 }
 
-const std::string& getLastError()
+std::string getLastError()
 {
-    return lastError_.get() ? *lastError_.get() : empty;
+    if (!lastError_.get()) { return {}; }
+    auto e(*lastError_.get());
+    lastError_.reset();
+    return e;
+}
+
+bool errorOccured()
+{
+    return lastError_.get();
+}
+
+void resetError()
+{
+    lastError_.reset();
 }
 
 } // detail
