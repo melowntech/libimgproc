@@ -16,15 +16,9 @@ void imgproc_tiff_errorHandler(const char *module, const char *fmt
 void imgproc_tiff_warningHandler(const char *module, const char *fmt
                                  , va_list ap);
 
-void imgproc_tiff_tagExtender(TIFF *tif);
-
 } // extern "C"
 
 namespace imgproc { namespace tiff {
-
-enum {
-    BINTIFFTAG_FILENAME = 50000
-};
 
 namespace detail {
 
@@ -265,7 +259,7 @@ void BinTiff::write(const std::string &data)
     setField(handle_, TIFFTAG_BITSPERSAMPLE, 8);
     setField(handle_, TIFFTAG_SAMPLESPERPIXEL, 1);
     setField(handle_, TIFFTAG_IMAGEWIDTH, BLOCK_SIZE);
-    setField(handle_, TIFFTAG_IMAGELENGTH, 0);
+    setField(handle_, TIFFTAG_IMAGELENGTH, 1);
 
     Writer writer(handle_, BLOCK_SIZE);
     writer.write(std::uint32_t(data.size()));
@@ -309,7 +303,7 @@ int findFile(TIFF *h, const std::string &filename)
     do {
         LOG(info4) << "Inside: " << ::TIFFCurrentDirectory(h);
         const char *fname;
-        if (::TIFFGetField(h, BINTIFFTAG_FILENAME, &fname)) {
+        if (::TIFFGetField(h, TIFFTAG_DOCUMENTNAME, &fname)) {
             LOG(info4) << "Found filename: " << fname;
             if (filename == fname) { return dir; }
         }
@@ -326,9 +320,12 @@ void BinTiff::create(const std::string &filename)
     // seek to the file (if exists)
     auto dir(findFile(TH(handle_), filename));
     if (dir < 0) {
-        // not found, flush directory -- how?
+        // not found, create new record
+        ::TIFFCreateDirectory(TH(handle_));
     }
-    setField(handle_, BINTIFFTAG_FILENAME, filename.c_str());
+
+    LOG(info4) << "Current dir: " << ::TIFFCurrentDirectory(TH(handle_));
+    setField(handle_, TIFFTAG_DOCUMENTNAME, filename.c_str());
 }
 
 void BinTiff::seek(const std::string &filename)
@@ -341,30 +338,11 @@ void BinTiff::seek(const std::string &filename)
 
 namespace detail {
 
-// tag registration
-
-const TIFFFieldInfo fields[] = {
-    { BINTIFFTAG_FILENAME, -1, -1, TIFF_ASCII, FIELD_CUSTOM
-      , true, false, ::strdup("BinTiffFilename") }
-};
-
 struct Init {
-    Init()
-        : extender()
-    {
+    Init() {
         ::TIFFSetErrorHandler(&::imgproc_tiff_errorHandler);
         ::TIFFSetWarningHandler(&::imgproc_tiff_warningHandler);
-        extender = ::TIFFSetTagExtender(&imgproc_tiff_tagExtender);
     }
-
-    void extendTags(TIFF *tif) {
-        ::TIFFMergeFieldInfo(tif, fields
-                             , sizeof(fields) / sizeof(TIFFFieldInfo));
-
-        if (extender) { extender(tif); }
-    }
-
-    TIFFExtendProc extender;
 };
 
 Init init_;
@@ -392,11 +370,6 @@ void imgproc_tiff_warningHandler(const char *module, const char *fmt
     ::vsnprintf(buf, sizeof(buf), fmt, ap);
     buf[sizeof(buf) - 1] = '\0';
     LOG(warn1) << "libtiff: " << module << buf;
-}
-
-void imgproc_tiff_tagExtender(TIFF *tif)
-{
-    imgproc::tiff::detail::init_.extendTags(tif);
 }
 
 } // extern "C"
