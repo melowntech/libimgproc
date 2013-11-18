@@ -19,6 +19,10 @@ struct Error : std::runtime_error {
     Error(const std::string &msg) : std::runtime_error(msg) {}
 };
 
+struct NoSuchFile : Error {
+    NoSuchFile(const std::string &msg) : Error(msg) {}
+};
+
 typedef std::uint32_t Dir;
 
 class BinTiff;

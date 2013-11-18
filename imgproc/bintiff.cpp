@@ -338,7 +338,7 @@ void BinTiff::create(const std::string &filename)
 void BinTiff::seek(const std::string &filename)
 {
     if (findFile(TH(handle_), filename) < 0) {
-        LOGTHROW(err1, Error)
+        LOGTHROW(err1, NoSuchFile)
             << "No such file " << filename << " in tiff.";
     }
 }
