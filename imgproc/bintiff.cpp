@@ -148,7 +148,7 @@ public:
 
             // something unwritten in the buffer
 
-            LOG(info4) << "writing row " << row_;
+            LOG(info1) << "writing row " << row_;
             if (::TIFFWriteScanline(h_, buf_.get(), row_) != 1) {
                 LOGTHROW(err1, Error)
                     << "Unable to write row " << row_ << " to tiff ("
@@ -234,7 +234,7 @@ private:
     void fetch() {
         if (left_) { return; }
 
-        LOG(info4) << "reading row " << row_;
+        LOG(info1) << "Reading row " << row_;
 
         begin_ = buf_.get();
         if (::TIFFReadScanline(h_, begin_, row_) != 1) {
@@ -282,7 +282,7 @@ void BinTiff::write(const std::string &data)
 
 std::string BinTiff::read()
 {
-    LOG(info4) << "reading";
+    LOG(info1) << "reading block";
 
     std::uint32_t dataSize;
     std::string out;
@@ -298,20 +298,20 @@ namespace {
 
 int findFile(TIFF *h, const std::string &filename)
 {
-    LOG(info4) << "Rewind";
+    LOG(info1) << "Rewind";
     int dir(0);
     if (!::TIFFSetDirectory(h, 0)) {
         // no directory at all
-        LOG(info4) << "No directory 0.";
+        LOG(info1) << "No directory 0.";
         return -1;
     }
 
-    LOG(info4) << "Scanning: " << ::TIFFCurrentDirectory(h);
+    LOG(info1) << "Scanning: " << ::TIFFCurrentDirectory(h);
     do {
-        LOG(info4) << "Inside: " << ::TIFFCurrentDirectory(h);
+        LOG(info1) << "Inside: " << ::TIFFCurrentDirectory(h);
         const char *fname;
         if (::TIFFGetField(h, TIFFTAG_DOCUMENTNAME, &fname)) {
-            LOG(info4) << "Found filename: " << fname;
+            LOG(info1) << "Found filename: " << fname;
             if (filename == fname) { return dir; }
         }
         ++dir;
@@ -331,7 +331,7 @@ void BinTiff::create(const std::string &filename)
         ::TIFFCreateDirectory(TH(handle_));
     }
 
-    LOG(info4) << "Current dir: " << ::TIFFCurrentDirectory(TH(handle_));
+    LOG(info1) << "Current dir: " << ::TIFFCurrentDirectory(TH(handle_));
     setField(handle_, TIFFTAG_DOCUMENTNAME, filename.c_str());
 }
 
