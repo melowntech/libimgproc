@@ -48,9 +48,14 @@ inline void rowFilter(
 template <class SrcView, class Filter2>
 inline typename SrcView::value_type reconstruct( const SrcView & view,
     const Filter2 & filter, const gil::point2<double> pos,
-    const typename SrcView::value_type defaultColor
-            = typename SrcView::value_type() )
+    boost::optional<typename SrcView::value_type> defaultColor = boost::none )
 {
+    typename SrcView::value_type black, white;
+    gil::color_convert( gil::gray8_pixel_t( 0 ), black );
+    gil::color_convert( gil::gray8_pixel_t( 0xff ), white );
+
+    if (!defaultColor) { defaultColor = black; }
+
     gil::point2<int> ll, ur;
 
     ll.x = (int) floor( pos.x - filter.halfwinx() );
@@ -85,7 +90,7 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
             else {
 
                 for ( int k = 0; k < numChannels; k++ )
-                    valueSum[k] += weight * defaultColor[k];
+                    valueSum[k] += weight * (*defaultColor)[k];
             }
 
             weightSum += weight;
@@ -95,10 +100,6 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
         cpos += gil::point2<std::ptrdiff_t>( - ( ur.x - ll.x + 1 ), 1 );
     }
 
-    typename SrcView::value_type black, white;
-    gil::color_convert( gil::gray8_pixel_t( 0 ), black );
-    gil::color_convert( gil::gray8_pixel_t( 0xff ), white );
-    
     typename SrcView::value_type retval;
 
     for ( int i = 0; i < numChannels; i++ )
