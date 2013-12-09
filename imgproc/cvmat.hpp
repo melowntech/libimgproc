@@ -11,39 +11,50 @@ namespace imgproc {
 
 namespace gil = boost::gil;
 
-gil::gray_float_view_t grayFloatView(cv::Mat &m)
+template <typename PixelType>
+typename gil::image<PixelType, false>::view_t view(cv::Mat &m)
 {
-    if (m.type() != CV_32FC1) {
-        throw TypeError("OpenCV matrix is not one channel float.");
-    }
-    return gil::interleaved_view
-        (m.rows, m.cols
-         , reinterpret_cast<gil::gray_float_pixel_t*>(m.data)
-         , m.step);
-}
-
-gil::gray_float_const_view_t grayFloatView(const cv::Mat &m)
-{
-    if (m.type() != CV_32FC1) {
-        throw TypeError("OpenCV matrix is not one channel float.");
-    }
+    // TODO: check matrix type/channels
 
     return gil::interleaved_view
         (m.rows, m.cols
-         , reinterpret_cast<const gil::gray_float_pixel_t*>(m.data)
+         , reinterpret_cast<PixelType*>(m.data)
          , m.step);
 }
 
-gil::gray_float_const_view_t grayFloatConstView(cv::Mat &m)
+template <typename PixelType>
+typename gil::image<PixelType, false>::const_view_t view(const cv::Mat &m)
 {
-    return grayFloatView(static_cast<const cv::Mat&>(m));
+    // TODO: check matrix type/channels
+
+    return gil::interleaved_view
+        (m.rows, m.cols
+         , reinterpret_cast<const PixelType*>(m.data)
+         , m.step);
 }
 
-gil::gray_float_const_view_t grayFloatConstView(const cv::Mat &m)
+template <typename PixelType>
+typename gil::image<PixelType, false>::const_view_t const_view(cv::Mat &m)
 {
-    return grayFloatView(m);
+    // TODO: check matrix type/channels
+
+    return gil::interleaved_view
+        (m.rows, m.cols
+         , reinterpret_cast<const PixelType*>(m.data)
+         , m.step);
 }
 
+template <typename PixelType>
+typename gil::image<PixelType, false>::const_view_t
+const_view(const cv::Mat &m)
+{
+    // TODO: check matrix type/channels
+
+    return gil::interleaved_view
+        (m.rows, m.cols
+         , reinterpret_cast<const PixelType*>(m.data)
+         , m.step);
+}
 
 } // namespace imgproc
 
