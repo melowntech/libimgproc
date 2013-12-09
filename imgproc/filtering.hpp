@@ -10,6 +10,7 @@
 
 #include <dbglog/dbglog.hpp>
 
+#include <math/math.hpp>
 #include <math/filters.hpp>
 #include <boost/gil/gil_all.hpp>
 

@@ -14,6 +14,8 @@
 
 #include "dbglog/dbglog.hpp"
 
+#include "error.hpp"
+
 namespace imgproc { namespace exif {
 
 typedef boost::rational<long> Rational;
@@ -25,7 +27,7 @@ const Rational millimeter(1, 1000);
 #define DECLARE_EXCEPTION(type, base) \
     struct type : public base { type(const std::string &msg) : base(msg) {} }
 
-DECLARE_EXCEPTION(Error, std::runtime_error);
+DECLARE_EXCEPTION(Error, imgproc::Error);
 DECLARE_EXCEPTION(NoSuchTag, Error);
 DECLARE_EXCEPTION(NoConversionAvailable, Error);
 DECLARE_EXCEPTION(InvalidValue, Error);

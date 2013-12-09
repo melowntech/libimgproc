@@ -22,6 +22,17 @@ else()
   message(STATUS "imgproc: compiling without TIFF support")
 endif()
 
+if(OpenCV_FOUND)
+  message(STATUS "imgproc: compiling in OpenCV support")
+
+  list(APPEND imgproc_DEPENDS OpenCV)
+
+  set(imgproc_OPENCV_SOURCES
+    cvmat.hpp)
+else()
+  message(STATUS "imgproc: compiling without OpenCV support")
+endif()
+
 define_module(LIBRARY imgproc DEPENDS ${imgproc_DEPENDS})
 
 set(imgproc_SOURCES
@@ -32,6 +43,7 @@ set(imgproc_SOURCES
   georeferencing.hpp
   scanconversion.hpp
   scanconversion.cpp
+  gil-float-image.hpp
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
