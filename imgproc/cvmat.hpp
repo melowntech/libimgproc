@@ -1,7 +1,7 @@
 #ifndef imgproc_cvmat_hpp_included_
 #define imgproc_cvmat_hpp_included_
 
-#include <opencv2/core/mat.hpp>
+#include <opencv2/core/core.hpp>
 
 #include "utility/raise.hpp"
 
