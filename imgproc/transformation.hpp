@@ -69,22 +69,22 @@ template <typename LowPassFilter2, typename Mapping2
           , typename SrcView, typename DstView>
 inline void transform(
         const Mapping2 & mapping,
-        const SrcView & view1, DstView & view2 );
+        const SrcView & view1, const DstView & view2 );
 
 /** Same as above, use DefaultFilter.
  */
 template <typename Mapping2, typename SrcView, typename DstView>
 inline void transform(
         const Mapping2 & mapping,
-        const SrcView & view1, DstView & view2 );
+        const SrcView & view1, const DstView & view2 );
 
 template <typename LowPassFilter2, typename SrcView, typename DstView>
-inline void scale( const SrcView & view1, DstView & view2 );
+inline void scale( const SrcView & view1, const DstView & view2 );
 
 /** Same as above, use DefaultFilter.
  */
 template <typename SrcView, typename DstView>
-inline void scale(const SrcView &view1, DstView &view2);
+inline void scale(const SrcView &view1, const DstView &view2);
 
 /* implementation */
 
@@ -93,7 +93,7 @@ template <typename LowPassFilter2, typename Mapping2
 inline void transform(
         const Mapping2 & mapping,
         const SrcView & view1,
-        DstView & view2 ) {
+        const DstView & view2 ) {
 
     for ( int i = 0, ei(view2.height()); i < ei; i++ ) {
 
@@ -110,7 +110,7 @@ inline void transform(
                 std::max( 2.0, 2.0 * deriv(0) ), std::max( 2.0, 2.0 * deriv(1) ) );
 
             *dstit++ = imgproc::reconstruct( view1, filter,
-                gil::point2<double>( srcpos(0), srcpos(1) ) );
+                 gil::point2<double>( srcpos(0), srcpos(1) ) );
         }
     }    
 }
@@ -118,13 +118,13 @@ inline void transform(
 template <typename Mapping2, typename SrcView, typename DstView>
 inline void transform(
         const Mapping2 & mapping,
-        const SrcView & view1, DstView & view2 )
+        const SrcView & view1, const DstView & view2 )
 {
     return transform<DefaultFilter>(mapping, view1, view2);
 }
 
 template <typename LowPassFilter2, typename SrcView, typename DstView>
-inline void scale( const SrcView & view1, DstView & view2 ) {
+inline void scale( const SrcView & view1, const DstView & view2 ) {
     Scaling2 scaling( math::Size2( view2.width(), view2.height() ),
               math::Size2( view1.width(), view1.height() ) );
 
@@ -132,7 +132,7 @@ inline void scale( const SrcView & view1, DstView & view2 ) {
 }
 
 template <typename SrcView, typename DstView>
-inline void scale(const SrcView &view1, DstView &view2) {
+inline void scale(const SrcView &view1, const DstView &view2) {
     return scale<DefaultFilter>(view1, view2);
 }
 
