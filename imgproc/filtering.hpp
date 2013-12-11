@@ -42,6 +42,59 @@ inline void rowFilter(
     }
 
 
+namespace detail {
+
+template <typename PixelType>
+class PixelLimits {
+public:
+    typedef typename gil::channel_type<PixelType>::type channel_type;
+
+    PixelLimits()
+        : min_(gil::channel_traits<channel_type>::min_value())
+        , max_(gil::channel_traits<channel_type>::max_value())
+    {
+        for (auto i(0); i < gil::num_channels<PixelType>::value; ++i) {
+            zero_[i] = 0;
+        }
+    }
+
+    double clamp(double value) const {
+        if (value < min_) {
+            return min_;
+        } else if (value > max_) {
+            return max_;
+        }
+        return value;
+    }
+
+    const PixelType& zero() const { return zero_; }
+
+private:
+    double min_;
+    double max_;
+    PixelType zero_;
+};
+
+template <>
+class PixelLimits<gil::pixel<float, gil::gray_layout_t> > {
+public:
+    typedef gil::pixel<float, gil::gray_layout_t> pixel_type;
+    PixelLimits() {
+        zero_[0] = 0.f;
+    }
+
+    double clamp(double value) const {
+        return value;
+    }
+
+    const pixel_type& zero() const { return zero_; }
+
+private:
+    pixel_type zero_;
+};
+
+} // namespace detail
+
 /**
  * Reconstruct a value within an image with a continuous time filter.
  */
@@ -51,11 +104,10 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
     const Filter2 & filter, const gil::point2<double> pos,
     boost::optional<typename SrcView::value_type> defaultColor = boost::none )
 {
-    typename SrcView::value_type black, white;
-    gil::color_convert( gil::gray8_pixel_t( 0 ), black );
-    gil::color_convert( gil::gray8_pixel_t( 0xff ), white );
+    detail::PixelLimits<typename SrcView::value_type> pl;
+    const auto &zero(pl.zero());
 
-    if (!defaultColor) { defaultColor = black; }
+    if (!defaultColor) { defaultColor = zero; }
 
     gil::point2<int> ll, ur;
 
@@ -103,13 +155,13 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
 
     typename SrcView::value_type retval;
 
-    for ( int i = 0; i < numChannels; i++ )
-        if ( weightSum > 1E-15 )
-            retval[i] = std::min( std::max(
-                            valueSum[i] / weightSum,
-                            (double) black[i] ), (double) white[i] );
-        else
-            retval[i] = black[i];
+    for ( int i = 0; i < numChannels; i++ ) {
+        if ( weightSum > 1E-15 ) {
+            retval[i] = pl.clamp(valueSum[i] / weightSum);
+        } else {
+            retval[i] = zero[i];
+        }
+    }
 
     /*LOG( debug ) << pos.x << ", " << pos.y << ": ["
                  << ll.x << "," << ll.y << "]->[" << ur.x << "," << ur.y << "] : "

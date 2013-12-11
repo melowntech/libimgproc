@@ -8,12 +8,15 @@
 #ifndef IMGPROC_TRANSFORMATION_HPP
 #define IMGPROC_TRANSFORMATION_HPP
 
+#include <type_traits>
+
 #include <dbglog/dbglog.hpp>
 
 #include <math/math_all.hpp>
 #include <boost/gil/gil_all.hpp>
 
 #include "filtering.hpp"
+#include "crop.hpp"
 
 namespace imgproc {
 
@@ -28,7 +31,7 @@ namespace imgproc {
  */
 
 /**
- * Scaling2 is a 2D scaling in grid registration (pixel is area).
+ * Scaling2 is a 2D scaling in pixel registration (pixel is area).
  * Models Mapping2 concept
  */
 
@@ -60,6 +63,35 @@ private:
 };
 
 
+/** Maps pixels from destination view to source crop
+ */
+class ReverseCroppingAndScaling2 {
+public:
+    template <typename T>
+    ReverseCroppingAndScaling2(const Crop2_<T> &srcCrop
+                               , const math::Size2 &dstSize)
+        : scaleX_(float(srcCrop.width) / dstSize.width)
+        , scaleY_(float(srcCrop.height) / dstSize.height)
+        , offX_(scaleX_ * 0.5 - 0.5 + srcCrop.x)
+        , offY_(scaleY_ * 0.5 - 0.5 + srcCrop.y)
+    {}
+
+    math::Point2 map(const math::Point2i &op) const {
+        return { offX_ + scaleX_ * op(0), offY_ + scaleY_ * op(1) };
+    }
+
+    math::Point2 derivatives(const math::Point2i &op) const {
+        (void) op;
+        return { scaleX_, scaleY_ };
+    }
+
+private:
+    float scaleX_;
+    float scaleY_;
+    float offX_;
+    float offY_;
+};
+
 typedef math::SincHamming2 DefaultFilter;
 
 /*
@@ -79,12 +111,37 @@ inline void transform(
         const SrcView & view1, const DstView & view2 );
 
 template <typename LowPassFilter2, typename SrcView, typename DstView>
-inline void scale( const SrcView & view1, const DstView & view2 );
+inline void scale(const SrcView & view1, const DstView & view2);
 
 /** Same as above, use DefaultFilter.
  */
 template <typename SrcView, typename DstView>
 inline void scale(const SrcView &view1, const DstView &view2);
+
+/** Crop area from src and scale it to fit to dstview.
+ *
+ *  \param LowPassFilter (template) filter used to reconstruct value in each
+ *                       pixel
+ *
+ *  \param view1 source view
+ *  \param view2 destination view
+ *  \param srcCrop crop area from view1
+ */
+template <typename LowPassFilter2, typename SrcView, typename DstView
+          , typename T>
+inline void cropAndScale(const SrcView &view1, const DstView &view2
+                         , const imgproc::Crop2_<T> &srcCrop);
+
+/** Crop area from src and scale it to fit to dstview. Used default low pass
+ * filter.
+ *
+ *  \param view1 source view
+ *  \param view2 destination view
+ *  \param srcCrop crop area from view1
+ */
+template <typename SrcView, typename DstView, typename T>
+inline void cropAndScale(const SrcView &view1, const DstView &view2
+                         , const imgproc::Crop2_<T> &srcCrop);
 
 /* implementation */
 
@@ -124,7 +181,8 @@ inline void transform(
 }
 
 template <typename LowPassFilter2, typename SrcView, typename DstView>
-inline void scale( const SrcView & view1, const DstView & view2 ) {
+inline void scale(const SrcView & view1, const DstView & view2)
+{
     Scaling2 scaling( math::Size2( view2.width(), view2.height() ),
               math::Size2( view1.width(), view1.height() ) );
 
@@ -132,8 +190,29 @@ inline void scale( const SrcView & view1, const DstView & view2 ) {
 }
 
 template <typename SrcView, typename DstView>
-inline void scale(const SrcView &view1, const DstView &view2) {
+inline void scale(const SrcView &view1, const DstView &view2)
+{
     return scale<DefaultFilter>(view1, view2);
+}
+
+template <typename LowPassFilter2, typename SrcView, typename DstView
+          , typename T>
+inline void cropAndScale(const SrcView & view1, const DstView &view2
+                         , const imgproc::Crop2_<T> &srcCrop)
+{
+    // since transform traverses destination view and maps coordinates to src
+    // viewport we must create reverse mapping
+
+    ReverseCroppingAndScaling2
+        op(srcCrop, math::Size2(view2.width(), view2.height()));
+    transform<LowPassFilter2>(op, view1, view2);
+}
+
+template <typename SrcView, typename DstView, typename T>
+inline void cropAndScale(const SrcView &view1, const DstView &view2
+                         , const imgproc::Crop2_<T> &srcCrop)
+{
+    return cropAndScale<DefaultFilter>(view1, view2, srcCrop);
 }
 
 } // namespace imgproc
