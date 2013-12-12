@@ -6,7 +6,6 @@
 #include "utility/raise.hpp"
 
 #include "error.hpp"
-#include "gil-float-image.hpp"
 
 namespace imgproc {
 
