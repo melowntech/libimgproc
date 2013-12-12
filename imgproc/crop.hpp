@@ -75,7 +75,7 @@ inline Crop2_<double> scale(const Crop2_<T> &crop
                             , const math::Point2_<double> &scale)
 {
     return Crop2_<double>(crop.width * scale(0)
-                          , crop.width * scale(1)
+                          , crop.height * scale(1)
                           , scale(0) * (0.5 + crop.x)
                           , scale(1) * (0.5 + crop.y));
 }
