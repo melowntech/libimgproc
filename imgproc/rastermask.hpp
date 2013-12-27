@@ -155,9 +155,7 @@ inline RasterMask& RasterMask::create(const math::Size2 &size, InitMode mode)
 
 inline bool RasterMask::get(int x, int y) const
 {
-    if ((x < 0) || (y < 0) || ((unsigned int)(x) >= size_.width)
-        || ((unsigned int)(y) >= size_.height))
-    {
+    if ((x < 0) || (y < 0) || (x >= size_.width) || (y >= size_.height)) {
         return false;
     }
 
@@ -167,9 +165,7 @@ inline bool RasterMask::get(int x, int y) const
 
 inline void RasterMask::set(int x, int y, bool value)
 {
-    if ((x < 0) || (y < 0) || ((unsigned int)(x) >= size_.width)
-        || ((unsigned int)(y) >= size_.height))
-    {
+    if ((x < 0) || (y < 0) || (x >= size_.width) || (y >= size_.height)) {
         return;
     }
 
@@ -222,7 +218,7 @@ public :
     RasterMask( const RasterMask & mask, const InitMode mode = SOURCE );
 
     /** return size of mask */
-    math::Size2 size() const { return {sizeX_, sizeY_}; }
+    math::Size2 size() const { return math::Size2(sizeX_, sizeY_); }
 
     /** assignment operator */
     RasterMask & operator = ( const RasterMask & );
@@ -267,7 +263,7 @@ public :
     /** dump mask to bitfield mask */
     imgproc::bitfield::RasterMask asBitfield() const;
 
-    math::Size2 dims() const { return {sizeX_, sizeY_}; }
+    math::Size2 dims() const { return math::Size2(sizeX_, sizeY_); }
 
 private :
 
