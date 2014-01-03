@@ -12,7 +12,8 @@
 #include "dbglog/dbglog.hpp"
 #include "utility/binaryio.hpp"
 
-#include "rastermask.hpp"
+#include "bitfield.hpp"
+#include "quadtree.hpp"
 
 namespace imgproc {
 
@@ -414,7 +415,8 @@ void RasterMask::Node::load( std::istream & f )
 imgproc::bitfield::RasterMask RasterMask::asBitfield() const
 {
     LOG(info4) << "Converting raster mask from quad-tree based representation";
-    imgproc::bitfield::RasterMask m(sizeX_, sizeY_, imgproc::RasterMask::EMPTY);
+    imgproc::bitfield::RasterMask m
+        (sizeX_, sizeY_, imgproc::bitfield::RasterMask::EMPTY);
     root_.dump(m, 0, 0, quadSize_);
     LOG(info4) << "RasterMask: " << m.size() << " vs " << count_;
 

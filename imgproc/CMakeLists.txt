@@ -38,8 +38,9 @@ define_module(LIBRARY imgproc DEPENDS ${imgproc_DEPENDS})
 set(imgproc_SOURCES
   color.cpp
   clahe.cpp
-  rastermask.hpp
-  rastermask.cpp
+  rastermask.hpp rastermask/bitfield.hpp rastermask/quadtree.hpp
+  rastermask/impl.cpp
+
   georeferencing.hpp
   scanconversion.hpp
   scanconversion.cpp
