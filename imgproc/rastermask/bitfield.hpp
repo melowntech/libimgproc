@@ -14,8 +14,11 @@
 #include <iosfwd>
 
 #include <boost/scoped_array.hpp>
+#include <boost/optional.hpp>
 
 #include "math/geometry_core.hpp"
+
+#include "../crop.hpp"
 
 /**** bit-field version of rastermask ****/
 
@@ -88,6 +91,15 @@ private:
     boost::scoped_array<std::uint8_t> mask_;
     std::size_t count_;
 };
+
+/** Calculate radius of restart mask (having circle center is its center)
+ * \param m raster mask to use
+ * \param refSize size of reference image if mask is not 1:1 of orignal image
+ * \param refRoi region of interest inside original image
+ */
+int radius(const RasterMask &m
+           , const boost::optional<math::Size2> &refSize = boost::none
+           , const boost::optional<imgproc::Crop2> &refRoi = boost::none);
 
 // Inline method implementation
 

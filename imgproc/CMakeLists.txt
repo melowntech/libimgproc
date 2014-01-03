@@ -39,7 +39,7 @@ set(imgproc_SOURCES
   color.cpp
   clahe.cpp
   rastermask.hpp rastermask/bitfield.hpp rastermask/quadtree.hpp
-  rastermask/impl.cpp
+  rastermask/impl.cpp rastermask/bitfield.cpp
 
   georeferencing.hpp
   scanconversion.hpp
