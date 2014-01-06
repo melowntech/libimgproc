@@ -15,27 +15,53 @@
 
 namespace imgproc { namespace bitfield {
 
+namespace {
+math::Extents2i extents(const boost::optional<imgproc::Crop2> &refRoi
+                        , const math::Size2 &size, double sx, double sy)
+{
+    if (!refRoi) {
+        // full
+        return math::Extents2i(0, 0, size.width, size.height);
+    }
+
+    math::Extents2i e(refRoi->x, refRoi->y, (refRoi->x + refRoi->width)
+                      , (refRoi->y + refRoi->height));
+
+    // limit to size
+    if (e.ll(0) < 0) { e.ll(0) = 0; }
+    if (e.ll(1) < 0) { e.ll(1) = 0; }
+    if (e.ur(0) > size.width) { e.ur(0) = size.width; }
+    if (e.ur(1) > size.height) { e.ur(1) = size.height; }
+
+    // scale to mathc mask size
+    return { int(std::floor(e.ll(0) / sx)), int(std::floor(e.ll(1) / sy))
+            , int(std::ceil(e.ur(0) / sx)), int(std::ceil(e.ur(1) / sy)) };
+}
+
+} // namespace
+
 int radius(const RasterMask &m
            , const boost::optional<math::Size2> &refSize
            , const boost::optional<imgproc::Crop2> &refRoi)
 {
-    (void) refRoi;
-
     auto size(m.dims());
     auto rs(refSize ? *refSize : size);
 
     double sx(double(rs.width) / size.width);
     double sy(double(rs.height) / size.height);
 
+    // calculate roi extents
+    auto roi(extents(refRoi, rs, sx, sy));
+
     // find out center
-    double cx(rs.width / 2.);
-    double cy(rs.height / 2.);
+    double cx(math::size(roi).width / 2.);
+    double cy(math::size(roi).height / 2.);
 
     // radius^2
     double r2(0);
 
-    for (int j(0); j < size.height; ++j) {
-        for (int i(0); i < size.width; ++i) {
+    for (int j(roi.ll(1)); j < roi.ur(1); ++j) {
+        for (int i(roi.ll(0)); i < roi.ur(0); ++i) {
             if (m.get(i, j)) {
                 // white pixel -> calculate radius^2
                 auto nr2(math::sqr((i * sx) - cx) + math::sqr((j * sy) - cy));
