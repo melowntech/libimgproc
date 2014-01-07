@@ -21,7 +21,9 @@ math::Extents2i extents(const boost::optional<imgproc::Crop2> &refRoi
 {
     if (!refRoi) {
         // full
-        return math::Extents2i(0, 0, size.width, size.height);
+        return { 0, 0
+                , int(std::ceil(size.width / sx))
+                , int(std::ceil(size.height / sy)) };
     }
 
     math::Extents2i e(refRoi->x, refRoi->y, (refRoi->x + refRoi->width)
@@ -64,7 +66,8 @@ int radius(const RasterMask &m
         for (int i(roi.ll(0)); i < roi.ur(0); ++i) {
             if (m.get(i, j)) {
                 // white pixel -> calculate radius^2
-                auto nr2(math::sqr((i * sx) - cx) + math::sqr((j * sy) - cy));
+                auto nr2(math::sqr((i - cx) * sx)
+                         + math::sqr((j - cy) * sy));
                 if (nr2 > r2) {
                     // larger value
                     r2 = nr2;
