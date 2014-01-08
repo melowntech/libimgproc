@@ -55,9 +55,9 @@ int radius(const RasterMask &m
     // calculate roi extents
     auto roi(extents(refRoi, rs, sx, sy));
 
-    // find out center
-    double cx(math::size(roi).width / 2.);
-    double cy(math::size(roi).height / 2.);
+    // find out center of roi
+    double cx((roi.ll(0) + roi.ur(0)) / 2.);
+    double cy((roi.ll(1) + roi.ur(1)) / 2.);
 
     // radius^2
     double r2(0);
