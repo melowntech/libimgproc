@@ -62,6 +62,8 @@ public:
     {
         tiff_->create(filename);
     }
+    OBinStream(OBinStream &&) = default;
+
     ~OBinStream() {
         if (os_) {
             tiff_->write(os_->str());
@@ -82,6 +84,8 @@ public:
         tiff_->seek(filename);
         os_.reset(new std::istringstream(tiff_->read()));
     }
+    IBinStream(IBinStream &&) = default;
+
     operator std::istream&() { return *os_; };
 
 private:
