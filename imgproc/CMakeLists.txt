@@ -28,7 +28,7 @@ if(OpenCV_FOUND)
   list(APPEND imgproc_DEPENDS OpenCV)
 
   set(imgproc_OPENCV_SOURCES
-    cvmat.hpp)
+    cvmat.hpp rastermask/cvmat.hpp rastermask/cvmat.cpp)
 else()
   message(STATUS "imgproc: compiling without OpenCV support")
 endif()
@@ -51,6 +51,7 @@ set(imgproc_SOURCES
 add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_EXIF_SOURCES}
   ${imgproc_TIFF_SOURCES}
+  ${imgproc_OPENCV_SOURCES}
   )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
