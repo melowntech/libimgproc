@@ -39,7 +39,27 @@ namespace quadtree {
 
 cv::Mat asCvMat(const RasterMask &mask, int pixelSize)
 {
-    return detail::asCvMat(mask, pixelSize);
+    const auto size(mask.dims());
+    cv::Mat m(pixelSize * size.height, pixelSize * size.width, CV_8UC1);
+    m = cv::Scalar(0);
+
+    mask.forEachQuad([&](ushort xstart, ushort ystart, ushort xsize
+                         , ushort ysize, bool)
+    {
+        for (int j(0), y(ystart * pixelSize); j < ysize; ++j, y += pixelSize) {
+            for (int i(0), x(xstart * pixelSize);
+                 i < xsize; ++i, x += pixelSize)
+            {
+                for (int jj(0); jj < pixelSize; ++jj) {
+                    for (int ii(0); ii < pixelSize; ++ii) {
+                        m.at<unsigned char>(y + jj, x + ii) = 0xff;
+                    }
+                }
+            }
+        }
+    }, RasterMask::Filter::white);
+
+    return m;
 }
 
 } // namespace quadtree

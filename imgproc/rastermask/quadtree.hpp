@@ -88,6 +88,21 @@ public :
 
     math::Size2 dims() const { return math::Size2(sizeX_, sizeY_); }
 
+    enum class Filter {
+        black, white, both
+    };
+
+    /** Runs op(x, y, xsize, ysize, white) for each black/white quad.
+     */
+    template <typename Op>
+    void forEachQuad(const Op &op, Filter filter = Filter::both) const;
+
+    /** Runs op(x, y, white) for each black/white pixel.
+     *  Uses forEachQuad and rasterizes quad internally.
+     */
+    template <typename Op>
+    void forEach(const Op &op, Filter filter = Filter::both)  const;
+
 private :
 
     enum NodeType { WHITE, BLACK, GRAY };
@@ -107,6 +122,11 @@ private :
         void dump( imgproc::bitfield::RasterMask &m, ushort x, ushort y
                    , ushort size ) const;
 
+        /** Called from RasterMask::forEachQuad */
+        template <typename Op>
+        void descend(ushort x, ushort y, ushort size, const Op &op
+                     , Filter filter) const;
+
         NodeType type;
         Node * ul, * ur, * ll, *lr;
         RasterMask & mask;
@@ -119,5 +139,7 @@ private :
 };
 
 } } // namespace imgproc::quadtree
+
+#include "./inline/quadtree.hpp"
 
 #endif // imgproc_rastermask_quadtree_hpp_included_
