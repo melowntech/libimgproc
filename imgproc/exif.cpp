@@ -10,6 +10,8 @@ Exif::Handle Exif::open(const boost::filesystem::path &path)
             << "Failed to read exif from file " << path << ".";
     }
 
+    exif_data_set_byte_order( ed, EXIF_BYTE_ORDER_INTEL );
+
     return {ed, [](::ExifData *ed) {
             if (ed) { ::exif_data_unref(ed); }
         }};
