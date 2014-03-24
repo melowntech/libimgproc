@@ -19,15 +19,14 @@ inline void RasterMask::forEachQuad(const Op &op, Filter filter) const
 template <typename Op>
 inline void RasterMask::forEach(const Op &op, Filter filter) const
 {
-    this->forEachQuad([&](ushort x, ushort y, ushort xsize
-                          , ushort ysize, bool white)
+    this->forEachQuad([&](uint x, uint y, uint xsize, uint ysize, bool white)
     {
         // rasterize quad
-        ushort ex(x + xsize);
-        ushort ey(y + ysize);
+        uint ex(x + xsize);
+        uint ey(y + ysize);
 
-        for (ushort j(y); j < ey; ++j) {
-            for (ushort i(x); i < ex; ++i) {
+        for (uint j(y); j < ey; ++j) {
+            for (uint i(x); i < ex; ++i) {
                 op(i, j, white);
             }
         }
@@ -35,14 +34,14 @@ inline void RasterMask::forEach(const Op &op, Filter filter) const
 }
 
 template <typename Op>
-inline void RasterMask::Node::descend(ushort x, ushort y, ushort size
+inline void RasterMask::Node::descend(uint x, uint y, uint size
                                       , const Op &op, Filter filter)
     const
 {
     switch (type) {
     case GRAY: {
         // descend down
-        ushort split = size / 2;
+        uint split = size / 2;
         ul->descend(x, y, split, op, filter);
         ll->descend(x, y + split, split, op, filter);
         ur->descend(x + split, y, split, op, filter);

@@ -110,8 +110,8 @@ private :
     struct Node
     {
         Node( RasterMask & mask ) : type( BLACK ), mask( mask ) {};
-        bool get( ushort x, ushort y, ushort size ) const;
-        void set( ushort x, ushort y, bool value, ushort size );
+        bool get( uint x, uint y, uint size ) const;
+        void set( uint x, uint y, bool value, uint size );
 
         Node & operator = ( const Node & s );
         ~Node();
@@ -119,13 +119,17 @@ private :
         void dump( std::ostream & f ) const;
         void load( std::istream & f );
 
-        void dump( imgproc::bitfield::RasterMask &m, ushort x, ushort y
-                   , ushort size ) const;
+        void dump( imgproc::bitfield::RasterMask &m, uint x, uint y
+                   , uint size ) const;
 
         /** Called from RasterMask::forEachQuad */
         template <typename Op>
-        void descend(ushort x, ushort y, ushort size, const Op &op
+        void descend(uint x, uint y, uint size, const Op &op
                      , Filter filter) const;
+
+        /** Inverts node (black -> white, white->black, gray is recursed down).
+         */
+        void invert();
 
         NodeType type;
         Node * ul, * ur, * ll, *lr;

@@ -1,12 +1,17 @@
+#include "dbglog/dbglog.hpp"
+
 #include "./cvmat.hpp"
 
 namespace imgproc {
 
+namespace bitfield {
+
 namespace detail {
 
 template <typename Mask>
-inline cv::Mat asCvMat(const Mask &mask, int pixelSize)
+inline cv::Mat asCvMat(const Mask &mask, double pixelSize)
 {
+#if 0
     const auto size(mask.dims());
     cv::Mat m(pixelSize * size.height, pixelSize * size.width, CV_8UC1);
 
@@ -22,13 +27,15 @@ inline cv::Mat asCvMat(const Mask &mask, int pixelSize)
     }
 
     return m;
+#endif
+    (void) mask;
+    (void) pixelSize;
+    return cv::Mat();
 }
 
 } // namespace detail
 
-namespace bitfield {
-
-cv::Mat asCvMat(const RasterMask &mask, int pixelSize)
+cv::Mat asCvMat(const RasterMask &mask, double pixelSize)
 {
     return detail::asCvMat(mask, pixelSize);
 }
@@ -37,22 +44,34 @@ cv::Mat asCvMat(const RasterMask &mask, int pixelSize)
 
 namespace quadtree {
 
-cv::Mat asCvMat(const RasterMask &mask, int pixelSize)
+cv::Mat asCvMat(const RasterMask &mask, double pixelSize)
 {
     const auto size(mask.dims());
-    cv::Mat m(pixelSize * size.height, pixelSize * size.width, CV_8UC1);
+    cv::Mat m(long(std::ceil(pixelSize * size.height))
+              , long(std::ceil(pixelSize * size.width))
+              , CV_8UC1);
     m = cv::Scalar(0);
 
-    mask.forEachQuad([&](ushort xstart, ushort ystart, ushort xsize
-                         , ushort ysize, bool)
+    // pixel size as an integer
+    auto psize(long(std::ceil(pixelSize)));
+
+    long quads(0);
+    long total(0);
+
+    mask.forEachQuad([&](uint xstart, uint ystart, uint xsize
+                         , uint ysize, bool)
     {
-        for (int j(0), y(ystart * pixelSize); j < ysize; ++j, y += pixelSize) {
-            for (int i(0), x(xstart * pixelSize);
-                 i < xsize; ++i, x += pixelSize)
-            {
-                for (int jj(0); jj < pixelSize; ++jj) {
-                    for (int ii(0); ii < pixelSize; ++ii) {
+        ++quads;
+        // iterate over quad
+        for (unsigned int j(0); j < ysize; ++j) {
+            auto y(pixelSize * (ystart + j));
+            for (unsigned int i(0); i < xsize; ++i) {
+                auto x(pixelSize * (xstart + i));
+
+                for (auto jj(0); jj < psize; ++jj) {
+                    for (auto ii(0); ii < psize; ++ii) {
                         m.at<unsigned char>(y + jj, x + ii) = 0xff;
+                        ++total;
                     }
                 }
             }

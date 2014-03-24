@@ -10,13 +10,13 @@ namespace imgproc {
 
 namespace bitfield {
 
-cv::Mat asCvMat(const RasterMask &mask, int pixelSize = 1);
+cv::Mat asCvMat(const RasterMask &mask, double pixelSize = 1);
 
 } // namespace bitfield
 
 namespace quadtree {
 
-cv::Mat asCvMat(const RasterMask &mask, int pixelSize = 1);
+cv::Mat asCvMat(const RasterMask &mask, double pixelSize = 1);
 
 } // namespace quadtree
 

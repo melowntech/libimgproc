@@ -170,23 +170,26 @@ void RasterMask::subtract( const RasterMask & op ) {
             if ( op.get( i, j ) ) set( i, j, false );
 }
 
-void RasterMask::invert() {
-
+void RasterMask::invert()
+{
+    root_.invert();
+#if 0
     for ( uint i = 0; i < sizeX_; i++ )
         for ( uint j = 0; j < sizeY_; j++ )
             set( i, j, ! get( i, j ) );
+#endif
 }
 
 bool RasterMask::get( int x, int y ) const {
 
     if ( x < 0 || x >= (int) sizeX_ || y < 0 || y >= (int) sizeY_ ) return false;
-    return root_.get( (ushort) x, (ushort) y, quadSize_ );
+    return root_.get( (uint) x, (uint) y, quadSize_ );
 }
 
 void RasterMask::set( int x, int y, bool value ) {
 
     if ( x < 0 || x >= (int) sizeX_ || y < 0 || y >= (int) sizeY_ ) return;
-    root_.set( (ushort) x, (ushort ) y, value, quadSize_ );
+    root_.set( (uint) x, (uint ) y, value, quadSize_ );
 }
 
 bool RasterMask::onBoundary( int x, int y ) const {
@@ -265,9 +268,9 @@ RasterMask::Node::~Node() {
     }
 }
 
-bool RasterMask::Node::get( ushort x, ushort y, ushort size ) const {
+bool RasterMask::Node::get( uint x, uint y, uint size ) const {
 
-    ushort split = size >> 1;
+    uint split = size >> 1;
 
     switch ( type ) {
         case WHITE :
@@ -294,9 +297,9 @@ bool RasterMask::Node::get( ushort x, ushort y, ushort size ) const {
     }
 }
 
-void RasterMask::Node::set( ushort x, ushort y, bool value, ushort size )
+void RasterMask::Node::set( uint x, uint y, bool value, uint size )
 {
-    ushort split = size >> 1;
+    uint split = size >> 1;
 
     // split node if necessarry
     if ( ( ( type == BLACK && value ) || ( type == WHITE && ! value  ) )
@@ -424,22 +427,22 @@ imgproc::bitfield::RasterMask RasterMask::asBitfield() const
 }
 
 void RasterMask::Node::dump(imgproc::bitfield::RasterMask &m
-                              , ushort x, ushort y, ushort size)
+                              , uint x, uint y, uint size)
     const
 {
-    ushort split = size / 2;
+    uint split = size / 2;
 
     switch ( type ) {
     case WHITE:
         {
             // fill in quad
-            ushort ex(x + size);
-            ushort ey(y + size);
+            uint ex(x + size);
+            uint ey(y + size);
             if (ex > mask.sizeX_) { ex = mask.sizeX_; };
             if (ey > mask.sizeY_) { ey = mask.sizeY_; };
 
-            for (ushort j(y); j < ey; ++j) {
-                for (ushort i(x); i < ex; ++i) {
+            for (uint j(y); j < ey; ++j) {
+                for (uint i(x); i < ex; ++i) {
                     m.set(i, j);
                 }
             }
@@ -454,6 +457,26 @@ void RasterMask::Node::dump(imgproc::bitfield::RasterMask &m
         ll->dump( m, x, y + split, split );
         ur->dump( m, x + split, y, split );
         lr->dump( m, x + split, y + split, split );
+        break;
+    }
+}
+
+void RasterMask::Node::invert()
+{
+    switch (type) {
+    case WHITE:
+        type = BLACK;
+        return;
+
+    case BLACK :
+        type = WHITE;
+        return;
+
+    case GRAY :
+        ul->invert();
+        ll->invert();
+        ur->invert();
+        lr->invert();
         break;
     }
 }
