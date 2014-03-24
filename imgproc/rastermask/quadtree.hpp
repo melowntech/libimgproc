@@ -17,6 +17,8 @@
 
 #include "math/geometry_core.hpp"
 
+#include "./bitfieldfwd.hpp"
+
 /**** quad-tree version of rastermask ****/
 
 namespace imgproc { namespace quadtree {

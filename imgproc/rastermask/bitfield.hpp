@@ -19,6 +19,7 @@
 #include "math/geometry_core.hpp"
 
 #include "../crop.hpp"
+#include "./bitfieldfwd.hpp"
 
 /**** bit-field version of rastermask ****/
 
