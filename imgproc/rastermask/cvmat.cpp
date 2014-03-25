@@ -1,3 +1,5 @@
+#include <opencv2/highgui/highgui.hpp>
+
 #include "dbglog/dbglog.hpp"
 
 #include "./cvmat.hpp"
@@ -51,31 +53,16 @@ cv::Mat asCvMat(const RasterMask &mask, double pixelSize)
               , long(std::ceil(pixelSize * size.width))
               , CV_8UC1);
     m = cv::Scalar(0);
-
-    // pixel size as an integer
-    auto psize(long(std::ceil(pixelSize)));
-
-    long quads(0);
-    long total(0);
+    auto black(cv::Scalar(0xff));
 
     mask.forEachQuad([&](uint xstart, uint ystart, uint xsize
                          , uint ysize, bool)
     {
-        ++quads;
-        // iterate over quad
-        for (unsigned int j(0); j < ysize; ++j) {
-            auto y(pixelSize * (ystart + j));
-            for (unsigned int i(0); i < xsize; ++i) {
-                auto x(pixelSize * (xstart + i));
-
-                for (auto jj(0); jj < psize; ++jj) {
-                    for (auto ii(0); ii < psize; ++ii) {
-                        m.at<unsigned char>(y + jj, x + ii) = 0xff;
-                        ++total;
-                    }
-                }
-            }
-        }
+        cv::Rect rect(int(std::floor(pixelSize * xstart))
+                      , int(std::floor(pixelSize * ystart))
+                      , int(std::ceil(pixelSize * xsize))
+                      , int(std::ceil(pixelSize * ysize)));
+        cv::rectangle(m, rect, black, CV_FILLED, 4);
     }, RasterMask::Filter::white);
 
     return m;
