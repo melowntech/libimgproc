@@ -8,6 +8,7 @@
 #ifndef imgproc_rastermask_quadtree_hpp_included_
 #define imgproc_rastermask_quadtree_hpp_included_
 
+#include <memory>
 #include <cstdint>
 #include <cstring>
 #include <algorithm>
@@ -55,7 +56,7 @@ public :
     void invert();
 
     /** do a set difference with two masks. */
-    void subtract( const RasterMask & op );
+    void subtract(const RasterMask &op);
 
     /** obtain mask value at given pos. */
     bool get( int x, int y ) const;
@@ -105,13 +106,35 @@ public :
     template <typename Op>
     void forEach(const Op &op, Filter filter = Filter::both)  const;
 
+    /** Merges other's quadtree in this quadtree.
+     *
+     * If checkDimensions is false you need to know what you are doing!
+     */
+    void merge(const RasterMask &other, bool checkDimensions = true);
+
+    /** In place intersects other's quadtree with this quadtree.
+     */
+    void intersect(const RasterMask &other);
+
+    /** Makes mask coarsen. White quads smaller than given threshold grow to
+     *  match threshold.
+     */
+    void coarsen(const uint threshold = 2);
+
 private :
+    void recount();
 
     enum NodeType { WHITE, BLACK, GRAY };
 
+    struct NodeChildren;
+
     struct Node
     {
-        Node( RasterMask & mask ) : type( BLACK ), mask( mask ) {};
+        Node(RasterMask &mask)
+            : type(BLACK), mask(mask), children() {};
+        Node(RasterMask &mask, NodeType type)
+            : type(type), mask(mask), children() {};
+
         bool get( uint x, uint y, uint size ) const;
         void set( uint x, uint y, bool value, uint size );
 
@@ -133,14 +156,43 @@ private :
          */
         void invert();
 
+        void merge(const Node &other);
+
+        void intersect(const Node &other);
+
+        void subtract(const Node &other);
+
+        void coarsen(uint size, const uint threshold);
+
+        /** Constracts node if all children are either white or black.
+         */
+        void contract();
+
         NodeType type;
-        Node * ul, * ur, * ll, *lr;
-        RasterMask & mask;
+        RasterMask &mask;
+        NodeChildren *children;
     };
+
+    struct NodeChildren {
+        NodeChildren(RasterMask &mask)
+            : ul(mask), ur(mask), ll(mask), lr(mask)
+        {}
+
+        NodeChildren(RasterMask &mask, NodeType type)
+            : ul(mask, type), ur(mask, type)
+            , ll(mask, type), lr(mask, type)
+        {}
+
+        Node ul, ur, ll, lr;
+    };
+
+    NodeChildren* malloc();
+    NodeChildren* malloc(NodeType type);
+    void free(NodeChildren *&children);
 
     uint sizeX_, sizeY_;
     uint quadSize_;
-    uint  count_;
+    ulong count_;
     Node root_;
 };
 

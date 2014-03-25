@@ -42,10 +42,10 @@ inline void RasterMask::Node::descend(uint x, uint y, uint size
     case GRAY: {
         // descend down
         uint split = size / 2;
-        ul->descend(x, y, split, op, filter);
-        ll->descend(x, y + split, split, op, filter);
-        ur->descend(x + split, y, split, op, filter);
-        lr->descend(x + split, y + split, split, op, filter);
+        children->ul.descend(x, y, split, op, filter);
+        children->ll.descend(x, y + split, split, op, filter);
+        children->ur.descend(x + split, y, split, op, filter);
+        children->lr.descend(x + split, y + split, split, op, filter);
         return;
     }
 

@@ -9,11 +9,73 @@
 #include <cmath>
 
 #include "dbglog/dbglog.hpp"
+#include "utility/binaryio.hpp"
 #include "math/math.hpp"
 
 #include "./bitfield.hpp"
 
 namespace imgproc { namespace bitfield {
+
+namespace {
+    const char BF_RASTERMASK_IO_MAGIC[5] = { 'R', 'M', 'A', 'S', 'K' };
+
+    using utility::binaryio::read;
+    using utility::binaryio::write;
+}
+
+void RasterMask::dump(std::ostream &f) const
+{
+    write(f, BF_RASTERMASK_IO_MAGIC); // 5 bytes
+    write(f, uint8_t(0)); // reserved
+    write(f, uint8_t(0)); // reserved
+    write(f, uint8_t(0)); // reserved
+
+    uint32_t width(size_.width);
+    uint32_t height(size_.height);
+    write(f, width);
+    write(f, height);
+
+    write(f, mask_.get(), bytes_);
+}
+
+void RasterMask::load(std::istream &f)
+{
+    char magic[5];
+    read(f, magic);
+
+    if (std::memcmp(magic, BF_RASTERMASK_IO_MAGIC,
+                    sizeof(BF_RASTERMASK_IO_MAGIC))) {
+        LOGTHROW(err2, std::runtime_error) << "RasterMask has wrong magic.";
+    }
+
+    uint8_t reserved1, reserved2, reserved3;
+    read(f, reserved1); // reserved
+    read(f, reserved2); // reserved
+    read(f, reserved3); // reserved
+
+    uint32_t width, height;
+    read(f, width);
+    read(f, height);
+
+    size_.width = width;
+    size_.height = height;
+    bytes_ = (size_.height * size_.width + 7) >> 3;
+    mask_.reset(new std::uint8_t[bytes_]);
+
+    read(f, mask_.get(), bytes_);
+
+    resetTrail();
+
+    // compute count_
+    count_ = std::accumulate
+        (mask_.get(), mask_.get() + bytes_, 0u
+         , [](unsigned int value, std::uint8_t byte) {
+            return (value + (byte & 0x01) + ((byte & 0x02) >> 1)
+                    + ((byte & 0x04) >> 2) + ((byte & 0x08) >> 3)
+                    + ((byte & 0x10) >> 4) + ((byte & 0x20) >> 5)
+                    + ((byte & 0x40) >> 6) + ((byte & 0x80) >> 7));
+        });
+}
 
 namespace {
 math::Extents2i extents(const boost::optional<imgproc::Crop2> &refRoi
@@ -80,4 +142,4 @@ int radius(const RasterMask &m
     return std::sqrt(r2);
 }
 
-} } // namespace imgproc::quadtree
+} } // namespace imgproc::bitfield
