@@ -53,16 +53,17 @@ cv::Mat asCvMat(const RasterMask &mask, double pixelSize)
               , long(std::ceil(pixelSize * size.width))
               , CV_8UC1);
     m = cv::Scalar(0);
-    auto black(cv::Scalar(0xff));
+    auto white(cv::Scalar(0xff));
 
     mask.forEachQuad([&](uint xstart, uint ystart, uint xsize
                          , uint ysize, bool)
     {
-        cv::Rect rect(int(std::floor(pixelSize * xstart))
-                      , int(std::floor(pixelSize * ystart))
-                      , int(std::ceil(pixelSize * xsize))
-                      , int(std::ceil(pixelSize * ysize)));
-        cv::rectangle(m, rect, black, CV_FILLED, 4);
+        cv::Point2i start(int(std::floor(pixelSize * xstart))
+                          , int(std::floor(pixelSize * ystart)));
+        cv::Point2i end(int(std::ceil(pixelSize * (xstart + xsize)))
+                        , int(std::ceil(pixelSize * (ystart + ysize))));
+
+        cv::rectangle(m, start, end, white, CV_FILLED, 4);
     }, RasterMask::Filter::white);
 
     return m;
