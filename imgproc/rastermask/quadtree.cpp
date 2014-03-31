@@ -471,29 +471,25 @@ void RasterMask::Node::invert()
 void RasterMask::Node::merge(const Node &other)
 {
     if ((type == NodeType::WHITE) || (other.type == NodeType::BLACK)) {
-        // nothing to do
+        // merge(WHITE, anything) = WHITE (keep)
+        // merge(anything, BLACK) = anything (keep)
         return;
     }
 
     if (other.type == NodeType::WHITE) {
-        // merging in white color
-        if (type == NodeType::GRAY) {
-            // destroy all children
-            mask.free(children);
-        }
-        // force white
-        type = WHITE;
+        // merge(anything, WHITE) = WHITE
+        *this = other;
         return;
     }
 
     // OK, other is gray
     if (type == NodeType::BLACK) {
-        // we are black -> need to split
-        children = mask.malloc();
-        type = NodeType::GRAY;
+        // merge(BLACK, GRAY) = GRAY
+        *this = other;
+        return;
     }
 
-    // go down
+    // merge(GRAY, GRAY) = go down
     children->ul.merge(other.children->ul);
     children->ll.merge(other.children->ll);
     children->ur.merge(other.children->ur);
