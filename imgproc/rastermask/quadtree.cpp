@@ -579,10 +579,10 @@ void RasterMask::Node::subtract(const Node &other)
     // subtract(GRAY, GRAY);
 
     // go down
-    children->ul.intersect(other.children->ul);
-    children->ll.intersect(other.children->ll);
-    children->ur.intersect(other.children->ur);
-    children->lr.intersect(other.children->lr);
+    children->ul.subtract(other.children->ul);
+    children->ll.subtract(other.children->ll);
+    children->ur.subtract(other.children->ur);
+    children->lr.subtract(other.children->lr);
 
     // contract if possible
     contract();
