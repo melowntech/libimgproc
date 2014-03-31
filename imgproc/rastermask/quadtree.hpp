@@ -69,10 +69,10 @@ public :
     bool onBoundary( int x, int y ) const;
 
     /** return mask size (number of white pixels) */
-    uint count() const { return count_; }
+    ulong count() const { return count_; }
 
     /** return total number of pixels */
-    uint capacity() const { return sizeX_ * sizeY_; }
+    ulong capacity() const { return ulong(sizeX_) * ulong(sizeY_); }
 
     /** test mask for emptiness */
     bool empty() const { return count_ == 0; }
