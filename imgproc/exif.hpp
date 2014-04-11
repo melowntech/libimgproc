@@ -81,9 +81,11 @@ public:
     const char* formatName() const { return exif_format_get_name(e_->format); }
 
     template <typename T>
-    const T& data() const { return *reinterpret_cast<const T*>(e_->data); }
+    const T& data(int idx = 0) const {
+        return *( reinterpret_cast<const T*>(e_->data) + idx );
+    }
 
-    template <typename T> T as() const;
+    template <typename T> T as(int idx = 0) const;
 
 private:
     friend class Exif;
@@ -192,30 +194,30 @@ operator>>(std::basic_istream<E, T> &is, Orientation &o)
 
 namespace detail {
 
-template <typename T, class Enable = void> T convert(const Exif::Entry &e);
+template <typename T, class Enable = void> T convert(const Exif::Entry &e, int idx);
 
 template <typename T
           , class = typename std::enable_if<std::is_arithmetic<T>
                                             ::value>::type>
-T convert(const Exif::Entry &e)
+T convert(const Exif::Entry &e, int idx)
 {
     switch (e.format()) {
-    case EXIF_FORMAT_BYTE: return e.data< ::ExifByte>();
-    case EXIF_FORMAT_SHORT: return e.data< ::ExifShort>();
-    case EXIF_FORMAT_LONG: return e.data< ::ExifLong>();
-    case EXIF_FORMAT_SBYTE: return e.data< ::ExifSByte>();
-    case EXIF_FORMAT_SSHORT: return e.data< ::ExifSShort>();
-    case EXIF_FORMAT_SLONG: return e.data< ::ExifSLong>();
-    case EXIF_FORMAT_FLOAT: return e.data<float>();
-    case EXIF_FORMAT_DOUBLE: return e.data<double>();
+    case EXIF_FORMAT_BYTE: return e.data< ::ExifByte>(idx);
+    case EXIF_FORMAT_SHORT: return e.data< ::ExifShort>(idx);
+    case EXIF_FORMAT_LONG: return e.data< ::ExifLong>(idx);
+    case EXIF_FORMAT_SBYTE: return e.data< ::ExifSByte>(idx);
+    case EXIF_FORMAT_SSHORT: return e.data< ::ExifSShort>(idx);
+    case EXIF_FORMAT_SLONG: return e.data< ::ExifSLong>(idx);
+    case EXIF_FORMAT_FLOAT: return e.data<float>(idx);
+    case EXIF_FORMAT_DOUBLE: return e.data<double>(idx);
 
     case EXIF_FORMAT_RATIONAL: {
-        const auto &v(e.data< ::ExifRational>());
+        const auto &v(e.data< ::ExifRational>(idx));
         return T(v.numerator) / T(v.denominator);
     }
 
     case EXIF_FORMAT_SRATIONAL: {
-        const auto &v(e.data< ::ExifSRational>());
+        const auto &v(e.data< ::ExifSRational>(idx));
         return T(v.numerator) / T(v.denominator);
     }
     default:
@@ -225,30 +227,33 @@ T convert(const Exif::Entry &e)
     throw;
 }
 
+/**
+ * FIXME, idx not working currently, acts as idx = 0 all the time
+ */
 template <>
-inline std::string convert<std::string, void>(const Exif::Entry &e)
+inline std::string convert<std::string, void>(const Exif::Entry &e, int)
 {
     return boost::lexical_cast<std::string>(e);
 }
 
 template <>
-inline Rational convert<Rational, void>(const Exif::Entry &e)
+inline Rational convert<Rational, void>(const Exif::Entry &e, int idx)
 {
     switch (e.format()) {
-    case EXIF_FORMAT_BYTE: return { e.data< ::ExifByte>() };
-    case EXIF_FORMAT_SHORT: return { e.data< ::ExifShort>() };
-    case EXIF_FORMAT_LONG: return { e.data< ::ExifLong>() };
-    case EXIF_FORMAT_SBYTE: return { e.data< ::ExifSByte>() };
-    case EXIF_FORMAT_SSHORT: return { e.data< ::ExifSShort>() };
-    case EXIF_FORMAT_SLONG: return { e.data< ::ExifSLong>() };
+    case EXIF_FORMAT_BYTE: return { e.data< ::ExifByte>(idx) };
+    case EXIF_FORMAT_SHORT: return { e.data< ::ExifShort>(idx) };
+    case EXIF_FORMAT_LONG: return { e.data< ::ExifLong>(idx) };
+    case EXIF_FORMAT_SBYTE: return { e.data< ::ExifSByte>(idx) };
+    case EXIF_FORMAT_SSHORT: return { e.data< ::ExifSShort>(idx) };
+    case EXIF_FORMAT_SLONG: return { e.data< ::ExifSLong>(idx) };
 
     case EXIF_FORMAT_RATIONAL: {
-        const auto &v(e.data< ::ExifRational>());
+        const auto &v(e.data< ::ExifRational>(idx));
         return { v.numerator, v.denominator };
     }
 
     case EXIF_FORMAT_SRATIONAL: {
-        const auto &v(e.data< ::ExifSRational>());
+        const auto &v(e.data< ::ExifSRational>(idx));
         return { v.numerator, v.denominator };
     }
     default:
@@ -260,9 +265,9 @@ inline Rational convert<Rational, void>(const Exif::Entry &e)
 
 } // namespace detail
 
-template <typename T> inline T Exif::Entry::as() const
+template <typename T> inline T Exif::Entry::as(int idx) const
 {
-    return detail::convert<T>(*this);
+    return detail::convert<T>(*this, idx);
 }
 
 } } // namespace imgproc::exif
