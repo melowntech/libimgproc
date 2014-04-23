@@ -33,6 +33,17 @@ else()
   message(STATUS "imgproc: compiling without OpenCV support")
 endif()
 
+if(EIGEN3_FOUND)
+  message(STATUS "imgproc: compiling in Eigen3 support")
+
+  list(APPEND imgproc_DEPENDS EIGEN3)
+
+  set(imgproc_EIGEN3_SOURCES
+    scattered-interpolation.hpp scattered-interpolation.cpp)
+else()
+  message(STATUS "imgproc: compiling without Eigen3 support")
+endif()
+
 define_module(LIBRARY imgproc DEPENDS ${imgproc_DEPENDS})
 
 set(imgproc_SOURCES
@@ -42,8 +53,7 @@ set(imgproc_SOURCES
   rastermask/bitfield.cpp rastermask/quadtree.cpp
 
   georeferencing.hpp
-  scanconversion.hpp
-  scanconversion.cpp
+  scanconversion.hpp scanconversion.cpp
   gil-float-image.hpp
   crop.hpp
 )
@@ -52,6 +62,7 @@ add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_EXIF_SOURCES}
   ${imgproc_TIFF_SOURCES}
   ${imgproc_OPENCV_SOURCES}
+  ${imgproc_EIGEN3_SOURCES}
   )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
