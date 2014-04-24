@@ -11,15 +11,19 @@ namespace imgproc {
 typedef Eigen::SparseMatrix<double> SparseMatrix;
 typedef Eigen::Triplet<double> Triplet;
 
-/**
+/** Solves the boundary value problem -\Delta u = 0 on elements in the matrix
+ *  'data' that correspond to unset elements in 'mask'. Elements corresponding
+ *  to set positions in 'mask' are regarded as given data.
  *
+ *  The method is described in section 3.8 "Laplace Interpolation" of
+ *  Numerical Recipes in C, Third Edition.
  */
 void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask)
 {
     int w = data.cols, h = data.rows;
     int n = w * h; // # of unknowns
 
-    // assemble a linear system for the boundary value problem -\Delta u = 0
+    // assemble the linear system
     LOG(info1) << "Assembling " << n << "x" << n << " sparse system.";
 
     std::vector<Triplet> coefs;
@@ -70,15 +74,16 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask)
     SparseMatrix mat(n, n);
     mat.setFromTriplets(coefs.begin(), coefs.end());
 
-    LOG(debug) << "mat = " << mat;
-    LOG(debug) << "rhs = " << rhs;
+    LOG(debug) << "mat = \n" << mat;
+    LOG(debug) << "rhs = \n" << rhs;
 
     // solve the system
     LOG(info1) << "Solving system.";
-    Eigen::SimplicialCholesky<SparseMatrix> solver(mat);
+    Eigen::BiCGSTAB<SparseMatrix, Eigen::IncompleteLUT<double> > solver(mat);
     Eigen::VectorXd sln(solver.solve(rhs));
 
-    LOG(debug) << "sln = " << sln;
+    LOG(info1) << "#iterations: " << solver.iterations();
+    LOG(info1) << "estimated error: " << solver.error();
 
     // return solution
     for (int i = 0; i < h; i++)
