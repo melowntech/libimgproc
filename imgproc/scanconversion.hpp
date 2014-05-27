@@ -11,6 +11,8 @@
 #include <vector>
 #include <opencv2/core/core.hpp>
 
+#include "math/geometry_core.hpp"
+
 namespace imgproc {
 
 //! Triangle scan conversion helper structure
@@ -27,7 +29,6 @@ struct Scanline
 //! depth (Z), which is also interpolated.
 void scanConvertTriangle(const cv::Point3f pt[3], int ymin, int ymax,
                          std::vector<Scanline>& scanlines);
-
 
 //! Calls the specified operation for each pixel of a scanline
 template<typename Operation>
@@ -46,6 +47,18 @@ void processScanline(const Scanline& sl, int xmin, int xmax, Operation op)
     }
 }
 
+//! Helper to call scanConvertTriangle with math::Point2
+inline void scanConvertTriangle(
+        const math::Point2 &a, const math::Point2 &b, const math::Point2 &c,
+        int ymin, int ymax, std::vector<Scanline>& scanlines)
+{
+    cv::Point3f pt[3] = {
+        { float(a(0)), float(a(1)), 0 },
+        { float(b(0)), float(b(1)), 0 },
+        { float(c(0)), float(c(1)), 0 },
+    };
+    scanConvertTriangle(pt, ymin, ymax, scanlines);
+}
 
 } // namespace imgproc
 

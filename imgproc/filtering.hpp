@@ -14,8 +14,11 @@
 #include <math/filters.hpp>
 #include <boost/gil/gil_all.hpp>
 
-namespace imgproc {
+#if IMGPROC_HAS_OPENCV
+#include <opencv2/core/core.hpp>
+#endif
 
+namespace imgproc {
 
 namespace gil = boost::gil;
 
@@ -171,9 +174,62 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
 }
 
 
+/**
+ * Reconstruct a value from cv::Mat with a continuous time filter.
+ * Note: only available when OpenCV is configured.
+ */
+
+#if IMGPROC_HAS_OPENCV
+template<typename MatType, typename Filter2>
+MatType reconstruct(const cv::Mat &mat, const Filter2 &filter,
+                    const math::Point2 &pos, MatType defaultColor = MatType())
+{
+    int x1(floor(pos(0) - filter.halfwinx()));
+    int x2(ceil (pos(0) + filter.halfwinx()));
+    int y1(floor(pos(1) - filter.halfwiny()));
+    int y2(ceil (pos(1) + filter.halfwiny()));
+
+    int numChannels = mat.channels();
+
+    double weightSum(0), valueSum[10];
+    for (int i = 0; i < numChannels; i++)
+        valueSum[i] = 0.0;
+
+    for (int i = y1; i <= y2; i++)
+    for (int j = x1; j <= x2; j++)
+    {
+        double weight(filter(j - pos(0), i - pos(1)));
+
+        if (i >= 0 && i < mat.rows && j >= 0 && j < mat.cols)
+        {
+            const MatType &value(mat.at<MatType>(i, j));
+            for (int k = 0; k < numChannels; k++)
+                valueSum[k] += weight * value[k];
+        }
+        else {
+            for (int k = 0; k < numChannels; k++)
+                valueSum[k] += weight * defaultColor[k];
+        }
+
+        weightSum += weight;
+    }
+
+    MatType retval;
+    for (int i = 0; i < numChannels; i++) {
+        if (weightSum > 1e-15) {
+            retval[i] = cv::saturate_cast<typename MatType::value_type>
+                                (valueSum[i] / weightSum);
+        } else {
+            retval[i] = 0;
+        }
+    }
+
+    return retval;
+}
+#endif
+
 
 } // namespace imgproc
-
 
 #endif 
 

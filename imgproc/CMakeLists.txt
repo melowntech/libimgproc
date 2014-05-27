@@ -24,6 +24,8 @@ endif()
 
 if(OpenCV_FOUND)
   message(STATUS "imgproc: compiling in OpenCV support")
+  append_parent_directory_list_property(COMPILE_DEFINITIONS
+    "IMGPROC_HAS_OPENCV=1")
 
   list(APPEND imgproc_DEPENDS OpenCV)
 
