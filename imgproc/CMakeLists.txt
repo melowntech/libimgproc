@@ -68,7 +68,7 @@ add_library(imgproc STATIC ${imgproc_SOURCES}
   )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
-target_compile_definitions(imgproc PRIVATE ${MODULE_DEFINITIONS})
+buildsys_target_compile_definitions(imgproc ${MODULE_DEFINITIONS})
 
 # test stuff
 if (COMPILE_TESTS)
