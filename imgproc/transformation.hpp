@@ -36,7 +36,7 @@ namespace imgproc {
  */
 
 class Scaling2 {
-    
+
 public:
     Scaling2( const math::Size2 & srcSize, const math::Size2 & dstSize ) {
 
@@ -45,19 +45,20 @@ public:
         offX_ = scaleX_ * 0.5 - 0.5;
         offY_ = scaleY_ * 0.5 - 0.5;
     };
-    
-    math::Point2 map( const math::Point2i & op ) const {
+
+    template<typename T>
+    math::Point2 map( const math::Point2_<T> & op ) const {
 
         return math::Point2( offX_ + scaleX_ * op(0), offY_ + scaleY_ * op(1) );
     }
 
-    
+
     math::Point2 derivatives( const math::Point2i & op) const {
         (void) op;
         return math::Point2( scaleX_, scaleY_ );
     }
 
-    
+
 private:
     float scaleX_, scaleY_, offX_, offY_;
 };
@@ -96,7 +97,7 @@ typedef math::SincHamming2 DefaultFilter;
 
 /*
  * Transform between two views using a generic reverse mapping function
- */ 
+ */
 template <typename LowPassFilter2, typename Mapping2
           , typename SrcView, typename DstView>
 inline void transform(
@@ -159,17 +160,17 @@ inline void transform(
         for ( int j = 0, ej(view2.width()); j < ej; j++ ) {
 
             math::Point2i dstpos( j, i );
-            
+
             math::Point2 srcpos = mapping.map( dstpos );
             math::Point2 deriv = mapping.derivatives( dstpos );
-            
+
             LowPassFilter2 filter(
                 std::max( 2.0, 2.0 * deriv(0) ), std::max( 2.0, 2.0 * deriv(1) ) );
 
             *dstit++ = imgproc::reconstruct( view1, filter,
                  gil::point2<double>( srcpos(0), srcpos(1) ) );
         }
-    }    
+    }
 }
 
 template <typename Mapping2, typename SrcView, typename DstView>
