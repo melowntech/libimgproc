@@ -58,8 +58,11 @@ public :
     /** do a set difference with two masks. */
     void subtract(const RasterMask &op);
 
-    /** obtain mask value at given pos. */
+    /** obtain mask value at given pos, return false if x, y out of bounds */
     bool get( int x, int y ) const;
+
+    /** obtain mask value at given pos, clamp x, y to nearest boundary position */
+    bool getClamped( int x, int y ) const;
 
     /** set mask value at given pos. */
     void set( int x, int y, bool value = true );

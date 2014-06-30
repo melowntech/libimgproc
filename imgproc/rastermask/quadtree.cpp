@@ -101,6 +101,17 @@ bool RasterMask::get( int x, int y ) const {
     return root_.get( (uint) x, (uint) y, quadSize_ );
 }
 
+bool RasterMask::getClamped( int x, int y ) const {
+
+    if ( x < 0 ) x = 0;
+    else if ( x >= (int) sizeX_) x = sizeX_ - 1;
+
+    if ( y < 0 ) y = 0;
+    else if ( y >= (int) sizeY_ ) y = sizeY_ - 1;
+
+    return root_.get( (uint) x, (uint) y, quadSize_ );
+}
+
 void RasterMask::set( int x, int y, bool value ) {
 
     if ( x < 0 || x >= (int) sizeX_ || y < 0 || y >= (int) sizeY_ ) return;
