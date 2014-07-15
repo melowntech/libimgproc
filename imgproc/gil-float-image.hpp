@@ -17,7 +17,7 @@ typedef image<grayf_pixel_t, false> grayf_image_t;
 typedef grayf_image_t::view_t grayf_view_t;
 typedef grayf_image_t::const_view_t grayf_const_view_t;
 
-typedef pixel<float, gray_layout_t> grayd_pixel_t;
+typedef pixel<double, gray_layout_t> grayd_pixel_t;
 typedef image<grayd_pixel_t, false> grayd_image_t;
 typedef grayd_image_t::view_t grayd_view_t;
 typedef grayd_image_t::const_view_t grayd_const_view_t;
