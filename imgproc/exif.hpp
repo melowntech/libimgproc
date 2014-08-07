@@ -53,7 +53,12 @@ public:
 
     class Entry;
 
+    // throws if tag not found
     Entry getEntry(ExifTag tag, ExifIfd ifd = EXIF_IFD_COUNT) const;
+
+    // returns tag or default if tag not present
+    template <typename T>
+    T getEntrySafe(const T& df, ExifTag tag, ExifIfd ifd = EXIF_IFD_COUNT) const;
 
     Rational getFPResolutionUnit(ExifIfd ifd = EXIF_IFD_COUNT) const;
 
@@ -268,6 +273,18 @@ inline Rational convert<Rational, void>(const Exif::Entry &e, int idx)
 template <typename T> inline T Exif::Entry::as(int idx) const
 {
     return detail::convert<T>(*this, idx);
+}
+
+template <typename T>
+T Exif::getEntrySafe(const T& df, ExifTag tag, ExifIfd ifd) const
+{
+    try {
+        Entry tmp(getEntry( tag, ifd ));
+        return tmp.as<T>();
+    } catch (const NoSuchTag &e) {
+        LOG(warn2) <<  e.what() << "; Setting tag to default " << df;
+    }
+    return df;
 }
 
 } } // namespace imgproc::exif
