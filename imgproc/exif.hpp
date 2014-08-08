@@ -282,7 +282,7 @@ T Exif::getEntrySafe(const T& df, ExifTag tag, ExifIfd ifd) const
         Entry tmp(getEntry( tag, ifd ));
         return tmp.as<T>();
     } catch (const NoSuchTag &e) {
-        LOG(warn2) <<  e.what() << "; Setting tag to default " << df;
+        LOG(warn1) <<  e.what() << "; Setting tag to default " << df;
     }
     return df;
 }
