@@ -59,6 +59,8 @@ set(imgproc_SOURCES
   scanconversion.hpp scanconversion.cpp
   gil-float-image.hpp
   crop.hpp
+
+  morphology.hpp
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}

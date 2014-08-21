@@ -8,7 +8,7 @@ namespace imgproc {
 
 #if IMGPROC_HAS_OPENCV
 template<typename MatType>
-void erode(cv::Mat &mat, int kernelSize = 3, MatType invalidValue = INFINITY)
+void erode(cv::Mat &mat, int kernelSize = 3)
 {
     cv::Mat result(mat.rows, mat.cols, mat.type());
 
@@ -17,9 +17,7 @@ void erode(cv::Mat &mat, int kernelSize = 3, MatType invalidValue = INFINITY)
     for (int y = 0; y < mat.rows; y++)
     for (int x = 0; x < mat.cols; x++)
     {
-        //if (mat.at<MatType>(y, x) == invalidValue) continue;
-
-        MatType minimum = INFINITY;
+        MatType minimum = mat.at<MatType>(y, x);
 
         for (int i = -kernelSize; i <= kernelSize; i++) {
             if (y+i < 0 || y+i >= mat.rows) continue;
@@ -28,13 +26,10 @@ void erode(cv::Mat &mat, int kernelSize = 3, MatType invalidValue = INFINITY)
                 if (x+j < 0 || x+j >= mat.cols) continue;
 
                 MatType value = mat.at<MatType>(y+i, x+j);
-                if (value != invalidValue) {
-                    minimum = std::min(value, minimum);
-                }
+                minimum = std::min(value, minimum);
             }
         }
 
-        if (minimum == INFINITY) minimum = invalidValue;
         result.at<MatType>(y, x) = minimum;
     }
 
@@ -61,9 +56,7 @@ void dilate(cv::Mat &mat, int kernelSize = 3)
                 if (x+j < 0 || x+j >= mat.cols) continue;
 
                 MatType value = mat.at<MatType>(y+i, x+j);
-                //if(value != invalidValue) {
-                    maximum = std::max(value, maximum);
-                //}
+                maximum = std::max(value, maximum);
             }
         }
 

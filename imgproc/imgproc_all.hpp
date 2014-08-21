@@ -10,5 +10,5 @@
 #include "filtering.hpp"
 #include "transformation.hpp"
 #include "rastermask.hpp"
-
+#include "morphology.hpp"
 
