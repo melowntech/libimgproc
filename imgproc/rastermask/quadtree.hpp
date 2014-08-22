@@ -67,6 +67,9 @@ public :
     /** set mask value at given pos. */
     void set( int x, int y, bool value = true );
 
+    /** Resets whole mask to given value. */
+    void reset(bool value = true);
+
     /** test if a given pixel is a boundary pixel (neighboring unset
         pixel in mask */
     bool onBoundary( int x, int y ) const;

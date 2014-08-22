@@ -118,6 +118,12 @@ void RasterMask::set( int x, int y, bool value ) {
     root_.set( (uint) x, (uint ) y, value, quadSize_ );
 }
 
+void RasterMask::reset(bool value)
+{
+    // set root to given value
+    root_ = Node(*this, value ? NodeType::WHITE : NodeType::BLACK);
+}
+
 bool RasterMask::onBoundary( int x, int y ) const {
 
     if ( ! get( x, y ) ) return false;
