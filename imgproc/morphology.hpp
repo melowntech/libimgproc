@@ -1,3 +1,6 @@
+#ifndef IMGPROC_MORPHOLOGY_HPP
+#define IMGPROC_MORPHOLOGY_HPP
+
 #include "math/geometry_core.hpp"
 
 #if IMGPROC_HAS_OPENCV
@@ -68,3 +71,5 @@ void dilate(cv::Mat &mat, int kernelSize = 3)
 #endif
 
 } // namespace imgproc
+
+#endif // IMGPROC_MORPHOLOGY_HPP
