@@ -82,4 +82,5 @@ buildsys_target_compile_definitions(imgproc ${MODULE_DEFINITIONS})
 # test stuff
 if (COMPILE_TESTS)
   add_subdirectory(test-tiff)
+  add_subdirectory(test-embeddedmask)
 endif()
