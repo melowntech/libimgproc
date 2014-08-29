@@ -1,4 +1,5 @@
 set(imgproc_DEPENDS math utility dbglog Boost)
+set(imgproc_DEFINITIONS)
 
 if(EXIF_FOUND)
   message(STATUS "imgproc: compiling in EXIF support")
@@ -15,6 +16,7 @@ if(TIFF_FOUND)
   message(STATUS "imgproc: compiling in TIFF support")
 
   list(APPEND imgproc_DEPENDS TIFF)
+  list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_TIFF=1)
 
   set(imgproc_TIFF_SOURCES
     bintiff.hpp bintiff.cpp)
@@ -46,7 +48,9 @@ else()
   message(STATUS "imgproc: compiling without Eigen3 support")
 endif()
 
-define_module(LIBRARY imgproc DEPENDS ${imgproc_DEPENDS})
+define_module(LIBRARY imgproc
+  DEPENDS ${imgproc_DEPENDS}
+  DEFINITIONS ${imgproc_DEFINITIONS})
 
 set(imgproc_SOURCES
   color.cpp
@@ -61,6 +65,8 @@ set(imgproc_SOURCES
   crop.hpp
 
   morphology.hpp
+
+  embeddedmask.hpp embeddedmask.cpp
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
