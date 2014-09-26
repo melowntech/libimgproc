@@ -54,6 +54,7 @@ define_module(LIBRARY imgproc
 
 set(imgproc_SOURCES
   color.cpp
+  bitdepth.hpp
   clahe.cpp
   spectral_analysis.hpp spectral_analysis.cpp
   rastermask.hpp rastermask/bitfield.hpp rastermask/quadtree.hpp
