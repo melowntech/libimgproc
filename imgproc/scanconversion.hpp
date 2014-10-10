@@ -12,6 +12,7 @@
 #include <opencv2/core/core.hpp>
 
 #include "math/geometry_core.hpp"
+#include "math/geometry.hpp"
 
 namespace imgproc {
 
@@ -58,6 +59,37 @@ inline void scanConvertTriangle(
         { float(c(0)), float(c(1)), 0 },
     };
     scanConvertTriangle(pt, ymin, ymax, scanlines);
+}
+
+
+template<typename Operation>
+void dda(const math::Point2 & p1, const math::Point2 &p2, Operation op)
+{
+    math::Point2i begin(p1);
+    math::Point2i end(p2);
+    float p=math::length(p1-begin)/math::length(p2-p1);
+
+    math::Point2 d(p2[0]-p1[0],p2[1]-p1[1]);
+
+    double l = std::max(std::abs(d[0]),std::abs(d[1]));
+    d = d*1/l;
+
+    float dp = math::length(d)/math::length(p2-p1);
+
+    int steps = std::max(std::abs(end[0]-begin[0]),std::abs(end[1]-begin[1]));
+    
+    math::Point2 cursor(begin);
+    for(int i=0;i<steps+1; ++i){
+        op(std::round(cursor[0]), std::round(cursor[1]), p);
+        p+=dp;
+        cursor+=d;
+    }
+}
+
+template<typename Operation>
+void dda(const cv::Point2f & p1, const cv::Point2f &p2, Operation op)
+{
+    dda(math::Point2( p1.x, p1.y ), math::Point2( p2.x, p2.y ),op);
 }
 
 } // namespace imgproc
