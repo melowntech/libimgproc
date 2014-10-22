@@ -13,7 +13,7 @@
 
 namespace imgproc {
 
-cv::Mat get8BitImage( const cv::Mat image ) {
+inline cv::Mat get8BitImage( const cv::Mat image ) {
     cv::Mat result8bit;
     
     if ( image.depth() == CV_16U ) {
