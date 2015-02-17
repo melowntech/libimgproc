@@ -33,6 +33,7 @@ if(OpenCV_FOUND)
   set(imgproc_OPENCV_SOURCES
     cvmat.hpp rastermask/cvmat.hpp rastermask/cvmat.cpp
     readimage.hpp readimage.cpp
+    findrects.hpp detail/findrects.hpp
     )
 else()
   message(STATUS "imgproc: compiling without OpenCV support")
