@@ -60,8 +60,8 @@ cv::Mat asCvMat(const RasterMask &mask, double pixelSize)
     {
         cv::Point2i start(int(std::floor(pixelSize * xstart))
                           , int(std::floor(pixelSize * ystart)));
-        cv::Point2i end(int(std::ceil(pixelSize * (xstart + xsize)))
-                        , int(std::ceil(pixelSize * (ystart + ysize))));
+        cv::Point2i end(int(std::ceil(pixelSize * (xstart + xsize - 1 )))
+                        , int(std::ceil(pixelSize * (ystart + ysize - 1))));
 
         cv::rectangle(m, start, end, white, CV_FILLED, 4);
     }, RasterMask::Filter::white);
