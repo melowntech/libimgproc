@@ -8,15 +8,17 @@
 #ifndef IMGPROC_FILTERING_HPP
 #define IMGPROC_FILTERING_HPP
 
-#include <dbglog/dbglog.hpp>
-
-#include <math/math.hpp>
-#include <math/filters.hpp>
 #include <boost/gil/gil_all.hpp>
 
 #if IMGPROC_HAS_OPENCV
 #include <opencv2/core/core.hpp>
 #endif
+
+#include "dbglog/dbglog.hpp"
+
+#include "math/math.hpp"
+#include "math/geometry_core.hpp"
+#include "math/filters.hpp"
 
 namespace imgproc {
 
@@ -228,8 +230,6 @@ MatType reconstruct(const cv::Mat &mat, const Filter2 &filter,
 }
 #endif
 
-
 } // namespace imgproc
 
-#endif 
-
+#endif
