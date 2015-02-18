@@ -17,6 +17,7 @@
 #include "math/filters.hpp"
 
 #include "./filtering.hpp"
+#include "./rastermask/quadtree.hpp"
 
 namespace imgproc {
 /**
