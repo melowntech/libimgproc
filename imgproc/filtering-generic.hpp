@@ -8,6 +8,14 @@
 #ifndef imgproc_filtering_generic_hpp_included_
 #define imgproc_filtering_generic_hpp_included_
 
+#if IMGPROC_HAS_OPENCV
+#include <opencv2/core/core.hpp>
+#endif // IMGPROC_HAS_OPENCV
+
+#include "math/math.hpp"
+#include "math/geometry_core.hpp"
+#include "math/filters.hpp"
+
 #include "./filtering.hpp"
 
 namespace imgproc {
@@ -48,43 +56,7 @@ struct UndefinedValueError : std::runtime_error {
 template<typename Reconstruction, typename Filter2>
 typename Reconstruction::value_type
 reconstruct(const Reconstruction &r, const Filter2 &filter
-            , const math::Point2 &pos)
-{
-    // calculate filtering window
-    const int x1(std::floor(pos(0) - filter.halfwinx()));
-    const int x2(std::ceil (pos(0) + filter.halfwinx()));
-    const int y1(std::floor(pos(1) - filter.halfwiny()));
-    const int y2(std::ceil (pos(1) + filter.halfwiny()));
-
-    const int numChannels(r.channels());
-
-    // accumulate values for whole filtering window
-    double weightSum(0), valueSum[10] = { 0.0 };
-    for (int i = y1; i <= y2; ++i) {
-        for (int j = x1; j <= x2; ++j) {
-            const double weight(filter(j - pos(0), i - pos(1)));
-
-            if (r.valid(j, i)) {
-                const auto &value(r(j, i));
-                for (int k = 0; k < numChannels; ++k) {
-                    valueSum[k] += weight * value[k];
-                }
-                weightSum += weight;
-            }
-        }
-    }
-
-    // calculate and return result
-    typename Reconstruction::value_type retval;
-    for (int i = 0; i < numChannels; ++i) {
-        if (weightSum > 1e-15) {
-            retval[i] = r.saturate(valueSum[i] / weightSum);
-        } else {
-            retval[i] = r.undefined();
-        }
-    }
-    return retval;
-}
+            , const math::Point2 &pos);
 
 /** Reconstruction plugin to add raster mask support.
  */
@@ -96,6 +68,7 @@ private:
     const quadtree::RasterMask &mask_;
 };
 
+#if IMGPROC_HAS_OPENCV
 // OpenCV Matrix support
 
 namespace detail {
@@ -157,6 +130,7 @@ public:
                 && MaskedPlugin::valid(x, y));
     }
 };
+#endif // IMGPROC_HAS_OPENCV
 
 // GIL view support
 
@@ -223,6 +197,48 @@ gilViewReconstruction(const gil::image_view<Loc> &view
                       , const quadtree::RasterMask &mask)
 {
     return { view, mask };
+}
+
+// Reconstruction core itself
+template<typename Reconstruction, typename Filter2>
+typename Reconstruction::value_type
+reconstruct(const Reconstruction &r, const Filter2 &filter
+            , const math::Point2 &pos)
+{
+    // calculate filtering window
+    const int x1(std::floor(pos(0) - filter.halfwinx()));
+    const int x2(std::ceil (pos(0) + filter.halfwinx()));
+    const int y1(std::floor(pos(1) - filter.halfwiny()));
+    const int y2(std::ceil (pos(1) + filter.halfwiny()));
+
+    const int numChannels(r.channels());
+
+    // accumulate values for whole filtering window
+    double weightSum(0), valueSum[10] = { 0.0 };
+    for (int i = y1; i <= y2; ++i) {
+        for (int j = x1; j <= x2; ++j) {
+            const double weight(filter(j - pos(0), i - pos(1)));
+
+            if (r.valid(j, i)) {
+                const auto &value(r(j, i));
+                for (int k = 0; k < numChannels; ++k) {
+                    valueSum[k] += weight * value[k];
+                }
+                weightSum += weight;
+            }
+        }
+    }
+
+    // calculate and return result
+    typename Reconstruction::value_type retval;
+    for (int i = 0; i < numChannels; ++i) {
+        if (weightSum > 1e-15) {
+            retval[i] = r.saturate(valueSum[i] / weightSum);
+        } else {
+            retval[i] = r.undefined();
+        }
+    }
+    return retval;
 }
 
 } // namespace imgproc

@@ -14,8 +14,6 @@
 #include <opencv2/core/core.hpp>
 #endif
 
-#include "dbglog/dbglog.hpp"
-
 #include "math/math.hpp"
 #include "math/geometry_core.hpp"
 #include "math/filters.hpp"
