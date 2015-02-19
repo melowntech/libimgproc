@@ -69,6 +69,8 @@ reconstruct(const ConstRaster &r, const Filter2 &filter
  */
 template <typename Derived>
 struct BoundsValidator {
+    typedef BoundsValidator<Derived> BoundsValidatorType;
+
     bool valid(int x, int y) const {
         return ((x >= 0)
                 && (x < static_cast<const Derived*>(this)->width())
