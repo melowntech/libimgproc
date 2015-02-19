@@ -35,7 +35,10 @@ reconstruct(const ConstRaster &raster, const Filter2 &filter
     const int numChannels(raster.channels());
 
     // accumulate values for whole filtering window
-    double weightSum(0), valueSum[10] = { 0.0 };
+    double weightSum(0.0);
+    double valueSum[10] = {
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    };
     for (int i = y1; i <= y2; ++i) {
         for (int j = x1; j <= x2; ++j) {
             const double weight(filter(j - pos(0), i - pos(1)));
