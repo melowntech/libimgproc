@@ -82,6 +82,9 @@ set(imgproc_SOURCES
   morphology.hpp
 
   embeddedmask.hpp embeddedmask.cpp
+
+  const-raster.hpp
+  filtering.hpp reconstruct.hpp
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
