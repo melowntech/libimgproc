@@ -141,13 +141,13 @@ private:
 
 template <typename ValueType>
 class MaskedCvConstRaster
-    : public CvConstRaster<ValueType>
-    , public MaskedPlugin
+    : public MaskedPlugin
+    , public CvConstRaster<ValueType>
 {
 public:
     MaskedCvConstRaster(const cv::Mat &mat
-                   , const quadtree::RasterMask &mask)
-        : CvConstRaster<ValueType>(mat), MaskedPlugin(mask)
+                        , const quadtree::RasterMask &mask)
+        : MaskedPlugin(mask), CvConstRaster<ValueType>(mat)
     {}
 
     bool valid(int x, int y) const {
@@ -242,13 +242,13 @@ private:
 
 template <typename ViewType>
 class MaskedGilConstRaster
-    : public GilConstRaster<ViewType>
-    , public MaskedPlugin
+    : public MaskedPlugin
+    , public GilConstRaster<ViewType>
 {
 public:
     MaskedGilConstRaster(const ViewType &view
-                                , const quadtree::RasterMask &mask)
-        : MaskedGilConstRaster<ViewType>(view), MaskedPlugin(mask)
+                         , const quadtree::RasterMask &mask)
+        : MaskedPlugin(mask), GilConstRaster<ViewType>(view)
     {}
 
     bool valid(int x, int y) const {
