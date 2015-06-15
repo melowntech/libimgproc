@@ -195,4 +195,15 @@ cv::Mat readGif(const boost::filesystem::path &path)
     return readGif(gif.get(), str(boost::format("file %s") % path));
 }
 
+math::Size2 gifSize(const boost::filesystem::path &path)
+{
+    auto gif(openGif(path));
+    if (!gif) {
+        LOGTHROW(err1, std::runtime_error)
+            << "Failed to open GIF file "
+            << path << ": <" << GifLastError() << ".";
+    }
+    return { int(gif->SWidth), int(gif->SHeight) };
+}
+
 } // namespace imgproc
