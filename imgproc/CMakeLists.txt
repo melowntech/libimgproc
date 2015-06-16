@@ -62,15 +62,6 @@ else()
   message(STATUS "imgproc: compiling without GIF support")
 endif()
 
-if(JASPER_FOUND)
-  message(STATUS "imgproc: compiling in JasPer support")
-  list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_JASPER=1)
-
-  list(APPEND imgproc_DEPENDS JASPER)
-else()
-  message(STATUS "imgproc: compiling without JasPer support")
-endif()
-
 define_module(LIBRARY imgproc
   DEPENDS ${imgproc_DEPENDS}
   DEFINITIONS ${imgproc_DEFINITIONS})
@@ -94,6 +85,8 @@ set(imgproc_SOURCES
 
   const-raster.hpp
   filtering.hpp reconstruct.hpp
+
+  jp2.hpp jp2.cpp
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}

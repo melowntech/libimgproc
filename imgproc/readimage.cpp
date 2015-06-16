@@ -10,65 +10,16 @@
 
 #include "./readimage.hpp"
 #include "./error.hpp"
+#include "./jp2.hpp"
 
 #ifdef IMGPROC_HAS_GIF
 #  include "./gif.hpp"
-#endif
-
-#ifdef IMGPROC_HAS_JASPER
-#  include <jasper/jasper.h>
 #endif
 
 namespace gil = boost::gil;
 namespace ba = boost::algorithm;
 
 namespace imgproc {
-
-namespace detail {
-
-#ifdef IMGPROC_HAS_JASPER
-typedef std::shared_ptr< ::jas_stream_t> JPStream;
-typedef std::shared_ptr< ::jas_image_t> JPImage;
-
-JPStream openJPStream(const boost::filesystem::path &path)
-{
-    auto jp(::jas_stream_fopen(path.c_str(), "rb" ));
-    if (!jp) {
-        LOGTHROW(err1, std::runtime_error)
-            << "Failed to open JP2 file "
-            << path << ".";
-    }
-
-    return JPStream(jp, [](::jas_stream_t *jp) {
-            if (jp) { ::jas_stream_close(jp); }
-        });
-}
-
-JPImage decodeJPImage(const boost::filesystem::path &path
-                      , const JPStream &stream)
-{
-    auto i(::jas_image_decode(stream.get(), -1, nullptr));
-    if (!i) {
-        LOGTHROW(err1, std::runtime_error)
-            << "Failed to decode JP2 image "
-            << path << ".";
-    }
-
-    return JPImage(i, [](::jas_image_t *i) {
-            if (i) { ::jas_image_destroy(i); }
-        });
-}
-
-math::Size2 jp2Size(const boost::filesystem::path &path)
-{
-    auto stream(openJPStream(path));
-    auto image(decodeJPImage(path, stream));
-
-    return { int(jas_image_width(image.get()))
-            , int(jas_image_height(image.get())) };
-}
-#endif
-} // namespace detail
 
 cv::Mat readImage(const void *data, std::size_t size)
 {
@@ -127,13 +78,7 @@ math::Size2 imageSize(const boost::filesystem::path &path)
     }
 
     if (ext == ".jp2") {
-#ifdef IMGPROC_HAS_JASPER
-        return detail::jp2Size(path);
-#else
-    LOGTHROW(err1, Error)
-        << "Cannot determine size of image in file " << path
-        << ": JPEG2000 support not compiled in.";
-#endif
+        return jp2Size(path);
     }
 
     if (ext == ".gif") {
