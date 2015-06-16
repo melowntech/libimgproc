@@ -12,6 +12,24 @@ else()
   message(STATUS "imgproc: compiling without EXIF support")
 endif()
 
+if(PNG_FOUND)
+  message(STATUS "imgproc: compiling in PNG support")
+
+  list(APPEND imgproc_DEPENDS PNG)
+  list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_PNG=1)
+else()
+  message(STATUS "imgproc: compiling without PNG support")
+endif()
+
+if(JPEG_FOUND)
+  message(STATUS "imgproc: compiling in JPEG support")
+
+  list(APPEND imgproc_DEPENDS JPEG)
+  list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_JPEG=1)
+else()
+  message(STATUS "imgproc: compiling without JPEG support")
+endif()
+
 if(TIFF_FOUND)
   message(STATUS "imgproc: compiling in TIFF support")
 

@@ -63,18 +63,36 @@ math::Size2 imageSize(const boost::filesystem::path &path)
     ba::to_lower(ext);
 
     if ((ext == ".jpg") || (ext == ".jpeg")) {
+#ifdef IMGPROC_HAS_JPEG
         auto size(gil::jpeg_read_dimensions(path.string()));
         return { int(size.x), int(size.y) };
+#else
+    LOGTHROW(err1, Error)
+        << "Cannot determine size of image in file " << path
+        << ": JPEG support not compiled in.";
+#endif
     }
 
     if (ext == ".tif") {
+#ifdef IMGPROC_HAS_TIFF
         auto size(gil::tiff_read_dimensions(path.string()));
         return { int(size.x), int(size.y) };
+#else
+    LOGTHROW(err1, Error)
+        << "Cannot determine size of image in file " << path
+        << ": TIFF support not compiled in.";
+#endif
     }
 
     if (ext == ".png") {
+#ifdef IMGPROC_HAS_PNG
         auto size(gil::png_read_dimensions(path.string()));
         return { int(size.x), int(size.y) };
+#else
+    LOGTHROW(err1, Error)
+        << "Cannot determine size of image in file " << path
+        << ": PNG support not compiled in.";
+#endif
     }
 
     if (ext == ".jp2") {
