@@ -1,6 +1,5 @@
 #include <boost/gil/extension/io/jpeg_io.hpp>
 #include <boost/gil/extension/io/png_io.hpp>
-#include <boost/gil/extension/io/tiff_io.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
 
@@ -14,6 +13,10 @@
 
 #ifdef IMGPROC_HAS_GIF
 #  include "./gif.hpp"
+#endif
+
+#ifdef IMGPROC_HAS_TIFF
+#  include "./tiff.hpp"
 #endif
 
 namespace gil = boost::gil;
@@ -41,20 +44,30 @@ cv::Mat readImage(const void *data, std::size_t size)
 
 cv::Mat readImage(const boost::filesystem::path &path)
 {
-    auto image(cv::imread(path.string(), CV_LOAD_IMAGE_COLOR));
+    std::string ext(path.extension().string());
+    ba::to_lower(ext);
 
-#ifdef IMGPROC_HAS_GIF
-    if (!image.data) {
-        // try gif
+#ifdef IMGPROC_HAS_TIFF
+    // TIFF-specific read
+    if (ext == ".tif") {
         try {
-            image = imgproc::readGif(path);
-        } catch (const std::runtime_error &e) {
-        }
+            auto image(imgproc::readTiff(path));
+            if (image.data) { return image; }
+        } catch (const std::runtime_error &e) {}
     }
 #endif
 
-    // TODO: try tiff
-    return image;
+#ifdef IMGPROC_HAS_GIF
+    if (ext == ".gif") {
+        try {
+            auto image(imgproc::readGif(path));
+            if (image.data) { return image; }
+        } catch (const std::runtime_error &e) {}
+    }
+#endif
+
+    // generic read
+    return cv::imread(path.string(), CV_LOAD_IMAGE_COLOR);
 }
 
 math::Size2 imageSize(const boost::filesystem::path &path)
@@ -75,8 +88,7 @@ math::Size2 imageSize(const boost::filesystem::path &path)
 
     if (ext == ".tif") {
 #ifdef IMGPROC_HAS_TIFF
-        auto size(gil::tiff_read_dimensions(path.string()));
-        return { int(size.x), int(size.y) };
+        return tiffSize(path);
 #else
     LOGTHROW(err1, Error)
         << "Cannot determine size of image in file " << path

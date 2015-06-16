@@ -37,6 +37,7 @@ if(TIFF_FOUND)
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_TIFF=1)
 
   set(imgproc_TIFF_SOURCES
+    tiff.hpp tiff.cpp
     bintiff.hpp bintiff.cpp)
 else()
   message(STATUS "imgproc: compiling without TIFF support")
