@@ -1,5 +1,4 @@
 #include <boost/gil/extension/io/jpeg_io.hpp>
-#include <boost/gil/extension/io/png_io.hpp>
 
 #include <boost/algorithm/string/case_conv.hpp>
 
@@ -10,6 +9,7 @@
 #include "./readimage.hpp"
 #include "./error.hpp"
 #include "./jp2.hpp"
+#include "./png_io.hpp"
 
 #ifdef IMGPROC_HAS_GIF
 #  include "./gif.hpp"
