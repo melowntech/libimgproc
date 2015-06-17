@@ -70,6 +70,18 @@ cv::Mat readImage(const boost::filesystem::path &path)
     return cv::imread(path.string(), CV_LOAD_IMAGE_COLOR);
 }
 
+cv::Mat readImage8bit(const boost::filesystem::path &path)
+{
+    auto image(readImage(path));
+    if (image.depth() == CV_16U) {
+        // convert to 8 bits
+        cv::Mat tmp;
+        image.convertTo(tmp, CV_8U, 255.0 / 65535.0);
+        return tmp;
+    }
+    return image;
+}
+
 math::Size2 imageSize(const boost::filesystem::path &path)
 {
     std::string ext(path.extension().string());

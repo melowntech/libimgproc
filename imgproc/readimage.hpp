@@ -13,6 +13,8 @@ cv::Mat readImage(const void *data, std::size_t size);
 
 cv::Mat readImage(const boost::filesystem::path &path);
 
+cv::Mat readImage8bit(const boost::filesystem::path &path);
+
 math::Size2 imageSize(const boost::filesystem::path &path);
 
 } // namespace imgproc
