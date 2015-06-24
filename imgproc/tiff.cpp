@@ -33,10 +33,11 @@ struct ImageParams {
     std::uint16_t orientation;
     std::uint32_t width;
     std::uint32_t height;
-
+    bool tiled;
 
     ImageParams(const fs::path &path)
         : path(path), bpp(8), orientation(1), width(0), height(0)
+        , tiled(false)
     {}
 
     int cvType() const {
@@ -50,6 +51,19 @@ struct ImageParams {
             << " in  TIFF file " << path << ".";
         throw;
     }
+
+    math::Size2 dims() const {
+        switch (orientation) {
+        case ORIENTATION_TOPLEFT:
+        case ORIENTATION_TOPRIGHT:
+        case ORIENTATION_BOTRIGHT:
+        case ORIENTATION_BOTLEFT:
+            return { int(width), int(height) };
+        }
+
+        return { int(height), int(width) };
+    }
+
 };
 
 ImageParams getParams(const fs::path &path)
@@ -62,6 +76,22 @@ ImageParams getParams(const fs::path &path)
 
     if (!TIFFGetField(tiff.get(), TIFFTAG_ORIENTATION, &params.orientation)) {
         params.orientation = 1;
+    } else {
+        switch (params.orientation) {
+        case ORIENTATION_TOPLEFT:
+        case ORIENTATION_TOPRIGHT:
+        case ORIENTATION_BOTRIGHT:
+        case ORIENTATION_BOTLEFT:
+        case ORIENTATION_LEFTTOP:
+        case ORIENTATION_RIGHTTOP:
+        case ORIENTATION_RIGHTBOT:
+        case ORIENTATION_LEFTBOT:
+            break;
+
+        default:
+            params.orientation = 1;
+            break;
+        }
     }
 
     if (!TIFFGetField(tiff.get(), TIFFTAG_IMAGEWIDTH, &params.width)) {
@@ -73,7 +103,113 @@ ImageParams getParams(const fs::path &path)
             << "Cannot get TIFF file " << path << " height.";
     }
 
+    std::uint32_t tileWidth;
+    params.tiled = TIFFGetField(tiff.get(), TIFFTAG_TILEWIDTH, &tileWidth);
+
     return params;
+}
+
+template <typename View>
+void loadTiled(const ImageParams &params, View view)
+{
+    switch (params.orientation) {
+    case ORIENTATION_TOPLEFT:
+    case ORIENTATION_TOPRIGHT:
+    case ORIENTATION_BOTRIGHT:
+    case ORIENTATION_BOTLEFT:
+        // correct
+        gil::tiff_read_and_convert_view(params.path.c_str(), view);
+        break;
+
+    case ORIENTATION_LEFTTOP:
+        // correct
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::flipped_left_right_view(gil::rotated90cw_view(view)));
+        break;
+
+    case ORIENTATION_RIGHTTOP:
+        // read does left-right flip
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::flipped_left_right_view(gil::rotated90ccw_view(view)));
+        break;
+
+    case ORIENTATION_RIGHTBOT:
+        // read does rot180
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::flipped_left_right_view(gil::rotated90cw_view(view)));
+        break;
+
+    case ORIENTATION_LEFTBOT:
+        // read does up-down flip
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::flipped_up_down_view(gil::rotated90cw_view(view)));
+        break;
+    }
+}
+
+template <typename View>
+void loadStriped(const ImageParams &params, View view)
+{
+    switch (params.orientation) {
+    case ORIENTATION_TOPLEFT:
+        gil::tiff_read_and_convert_view(params.path.c_str(), view);
+        break;
+
+    case ORIENTATION_TOPRIGHT:
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::flipped_left_right_view(view));
+        break;
+
+    case ORIENTATION_BOTRIGHT:
+        gil::tiff_read_and_convert_view
+            (params.path.c_str(), rotated180_view(view));
+        break;
+
+    case ORIENTATION_BOTLEFT:
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::flipped_up_down_view(view));
+        break;
+
+    case ORIENTATION_LEFTTOP:
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::flipped_left_right_view(gil::rotated90cw_view(view)));
+        break;
+
+    case ORIENTATION_RIGHTTOP:
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::rotated90ccw_view(view));
+        break;
+
+    case ORIENTATION_RIGHTBOT:
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::flipped_left_right_view(gil::rotated90ccw_view(view)));
+        break;
+
+    case ORIENTATION_LEFTBOT:
+        gil::tiff_read_and_convert_view
+            (params.path.c_str()
+             , gil::rotated90cw_view(view));
+        break;
+    }
+}
+
+template <typename View>
+void load(const ImageParams &params, View view)
+{
+    if (params.tiled) {
+        loadTiled(params, view);
+    } else {
+        loadStriped(params, view);
+    }
 }
 
 } // namespace detail;
@@ -89,19 +225,18 @@ cv::Mat readTiff(const void *data, std::size_t size)
 
 cv::Mat readTiff(const fs::path &path)
 {
-    auto params(detail::getParams(path));
+    const auto params(detail::getParams(path));
+    const auto dims(params.dims());
 
-    cv::Mat img(params.height, params.width, params.cvType());
+    cv::Mat img(dims.height, dims.width, params.cvType());
 
     switch (params.bpp) {
     case 8:
-        gil::tiff_read_and_convert_view
-            (path.c_str(), imgproc::view<gil::bgr8_pixel_t>(img));
+        detail::load(params, imgproc::view<gil::bgr8_pixel_t>(img));
         break;
 
     case 16:
-        gil::tiff_read_and_convert_view
-            (path.c_str(), imgproc::view<gil::bgr16_pixel_t>(img));
+        detail::load(params, imgproc::view<gil::bgr16_pixel_t>(img));
         break;
     }
 
@@ -110,8 +245,7 @@ cv::Mat readTiff(const fs::path &path)
 
 math::Size2 tiffSize(const fs::path &path)
 {
-    auto size(gil::tiff_read_dimensions(path.string()));
-    return { int(size.x), int(size.y) };
+    return detail::getParams(path).dims();
 }
 
 } // namespace imgproc
