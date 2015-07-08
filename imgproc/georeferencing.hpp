@@ -107,6 +107,14 @@ struct Georeferencing2_
     iterator end();
     const_iterator end() const;
     const_iterator cend();
+
+    std::size_t size() const { return 4; }
+
+    const value_type& front() const { return ul; }
+    value_type& front() { return ul; }
+
+    const value_type& back() const { return ll; }
+    value_type& back() { return ll; }
 };
 
 template <typename T>
@@ -163,6 +171,14 @@ struct Georeferencing3_
     iterator end();
     const_iterator end() const;
     const_iterator cend();
+
+    std::size_t size() const { return 4; }
+
+    const value_type& front() const { return ul; }
+    value_type& front() { return ul; }
+
+    const value_type& back() const { return ll; }
+    value_type& back() { return ll; }
 };
 
 template <typename T>
