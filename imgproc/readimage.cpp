@@ -26,7 +26,8 @@ namespace imgproc {
 
 cv::Mat readImage(const void *data, std::size_t size)
 {
-    auto image(cv::imdecode({data, int(size)}, CV_LOAD_IMAGE_COLOR));
+    auto image(cv::imdecode({data, int(size)}
+               , CV_LOAD_IMAGE_COLOR | CV_LOAD_IMAGE_ANYDEPTH));
 
 #ifdef IMGPROC_HAS_GIF
     if (!image.data) {
@@ -67,7 +68,8 @@ cv::Mat readImage(const boost::filesystem::path &path)
 #endif
 
     // generic read
-    return cv::imread(path.string(), CV_LOAD_IMAGE_COLOR);
+    return cv::imread(path.string()
+                      , CV_LOAD_IMAGE_COLOR | CV_LOAD_IMAGE_ANYDEPTH);
 }
 
 cv::Mat readImage8bit(const boost::filesystem::path &path)
