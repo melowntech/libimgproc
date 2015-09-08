@@ -86,6 +86,14 @@ public:
 
     const math::Size2& dims() const { return size_; }
 
+    std::size_t byteCount() const { return bytes_; }
+
+    /** Write binary data representation to stream */
+    void writeData(std::ostream &f) const;
+
+    /** Read binary data representation from stream */
+    void readData(std::istream &f);
+
 private:
     math::Size2 size_;
     std::size_t bytes_;

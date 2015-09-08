@@ -142,4 +142,14 @@ int radius(const RasterMask &m
     return std::sqrt(r2);
 }
 
+void RasterMask::writeData(std::ostream &f) const
+{
+    write(f, mask_.get(), bytes_);
+}
+
+void RasterMask::readData(std::istream &f)
+{
+    read(f, mask_.get(), bytes_);
+}
+
 } } // namespace imgproc::bitfield
