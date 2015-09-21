@@ -83,6 +83,8 @@ public :
     /** test mask for emptiness */
     bool empty() const { return count_ == 0; }
 
+    bool full() const { return count_ == capacity(); }
+
     /** test mask for zero size */
     bool zeroSize() const { return !capacity(); }
 
@@ -170,7 +172,7 @@ private :
 
         void coarsen(uint size, const uint threshold);
 
-        /** Constracts node if all children are either white or black.
+        /** Contracts node if all children are either white or black.
          */
         void contract();
 

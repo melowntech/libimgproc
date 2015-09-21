@@ -343,7 +343,7 @@ void RasterMask::Node::set( uint x, uint y, bool value, uint size )
 
     // contract node if possible
     contract();
- }
+}
 
 void RasterMask::Node::contract()
 {
