@@ -26,6 +26,8 @@ if(JPEG_FOUND)
 
   list(APPEND imgproc_DEPENDS JPEG)
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_JPEG=1)
+  set(imgproc_JPEG_SOURCES
+    jpeg.hpp jpeg.cpp)
 else()
   message(STATUS "imgproc: compiling without JPEG support")
 endif()
@@ -106,6 +108,7 @@ set(imgproc_SOURCES
   filtering.hpp reconstruct.hpp
 
   jp2.hpp jp2.cpp
+  ${imgproc_JPEG_SOURCES}
 )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
