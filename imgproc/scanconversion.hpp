@@ -61,6 +61,18 @@ inline void scanConvertTriangle(
     scanConvertTriangle(pt, ymin, ymax, scanlines);
 }
 
+//! Helper to call scanConvertTriangle with math::Point2
+inline void scanConvertTriangle(
+        const math::Point3 &a, const math::Point3 &b, const math::Point3 &c,
+        int ymin, int ymax, std::vector<Scanline>& scanlines)
+{
+    cv::Point3f pt[3] = {
+        { float(a(0)), float(a(1)), float(a(2)) },
+        { float(b(0)), float(b(1)), float(b(2)) },
+        { float(c(0)), float(c(1)), float(c(2)) },
+    };
+    scanConvertTriangle(pt, ymin, ymax, scanlines);
+}
 
 template<typename Operation>
 void dda(const math::Point2 & p1, const math::Point2 &p2, Operation op)
