@@ -55,6 +55,7 @@ if(OpenCV_FOUND)
     cvmat.hpp rastermask/cvmat.hpp rastermask/cvmat.cpp
     readimage.hpp readimage.cpp
     findrects.hpp detail/findrects.impl.hpp
+    uvpack.hpp uvpack.cpp
     )
 else()
   message(STATUS "imgproc: compiling without OpenCV support")
