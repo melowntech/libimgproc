@@ -52,7 +52,9 @@ if(OpenCV_FOUND)
   list(APPEND imgproc_DEPENDS OpenCV)
 
   set(imgproc_OPENCV_SOURCES
-    cvmat.hpp rastermask/cvmat.hpp rastermask/cvmat.cpp
+    cvmat.hpp
+    rastermask/cvmat.hpp rastermask/cvmat.cpp
+    rastermask/transform.hpp rastermask/transform.cpp
     readimage.hpp readimage.cpp
     findrects.hpp detail/findrects.impl.hpp
     uvpack.hpp uvpack.cpp
