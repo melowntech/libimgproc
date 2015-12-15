@@ -43,6 +43,11 @@ public :
     /** initialize a mask of the same order, optionally copying mask. */
     RasterMask( const RasterMask & mask, const InitMode mode = SOURCE );
 
+    /** Initialize mask from other mask's subtree at given coordinates.
+     */
+    RasterMask(const RasterMask other, const math::Size2 &size
+               , uint depth, uint x, uint y);
+
     /** return size of mask */
     math::Size2 size() const { return math::Size2(sizeX_, sizeY_); }
 
@@ -129,6 +134,15 @@ public :
      */
     void coarsen(const uint threshold = 2);
 
+    /** Returns new raster mask that created from subtreee at given quad.
+     *
+     * Quad is addressed by depth from root and index in grid at given depth.
+     *
+     * Mask is assigned given size.
+     */
+    RasterMask subTree(const math::Size2 &size
+                       , uint depth, uint x, uint y) const;
+
 private :
     void recount();
 
@@ -175,6 +189,10 @@ private :
         /** Contracts node if all children are either white or black.
          */
         void contract();
+
+        /** Finds quad in given subtree.
+         */
+        const Node& find(uint depth, uint x, uint y) const;
 
         NodeType type;
         RasterMask &mask;

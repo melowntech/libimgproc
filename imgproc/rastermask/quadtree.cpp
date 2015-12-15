@@ -22,17 +22,23 @@ namespace {
 
     using utility::binaryio::read;
     using utility::binaryio::write;
+
+    uint computeQuadSize(uint sizeX, uint sizeY)
+    {
+        uint quadSize = 1;
+        while ((quadSize < sizeX) || (quadSize < sizeY)) {
+            quadSize <<= 1;
+        }
+        return quadSize;
+    }
 }
 
 
 RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
-    : sizeX_( sizeX ), sizeY_( sizeY ), root_( *this )
+    : sizeX_( sizeX ), sizeY_( sizeY )
+    , quadSize_(computeQuadSize(sizeX_, sizeY_))
+    , root_( *this )
 {
-    quadSize_ = 1;
-    while (quadSize_ < sizeX_ || quadSize_ < sizeY_) {
-        quadSize_ *= 2;
-    }
-
     switch ( mode ) {
     case EMPTY :
         root_.type = BLACK;
@@ -48,13 +54,10 @@ RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
 }
 
 RasterMask::RasterMask( const math::Size2 & size, const InitMode mode )
-    : sizeX_( size.width ), sizeY_( size.height ), root_( * this )
+    : sizeX_( size.width ), sizeY_( size.height )
+    , quadSize_(computeQuadSize(sizeX_, sizeY_))
+    , root_( * this )
 {
-    quadSize_ = 1;
-    while (quadSize_ < sizeX_ || quadSize_ < sizeY_) {
-        quadSize_ *= 2;
-    }
-
     switch ( mode ) {
     case EMPTY :
         root_.type = BLACK;
@@ -627,6 +630,52 @@ void RasterMask::Node::coarsen(uint size, const uint threshold)
     children->ll.coarsen(size, threshold);
     children->ur.coarsen(size, threshold);
     children->lr.coarsen(size, threshold);
+}
+
+RasterMask::RasterMask(const RasterMask other, const math::Size2 &size
+                       , uint depth, uint x, uint y)
+    : sizeX_(size.width), sizeY_(size.height)
+    , quadSize_(computeQuadSize(sizeX_, sizeY_))
+    , root_(*this)
+{
+    // clone
+    root_ = other.root_.find(depth, x, y);
+    recount();
+}
+
+RasterMask RasterMask::subTree(const math::Size2 &size, uint depth
+                               , uint x, uint y) const
+{
+    return RasterMask(*this, size, depth, x, y);
+}
+
+/** Finds quad in given subtree.
+ */
+const RasterMask::Node& RasterMask::Node::find(uint depth, uint x, uint y)
+    const
+{
+    // if we can descend down (i.e. both tree and depth allow)
+    if (depth && (type == GRAY)) {
+        // find node to descend
+        --depth;
+        uint mask(1 << depth);
+        auto index(((x & mask) ? 1 : 0) | ((y & mask) ? 2 : 0));
+
+        switch (index) {
+        case 0: return children->ul.find(depth, x, y); // upper-left
+        case 1: return children->ur.find(depth, x, y); // upper-right
+        case 2: return children->ll.find(depth, x, y); // lower-left
+        case 3: return children->lr.find(depth, x, y); // lower-right
+
+        default:
+            LOGTHROW(err2, std::runtime_error)
+                << "Wrong child node index " << index << " calculated"
+                " from depth=" << depth << ", x=" << x << ", y=" << y << ".";
+        }
+    }
+
+    // there is nothing more down there
+    return *this;
 }
 
 } } // namespace imgproc::quadtree
