@@ -46,15 +46,29 @@ cv::Mat asCvMat(const RasterMask &mask, double pixelSize)
 
 namespace quadtree {
 
-cv::Mat asCvMat(const RasterMask &mask, double pixelSize)
+math::Size2 maskMatSize(const RasterMask &mask, double pixelSize)
 {
     const auto size(mask.dims());
-    cv::Mat m(long(std::ceil(pixelSize * size.height))
-              , long(std::ceil(pixelSize * size.width))
-              , CV_8UC1);
+    return math::Size2(long(std::ceil(pixelSize * size.height))
+                       , long(std::ceil(pixelSize * size.width)));
+}
+
+cv::Mat asCvMat(const RasterMask &mask, double pixelSize)
+{
+    auto ms(maskMatSize(mask, pixelSize));
+    cv::Mat m(ms.height, ms.width, maskMatDataType(mask));
+    return asCvMat(m, mask, pixelSize);
+}
+
+cv::Mat& asCvMat(cv::Mat &m, const RasterMask &mask, double pixelSize)
+{
+    // ensure m has proper size and type
+    auto ms(maskMatSize(mask, pixelSize));
+    m.create(ms.height, ms.width, maskMatDataType(mask));
+
     m = cv::Scalar(0);
     auto white(cv::Scalar(0xff));
-    
+
     /* NB Tomas D. fixed calculation of end in a way it stopped working for 
      * pixelSize being whole number.
      * 
