@@ -11,6 +11,7 @@
 
 #include "dbglog/dbglog.hpp"
 #include "utility/binaryio.hpp"
+#include "utility/align.hpp"
 
 #include "bitfield.hpp"
 #include "quadtree.hpp"
@@ -23,20 +24,23 @@ namespace {
     using utility::binaryio::read;
     using utility::binaryio::write;
 
-    uint computeQuadSize(uint sizeX, uint sizeY)
+    uint computeDepth(uint sizeX, uint sizeY)
     {
         uint quadSize = 1;
+        uint depth(0);
         while ((quadSize < sizeX) || (quadSize < sizeY)) {
             quadSize <<= 1;
+            ++depth;
         }
-        return quadSize;
+        return depth;
     }
 }
 
 
 RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
     : sizeX_( sizeX ), sizeY_( sizeY )
-    , quadSize_(computeQuadSize(sizeX_, sizeY_))
+    , depth_(computeDepth(sizeX_, sizeY_))
+    , quadSize_(1 << depth_)
     , root_( *this )
 {
     switch ( mode ) {
@@ -55,7 +59,8 @@ RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
 
 RasterMask::RasterMask( const math::Size2 & size, const InitMode mode )
     : sizeX_( size.width ), sizeY_( size.height )
-    , quadSize_(computeQuadSize(sizeX_, sizeY_))
+    , depth_(computeDepth(sizeX_, sizeY_))
+    , quadSize_(1 << depth_)
     , root_( * this )
 {
     switch ( mode ) {
@@ -73,7 +78,9 @@ RasterMask::RasterMask( const math::Size2 & size, const InitMode mode )
 }
 
 RasterMask::RasterMask( const RasterMask & mask, const InitMode mode )
-    : sizeX_( mask.sizeX_ ), sizeY_( mask.sizeY_ ), quadSize_( mask.quadSize_ ),
+    : sizeX_( mask.sizeX_ ), sizeY_( mask.sizeY_ )
+    , depth_(mask.depth_)
+    , quadSize_( mask.quadSize_ ),
       root_( *this )
 {
     switch ( mode ) {
@@ -177,11 +184,56 @@ void RasterMask::load( std::istream & f )
     f.read( reinterpret_cast<char *>( & sizeX_ ), sizeof( uint ) );
     f.read( reinterpret_cast<char *>( & sizeY_ ), sizeof( uint ) );
     f.read( reinterpret_cast<char *>( & quadSize_ ), sizeof( uint ) );
+
+    // calculate depth and fix quad size
+    depth_ = computeDepth(sizeX_, sizeY_);
+    quadSize_ = (1 << depth_);
+
     std::uint32_t count(0);
     f.read( reinterpret_cast<char *>( & count ), sizeof( count ) );
 
     root_.load( f );
     recount();
+}
+
+void RasterMask::dump2( std::ostream & f ) const
+{
+    // TODO: move to mappedqtree
+    const char IO_MAGIC[6] = { 'M', 'Q', 'M', 'A', 'S', 'K' };
+    write(f, IO_MAGIC); // 6 bytes
+    write(f, uint8_t(0)); // reserved
+    write(f, uint8_t(0)); // reserved
+
+    // write depth
+    write(f, std::uint8_t(depth_));
+
+    // make room for data size
+    auto sizePlace(f.tellp());
+    f.seekp(sizePlace + std::streampos(sizeof(std::uint32_t)));
+
+    // write root node or descend
+    switch (root_.type) {
+    case NodeType::WHITE:
+        write(f, std::uint8_t(0xff));
+        break;
+
+    case NodeType::BLACK:
+        write(f, std::uint8_t(0x00));
+        break;
+
+    default:
+        root_.dump2(f);
+        break;
+    }
+
+    // compute data size and write to pre-allocated place
+    auto end(f.tellp());
+    f.seekp(sizePlace);
+    std::uint32_t size(end - sizePlace - sizeof(std::uint32_t));
+    write(f, size);
+
+    // move back to the end
+    f.seekp(end);
 }
 
 RasterMask & RasterMask::operator = ( const RasterMask & op )
@@ -423,6 +475,61 @@ void RasterMask::Node::load( std::istream & f )
     }
 }
 
+void RasterMask::Node::dump2(std::ostream &f) const
+{
+    // NB: this function must be called only when type == GRAY
+
+    auto bitValue([](NodeType type, std::uint8_t offset) -> std::uint8_t
+    {
+        switch (type) {
+        case NodeType::WHITE: return 0x3 << (2 * offset);
+        case NodeType::BLACK: return 0x0;
+        case NodeType::GRAY: return 0x1 << (2 * offset);
+        }
+        return 0;
+    });
+
+    auto writeSubtree([&f](const Node &node)
+    {
+        if (node.type != NodeType::GRAY) { return; }
+
+        // record current position and align it to sizeof jump value
+        auto jump(utility::align(f.tellp(), sizeof(std::uint32_t)));
+
+        // allocate space for jump offset
+        f.seekp(jump + std::streampos(sizeof(std::uint32_t)));
+
+        // write subtree
+        node.dump2(f);
+
+        // remember current position
+        auto end(f.tellp());
+
+        // rewind to allocated space
+        f.seekp(jump);
+
+        // calculate jump value (take size of jump value into account)
+        std::uint32_t jumpValue(end - jump - sizeof(jumpValue));
+        write(f, jumpValue);
+
+        // jump to the end again
+        f.seekp(end);
+    });
+
+    std::uint8_t value
+        (bitValue(children->ul.type, 3)
+         | bitValue(children->ur.type, 2)
+         | bitValue(children->ll.type, 1)
+         | bitValue(children->lr.type, 0));
+
+    write(f, value);
+
+    writeSubtree(children->ul);
+    writeSubtree(children->ur);
+    writeSubtree(children->ll);
+    writeSubtree(children->lr);
+}
+
 imgproc::bitfield::RasterMask RasterMask::asBitfield() const
 {
     LOG(info1) << "Converting raster mask from quad-tree based representation";
@@ -635,7 +742,8 @@ void RasterMask::Node::coarsen(uint size, const uint threshold)
 RasterMask::RasterMask(const RasterMask other, const math::Size2 &size
                        , uint depth, uint x, uint y)
     : sizeX_(size.width), sizeY_(size.height)
-    , quadSize_(computeQuadSize(sizeX_, sizeY_))
+    , depth_(computeDepth(sizeX_, sizeY_))
+    , quadSize_(1 << depth_)
     , root_(*this)
 {
     // clone
@@ -676,6 +784,65 @@ const RasterMask::Node& RasterMask::Node::find(uint depth, uint x, uint y)
 
     // there is nothing more down there
     return *this;
+}
+
+void RasterMask::setQuad(int depth, int x, int y, bool value)
+{
+    if (depth > int(depth_)) {
+        // outside of valid tree
+        return;
+    }
+    auto diff(depth_ - depth);
+
+    // convert position to give depth
+    x <<= diff;
+    y <<= diff;
+
+    if ((x < 0) || (x >= int(sizeX_)) || (y < 0) || (y >= int(sizeY_))) {
+        // outside of valid tree
+        return;
+    }
+
+    root_.setQuad(depth, x, y, value, quadSize_);
+}
+
+void RasterMask::Node::setQuad(uint depth, uint x, uint y, bool value
+                               , uint size)
+{
+    uint split = size >> 1;
+
+    // split node if necessarry
+    if (depth && ((type == BLACK && value)
+                  || (type == WHITE && !value)))
+    {
+        children = mask.malloc(type);
+        type = GRAY;
+    }
+
+    // process
+    if (type == BLACK) {
+        if (value) { type = WHITE; mask.count_ += (size * size); }
+    } else if (type == WHITE) {
+        if (!value) { type = BLACK; mask.count_ -= (size * size); }
+    } else if (type == GRAY) {
+        if (x < split) {
+            if (y < split) {
+                children->ul.setQuad(depth - 1, x, y, value, split);
+            } else {
+                children->ll.setQuad(depth - 1, x, y - split, value, split );
+            }
+        } else {
+            if ( y < split ) {
+                children->ur.setQuad(depth - 1, x - split, y, value, split );
+            } else {
+                children->lr.setQuad(depth - 1, x - split, y - split, value
+                                     , split );
+            }
+        }
+    }
+
+    // contract node if possible
+    contract();
 }
 
 } } // namespace imgproc::quadtree

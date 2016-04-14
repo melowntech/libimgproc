@@ -8,6 +8,8 @@
 #ifndef imgproc_rastermask_inline_quadtree_hpp_included_
 #define imgproc_rastermask_inline_quadtree_hpp_included_
 
+#include <boost/logic/tribool.hpp>
+
 namespace imgproc { namespace quadtree {
 
 template <typename Op>
@@ -64,6 +66,41 @@ inline void RasterMask::Node::descend(uint x, uint y, uint size
     op(x, y, ((x + size) > mask.sizeX_) ? (mask.sizeX_ - x) : size
        , ((y + size) > mask.sizeY_) ? (mask.sizeY_ - y) : size
        , (type == WHITE));
+}
+
+template <typename Op>
+inline void RasterMask::forEachQuad(uint depth, const Op &op) const
+{
+    root_.descend(depth, 0, 0, quadSize_, op);
+}
+
+template <typename Op>
+inline void RasterMask::Node::descend(uint depth, uint x, uint y, uint size
+                                      , const Op &op)
+    const
+{
+    boost::tribool value(boost::indeterminate);
+    switch (type) {
+    case NodeType::GRAY:
+        if (depth) {
+            // descend down
+            uint split = size / 2;
+            children->ul.descend(depth - 1, x, y, split, op);
+            children->ll.descend(depth - 1, x, y + split, split, op);
+            children->ur.descend(depth - 1, x + split, y, split, op);
+            children->lr.descend(depth - 1, x + split, y + split, split, op);
+            return;
+        }
+        break;
+
+    default:
+        value = (type == NodeType::WHITE);
+    }
+
+    // call operation for black/white node
+    op(x, y, ((x + size) > mask.sizeX_) ? (mask.sizeX_ - x) : size
+       , ((y + size) > mask.sizeY_) ? (mask.sizeY_ - y) : size
+       , value);
 }
 
 } } // namespace imgproc::quadtree

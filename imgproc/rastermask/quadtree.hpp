@@ -72,6 +72,14 @@ public :
     /** set mask value at given pos. */
     void set( int x, int y, bool value = true );
 
+    /** set mask value at whole quad.
+     *
+     *  \param depth depth in tree, root starts at 0
+     *  \param x horizontal index in quads at given depth
+     *  \param y horizontal index in quads at given depth
+     */
+    void setQuad(int depth, int x, int y, bool value = true);
+
     /** Resets whole mask to given value. */
     void reset(bool value = true);
 
@@ -99,6 +107,9 @@ public :
     /** load mask from stream */
     void load( std::istream & f );
 
+    /** dump mask to stream */
+    void dump2( std::ostream & f ) const;
+
     /** dump mask to bitfield mask */
     imgproc::bitfield::RasterMask asBitfield() const;
 
@@ -118,6 +129,13 @@ public :
      */
     template <typename Op>
     void forEach(const Op &op, Filter filter = Filter::both)  const;
+
+    /** Runs op(x, y, xsize, ysize, boost::tribool) for each black/white/gray
+     *  quad (gray is marked by indeterminate value). Tree descent is terminated
+     *  at given tree depth.
+     */
+    template <typename Op>
+    void forEachQuad(uint depth, const Op &op) const;
 
     /** Merges other's quadtree in this quadtree.
      *
@@ -143,6 +161,10 @@ public :
     RasterMask subTree(const math::Size2 &size
                        , uint depth, uint x, uint y) const;
 
+    /** Returns maximal depth of tree.
+     */
+    uint depth() const { return depth_; }
+
 private :
     void recount();
 
@@ -159,12 +181,15 @@ private :
 
         bool get( uint x, uint y, uint size ) const;
         void set( uint x, uint y, bool value, uint size );
+        void setQuad(uint depth, uint x, uint y, bool value, uint size);
 
         Node & operator = ( const Node & s );
         ~Node();
 
         void dump( std::ostream & f ) const;
         void load( std::istream & f );
+
+        void dump2( std::ostream & f ) const;
 
         void dump( imgproc::bitfield::RasterMask &m, uint x, uint y
                    , uint size ) const;
@@ -173,6 +198,10 @@ private :
         template <typename Op>
         void descend(uint x, uint y, uint size, const Op &op
                      , Filter filter) const;
+
+        /** Called from RasterMask::forEachQuad */
+        template <typename Op>
+        void descend(uint depth, uint x, uint y, uint size, const Op &op) const;
 
         /** Inverts node (black -> white, white->black, gray is recursed down).
          */
@@ -217,6 +246,7 @@ private :
     void free(NodeChildren *&children);
 
     uint sizeX_, sizeY_;
+    uint depth_;
     uint quadSize_;
     ulong count_;
     Node root_;

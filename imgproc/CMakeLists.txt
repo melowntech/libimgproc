@@ -97,6 +97,7 @@ set(imgproc_SOURCES
   spectral_analysis.hpp spectral_analysis.cpp
   rastermask.hpp rastermask/bitfield.hpp rastermask/quadtree.hpp
   rastermask/bitfield.cpp rastermask/quadtree.cpp
+  rastermask/mappedqtree.cpp rastermask/mappedqtree.cpp
 
   georeferencing.hpp
   scanconversion.hpp scanconversion.cpp
