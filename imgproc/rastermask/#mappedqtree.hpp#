@@ -145,7 +145,7 @@ template <typename Op>
 void RasterMask::forEachQuad(const Op &op, unsigned int depthLimit
                              , const Extents *extents) const
 {
-    // this is special handling for root node that has no explicit
+   // this is special handling for root node that has no explicit
     // representation
     std::size_t root(start_);
     // load node value
