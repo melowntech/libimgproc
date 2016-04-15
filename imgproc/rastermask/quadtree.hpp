@@ -22,6 +22,10 @@
 
 /**** quad-tree version of rastermask ****/
 
+namespace imgproc { namespace mappedqtree {
+class RasterMask;
+} } // imgproc::mappedqtree
+
 namespace imgproc { namespace quadtree {
 
 class RasterMask {
@@ -106,9 +110,6 @@ public :
 
     /** load mask from stream */
     void load( std::istream & f );
-
-    /** dump mask to stream */
-    void dump2( std::ostream & f ) const;
 
     /** dump mask to bitfield mask */
     imgproc::bitfield::RasterMask asBitfield() const;
@@ -250,6 +251,10 @@ private :
     uint quadSize_;
     ulong count_;
     Node root_;
+
+    /** Needed for mappedqtree::RasterMask creation.
+     */
+    friend class mappedqtree::RasterMask;
 };
 
 } } // namespace imgproc::quadtree

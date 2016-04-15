@@ -25,6 +25,10 @@
 
 /**** mappedqtree version of rastermask ****/
 
+namespace imgproc { namespace quadtree {
+class RasterMask;
+} } // imgproc::quadtree
+
 namespace imgproc { namespace mappedqtree {
 
 class RasterMask {
@@ -58,6 +62,11 @@ public:
     math::Size2i size() const {
         return math::Size2i(1 << depth_, 1 << depth_);
     }
+
+    /** Writes quadtree::RasterMask in the mappedqtree::RasterMask's on-disk
+     *  format.
+     */
+    static void write(std::ostream &out, const quadtree::RasterMask &mask);
 
 private:
     template <typename T>

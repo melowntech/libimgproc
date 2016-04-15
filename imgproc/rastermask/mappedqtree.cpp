@@ -9,6 +9,7 @@
 #include "utility/align.hpp"
 
 #include "./mappedqtree.hpp"
+#include "./quadtree.hpp"
 
 namespace bi = boost::interprocess;
 namespace bin = utility::binaryio;
@@ -85,6 +86,107 @@ RasterMask::RasterMask(const boost::filesystem::path &path
     , depth_(memory_->depth)
     , start_(memory_->treeStart)
 {
+}
+
+void RasterMask::write(std::ostream &f, const quadtree::RasterMask &mask)
+{
+    typedef quadtree::RasterMask::Node Node;
+    typedef quadtree::RasterMask::NodeType NodeType;
+
+    struct Writer {
+        Writer(const Node &node, std::ostream &f)
+            : f(f)
+        {
+            write(node);
+        }
+
+        inline std::uint8_t bitValue(NodeType type, std::uint8_t offset) {
+            switch (type) {
+            case NodeType::WHITE: return 0x3 << (2 * offset);
+            case NodeType::BLACK: return 0x0;
+            case NodeType::GRAY: return 0x1 << (2 * offset);
+            }
+            return 0;
+        }
+
+        inline void writeSubtree(const Node &node) {
+            if (node.type != NodeType::GRAY) { return; }
+
+            // record current position and align it to sizeof jump value
+            auto jump(utility::align(f.tellp(), sizeof(std::uint32_t)));
+
+            // allocate space for jump offset
+            f.seekp(jump + std::streampos(sizeof(std::uint32_t)));
+
+            // write subtree
+            write(node);
+
+            // remember current position
+            auto end(f.tellp());
+
+            // rewind to allocated space
+            f.seekp(jump);
+
+            // calculate jump value (take size of jump value into account)
+            std::uint32_t jumpValue(end - jump - sizeof(jumpValue));
+            bin::write(f, jumpValue);
+
+            // jump to the end again
+            f.seekp(end);
+        }
+
+        inline void write(const Node &node) {
+            std::uint8_t value
+                (bitValue(node.children->ul.type, 3)
+                 | bitValue(node.children->ur.type, 2)
+                 | bitValue(node.children->ll.type, 1)
+                 | bitValue(node.children->lr.type, 0));
+
+            bin::write(f, value);
+
+            writeSubtree(node.children->ul);
+            writeSubtree(node.children->ur);
+            writeSubtree(node.children->ll);
+            writeSubtree(node.children->lr);
+        }
+
+        std::ostream &f;
+    };
+
+    bin::write(f, IO_MAGIC); // 6 bytes
+    bin::write(f, uint8_t(0)); // reserved
+    bin::write(f, uint8_t(0)); // reserved
+
+    // write depth
+    bin::write(f, std::uint8_t(mask.depth()));
+
+    // make room for data size
+    auto sizePlace(f.tellp());
+    f.seekp(sizePlace + std::streampos(sizeof(std::uint32_t)));
+
+    // write root node or descend
+    switch (mask.root_.type) {
+    case NodeType::WHITE:
+        bin::write(f, std::uint8_t(0xff));
+        break;
+
+    case NodeType::BLACK:
+        bin::write(f, std::uint8_t(0x00));
+        break;
+
+    default:
+        Writer(mask.root_, f);
+        break;
+    }
+
+    // compute data size and write to pre-allocated place
+    auto end(f.tellp());
+    f.seekp(sizePlace);
+    std::uint32_t size(end - sizePlace - sizeof(std::uint32_t));
+    bin::write(f, size);
+
+    // move back to the end
+    f.seekp(end);
 }
 
 } } // namespace imgproc::mappedqtree

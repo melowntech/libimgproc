@@ -196,46 +196,6 @@ void RasterMask::load( std::istream & f )
     recount();
 }
 
-void RasterMask::dump2( std::ostream & f ) const
-{
-    // TODO: move to mappedqtree
-    const char IO_MAGIC[6] = { 'M', 'Q', 'M', 'A', 'S', 'K' };
-    write(f, IO_MAGIC); // 6 bytes
-    write(f, uint8_t(0)); // reserved
-    write(f, uint8_t(0)); // reserved
-
-    // write depth
-    write(f, std::uint8_t(depth_));
-
-    // make room for data size
-    auto sizePlace(f.tellp());
-    f.seekp(sizePlace + std::streampos(sizeof(std::uint32_t)));
-
-    // write root node or descend
-    switch (root_.type) {
-    case NodeType::WHITE:
-        write(f, std::uint8_t(0xff));
-        break;
-
-    case NodeType::BLACK:
-        write(f, std::uint8_t(0x00));
-        break;
-
-    default:
-        root_.dump2(f);
-        break;
-    }
-
-    // compute data size and write to pre-allocated place
-    auto end(f.tellp());
-    f.seekp(sizePlace);
-    std::uint32_t size(end - sizePlace - sizeof(std::uint32_t));
-    write(f, size);
-
-    // move back to the end
-    f.seekp(end);
-}
-
 RasterMask & RasterMask::operator = ( const RasterMask & op )
 {
     if ( & op == this ) return *this;
@@ -473,61 +433,6 @@ void RasterMask::Node::load( std::istream & f )
         children->ll.load( f );
         children->lr.load( f );
     }
-}
-
-void RasterMask::Node::dump2(std::ostream &f) const
-{
-    // NB: this function must be called only when type == GRAY
-
-    auto bitValue([](NodeType type, std::uint8_t offset) -> std::uint8_t
-    {
-        switch (type) {
-        case NodeType::WHITE: return 0x3 << (2 * offset);
-        case NodeType::BLACK: return 0x0;
-        case NodeType::GRAY: return 0x1 << (2 * offset);
-        }
-        return 0;
-    });
-
-    auto writeSubtree([&f](const Node &node)
-    {
-        if (node.type != NodeType::GRAY) { return; }
-
-        // record current position and align it to sizeof jump value
-        auto jump(utility::align(f.tellp(), sizeof(std::uint32_t)));
-
-        // allocate space for jump offset
-        f.seekp(jump + std::streampos(sizeof(std::uint32_t)));
-
-        // write subtree
-        node.dump2(f);
-
-        // remember current position
-        auto end(f.tellp());
-
-        // rewind to allocated space
-        f.seekp(jump);
-
-        // calculate jump value (take size of jump value into account)
-        std::uint32_t jumpValue(end - jump - sizeof(jumpValue));
-        write(f, jumpValue);
-
-        // jump to the end again
-        f.seekp(end);
-    });
-
-    std::uint8_t value
-        (bitValue(children->ul.type, 3)
-         | bitValue(children->ur.type, 2)
-         | bitValue(children->ll.type, 1)
-         | bitValue(children->lr.type, 0));
-
-    write(f, value);
-
-    writeSubtree(children->ul);
-    writeSubtree(children->ur);
-    writeSubtree(children->ll);
-    writeSubtree(children->lr);
 }
 
 imgproc::bitfield::RasterMask RasterMask::asBitfield() const
