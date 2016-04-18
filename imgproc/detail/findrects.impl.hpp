@@ -118,24 +118,18 @@ findRectangles(const cv::Mat &img, Filter filter)
 
     for (int j(0); j < img.rows; ++j) {
         for (int i(0); i < img.cols; ++i) {
-            if (!i || !j) {
-                // force top row and left column to be 1
-                acc.at<cv::Vec2i>(j, i) = { 1, 1 };
-                continue;
-            }
-
             int width(1);
             int height(1);
 
             auto currentPx(img.at<PixelType>(j, i));
-            if (img.at<PixelType>(j, i - 1) == currentPx) {
+            if (i && (img.at<PixelType>(j, i - 1) == currentPx)) {
                 auto left(acc.at<cv::Vec2i>(j, i - 1));
 
                 // something to the left, continue line
                 width += left[0];
             }
 
-            if (img.at<PixelType>(j - 1, i) == currentPx) {
+            if (j && (img.at<PixelType>(j - 1, i) == currentPx)) {
                 auto up (acc.at<cv::Vec2i>(j - 1, i));
                 // something to the up, try to continue rectangle
                 if (up[0] >= width) {
