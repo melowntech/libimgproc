@@ -734,14 +734,81 @@ void RasterMask::Node::setQuad(uint depth, uint x, uint y, bool value
             if (y < split) {
                 children->ul.setQuad(depth - 1, x, y, value, split);
             } else {
-                children->ll.setQuad(depth - 1, x, y - split, value, split );
+                children->ll.setQuad(depth - 1, x, y - split, value, split);
             }
         } else {
             if ( y < split ) {
-                children->ur.setQuad(depth - 1, x - split, y, value, split );
+                children->ur.setQuad(depth - 1, x - split, y, value, split);
             } else {
                 children->lr.setQuad(depth - 1, x - split, y - split, value
-                                     , split );
+                                     , split);
+            }
+        }
+    }
+
+    // contract node if possible
+    contract();
+}
+
+void RasterMask::setSubtree(int depth, int x, int y, const RasterMask &mask)
+{
+    if (depth > int(depth_)) {
+        // outside of valid tree
+        return;
+    }
+
+    if ((depth + mask.depth_) > int(depth_)) {
+        // too deep tree
+        return;
+    }
+
+    auto diff(depth_ - depth);
+
+    // convert position to give depth
+    x <<= diff;
+    y <<= diff;
+
+    if ((x < 0) || (x >= int(sizeX_)) || (y < 0) || (y >= int(sizeY_))) {
+        // outside of valid tree
+        return;
+    }
+
+    root_.setSubtree(depth, x, y, mask, quadSize_);
+}
+
+void RasterMask::Node::setSubtree(uint depth, uint x, uint y
+                                  , const RasterMask &other, uint size)
+{
+    uint split = size >> 1;
+
+    // split node if necessarry
+    if (depth && (type != GRAY)) {
+        children = mask.malloc(type);
+        type = GRAY;
+    }
+
+    if (!depth) {
+        // wea are at proper bottom
+        auto update((type == WHITE) ? -(size * size) : 0);
+
+        // copy node
+        *this = other.root_;
+
+        // update mask count
+        mask.count_ += other.count_ + update;
+    } else if (type == GRAY) {
+        if (x < split) {
+            if (y < split) {
+                children->ul.setSubtree(depth - 1, x, y, other, split);
+            } else {
+                children->ll.setSubtree(depth - 1, x, y - split, other, split);
+            }
+        } else {
+            if (y < split) {
+                children->ur.setSubtree(depth - 1, x - split, y, other, split);
+            } else {
+                children->lr.setSubtree(depth - 1, x - split, y - split, other
+                                        , split);
             }
         }
     }

@@ -80,9 +80,19 @@ public :
      *
      *  \param depth depth in tree, root starts at 0
      *  \param x horizontal index in quads at given depth
-     *  \param y horizontal index in quads at given depth
+     *  \param y vertical index in quads at given depth
+     *  \param value value to se to
      */
     void setQuad(int depth, int x, int y, bool value = true);
+
+    /** Set subtree from other mask. Subtree is clipped at maximum mask depth.
+     *
+     *  \param depth depth in tree, root starts at 0
+     *  \param x horizontal index in quads at given depth
+     *  \param y vertical index in quads at given depth
+     *  \param mask to source data from
+     */
+    void setSubtree(int depth, int x, int y, const RasterMask &mask);
 
     /** Resets whole mask to given value. */
     void reset(bool value = true);
@@ -183,6 +193,8 @@ private :
         bool get( uint x, uint y, uint size ) const;
         void set( uint x, uint y, bool value, uint size );
         void setQuad(uint depth, uint x, uint y, bool value, uint size);
+        void setSubtree(uint depth, uint x, uint y, const RasterMask &other
+                        , uint size);
 
         Node & operator = ( const Node & s );
         ~Node();
