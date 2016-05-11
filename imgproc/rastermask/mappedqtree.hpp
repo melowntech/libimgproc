@@ -65,8 +65,13 @@ public:
 
     /** Writes quadtree::RasterMask in the mappedqtree::RasterMask's on-disk
      *  format.
+     *
+     *  Start node (detauls to mask root) can be set by (depth, x,
+     *  y). Coordinates are in grid defined by nodes at given depth.
      */
-    static void write(std::ostream &out, const quadtree::RasterMask &mask);
+    static void write(std::ostream &out, const quadtree::RasterMask &mask
+                      , unsigned int depth = 0, unsigned int x = 0
+                      , unsigned int y = 0);
 
 private:
     template <typename T>

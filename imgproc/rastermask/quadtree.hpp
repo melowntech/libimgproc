@@ -196,6 +196,8 @@ private :
         void setSubtree(uint depth, uint x, uint y, const RasterMask &other
                         , uint size);
 
+        const Node* findSubtree(uint depth, uint x, uint y, uint size) const;
+
         Node & operator = ( const Node & s );
         ~Node();
 
@@ -257,6 +259,7 @@ private :
     NodeChildren* malloc();
     NodeChildren* malloc(NodeType type);
     void free(NodeChildren *&children);
+    const Node* findSubtree(int depth, int x, int y) const;
 
     uint sizeX_, sizeY_;
     uint depth_;

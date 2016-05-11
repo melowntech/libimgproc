@@ -817,4 +817,59 @@ void RasterMask::Node::setSubtree(uint depth, uint x, uint y
     contract();
 }
 
+const RasterMask::Node* RasterMask::findSubtree(int depth, int x, int y)
+    const
+{
+    if (depth > int(depth_)) {
+        // outside of valid tree
+        return nullptr;
+    }
+    auto diff(depth_ - depth);
+
+    // convert position to give depth
+    x <<= diff;
+    y <<= diff;
+
+    if ((x < 0) || (x >= int(sizeX_)) || (y < 0) || (y >= int(sizeY_))) {
+        // outside of valid tree
+        return nullptr;
+    }
+
+    // launch search
+    return root_.findSubtree(depth, x, y, quadSize_);
+}
+
+const RasterMask::Node*
+RasterMask::Node::findSubtree(uint depth, uint x, uint y, uint size) const
+{
+    uint split = size >> 1;
+
+    if (!depth) {
+        // bottom -> return node
+        return this;
+    }
+
+    if ((type == BLACK) || (type == WHITE)) {
+        // single color, we can safely return this node even not at bottom
+        return this;
+    }
+
+    // gray node, descend
+
+    if (x < split) {
+        if (y < split) {
+            return children->ul.findSubtree(depth - 1, x, y, split);
+        } else {
+            return children->ll.findSubtree(depth - 1, x, y - split, split);
+        }
+    } else {
+        if (y < split) {
+            return children->ur.findSubtree(depth - 1, x - split, y, split);
+        } else {
+            return children->lr.findSubtree(depth - 1, x - split, y - split
+                                            , split);
+        }
+    }
+}
+
 } } // namespace imgproc::quadtree

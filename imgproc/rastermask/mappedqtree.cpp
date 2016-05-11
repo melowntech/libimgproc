@@ -88,7 +88,8 @@ RasterMask::RasterMask(const boost::filesystem::path &path
 {
 }
 
-void RasterMask::write(std::ostream &f, const quadtree::RasterMask &mask)
+void RasterMask::write(std::ostream &f, const quadtree::RasterMask &mask
+                       , unsigned int depth, unsigned int x, unsigned int y)
 {
     typedef quadtree::RasterMask::Node Node;
     typedef quadtree::RasterMask::NodeType NodeType;
@@ -158,25 +159,31 @@ void RasterMask::write(std::ostream &f, const quadtree::RasterMask &mask)
     bin::write(f, uint8_t(0)); // reserved
 
     // write depth
-    bin::write(f, std::uint8_t(mask.depth()));
+    auto d(mask.depth() - depth);
+    bin::write(f, std::uint8_t(d));
 
     // make room for data size
     auto sizePlace(f.tellp());
     f.seekp(sizePlace + std::streampos(sizeof(std::uint32_t)));
 
-    // write root node or descend
-    switch (mask.root_.type) {
-    case NodeType::WHITE:
-        bin::write(f, std::uint8_t(0xff));
-        break;
+    if (const auto *start = mask.findSubtree(depth, x, y)) {
+        // write root node or descend
+        switch (start->type) {
+        case NodeType::WHITE:
+            bin::write(f, std::uint8_t(0xff));
+            break;
 
-    case NodeType::BLACK:
+        case NodeType::BLACK:
+            bin::write(f, std::uint8_t(0x00));
+            break;
+
+        default:
+            Writer(*start, f);
+            break;
+        }
+    } else {
+        // subtree not found -> black by definition
         bin::write(f, std::uint8_t(0x00));
-        break;
-
-    default:
-        Writer(mask.root_, f);
-        break;
     }
 
     // compute data size and write to pre-allocated place
