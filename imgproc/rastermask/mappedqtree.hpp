@@ -38,8 +38,15 @@ public:
     RasterMask(const boost::filesystem::path &path
                , std::size_t offset = 0);
 
+    /** Combines RasterMask() and RasterMask(path) into one constructor.
+     */
+    RasterMask(const boost::optional<boost::filesystem::path> &path
+               , std::size_t offset = 0);
+
     RasterMask(const RasterMask&) = default;
     RasterMask& operator=(const RasterMask&) = default;
+
+    operator bool() const { return memory_.get(); }
 
     typedef math::Extents2_<unsigned int> Extents;
 
@@ -53,6 +60,29 @@ public:
         {}
     };
 
+    struct Node {
+        unsigned int size;
+        unsigned int depth;
+        unsigned int x;
+        unsigned int y;
+
+        Node(unsigned int size, unsigned int depth = 0, unsigned int x = 0
+             , unsigned int y = 0)
+            : size(size), depth(depth), x(x), y(y)
+        {}
+
+        Node child(unsigned int ix = 0, unsigned int iy = 0) const {
+            return { size >> 1, depth + 1, x + ix, y + iy };
+        }
+
+        void shift(int diff) {
+            size >>= diff;
+            x >>= diff;
+            y >>= diff;
+        }
+    };
+
+    // calls op(Node, boost::tribool) for each node.
     template <typename Op>
     void forEachQuad(const Op &op, const Constraints &constraints
                      = Constraints()) const;
@@ -84,8 +114,7 @@ private:
 
     /** Called from RasterMask::forEachQuad */
     template <typename Op>
-    void descend(unsigned int x, unsigned int y, unsigned int size
-                 , std::size_t index, const Op &op
+    void descend(const Node &node, std::size_t index, const Op &op
                  , unsigned int depthLimit, const Extents *extents) const;
 
     struct Memory;
@@ -140,15 +169,15 @@ void RasterMask::forEachQuad(const Op &op, const Constraints &constraints)
 
 namespace detail {
 
-inline bool checkExtents(const RasterMask::Extents *&extents, unsigned int x
-                         , unsigned int y, unsigned int size)
+inline bool checkExtents(const RasterMask::Extents *&extents
+                         , const RasterMask::Node &node)
 {
     if (!extents) { return true; }
 
-    if ((x + size) <= extents->ll(0)) { return false; }
-    if (x >= extents->ur(0)) { return false; }
-    if ((y + size) <= extents->ll(1)) { return false; }
-    if (y >= extents->ur(1)) { return false; }
+    if ((node.x + node.size) <= extents->ll(0)) { return false; }
+    if (node.x >= extents->ur(0)) { return false; }
+    if ((node.y + node.size) <= extents->ll(1)) { return false; }
+    if (node.y >= extents->ur(1)) { return false; }
 
     return true;
 }
@@ -164,20 +193,20 @@ void RasterMask::forEachQuad(const Op &op, unsigned int depthLimit
     std::size_t root(start_);
     // load node value
     const auto value(read<std::uint8_t>(root));
-    auto size(1 << depth_);
 
-    if (!detail::checkExtents(extents, 0, 0, size)) { return; }
+    Node rn(1 << depth_);
+    if (!detail::checkExtents(extents, rn)) { return; }
 
     // handle value
     switch (value) {
     case 0x00:
         // root is black leaf node
-        op(0, 0, size, false);
+        op(rn, false);
         return;
 
     case 0xff:
         // root is white leaf node
-        op(0, 0, size, true);
+        op(rn, true);
         return;
 
     default: break;
@@ -186,18 +215,16 @@ void RasterMask::forEachQuad(const Op &op, unsigned int depthLimit
     // root has some children: handle if at allowed bottom
     if (!depthLimit) {
         // bottom -> execute
-        op(0, 0, size, boost::indeterminate);
+        op(rn, boost::indeterminate);
         return;
     }
 
     // descend down the tree
-    descend(0, 0, size, start_, op, depthLimit, extents);
+    descend(rn, start_, op, depthLimit, extents);
 }
 
 template <typename Op>
-void RasterMask::descend(unsigned int x, unsigned int y
-                         , unsigned int size, std::size_t index
-                         , const Op &op
+void RasterMask::descend(const Node &node, std::size_t index, const Op &op
                          , unsigned int depthLimit, const Extents *extents)
     const
 {
@@ -209,23 +236,21 @@ void RasterMask::descend(unsigned int x, unsigned int y
         return ((children >> (2 * offset)) & 0x3);
     });
 
-    auto processSubtree([&](std::uint8_t type
-                            , unsigned int depthLimit
-                            , unsigned int x, unsigned int y
-                            , unsigned int size) -> void
+    auto processSubtree([&](std::uint8_t type, unsigned int depthLimit
+                            , const Node &node) -> void
     {
         switch (type) {
         case 0x0:
             // black node
-            if (detail::checkExtents(extents, x, y, size)) {
-                op(x, y, size, false);
+            if (detail::checkExtents(extents, node)) {
+                op(node, false);
             }
             return;
 
         case 0x3:
             // white node
-            if (detail::checkExtents(extents, x, y, size)) {
-                op(x, y, size, true);
+            if (detail::checkExtents(extents, node)) {
+                op(node, true);
             }
             return;
 
@@ -237,25 +262,25 @@ void RasterMask::descend(unsigned int x, unsigned int y
 
         if (!depthLimit) {
             // bottom -> execute
-            if (detail::checkExtents(extents, x, y, size)) {
-                op(x, y, size, boost::indeterminate);
+            if (detail::checkExtents(extents, node)) {
+                op(node, boost::indeterminate);
             }
             index += jump;
             return;
         }
 
         // descend
-        if (detail::checkExtents(extents, x, y, size)) {
-            descend(x, y, size, index, op, depthLimit, extents);
+        if (detail::checkExtents(extents, node)) {
+            descend(node, index, op, depthLimit, extents);
         }
         index += jump;
     });
 
-    const auto split(size / 2);
-    processSubtree(type(3), depthLimit - 1, x, y, split);
-    processSubtree(type(2), depthLimit - 1, x + split, y, split);
-    processSubtree(type(1), depthLimit - 1, x, y + split, split);
-    processSubtree(type(0), depthLimit - 1, x + split, y + split, split);
+    const auto split(node.size / 2);
+    processSubtree(type(3), depthLimit - 1, node.child());
+    processSubtree(type(2), depthLimit - 1, node.child(split));
+    processSubtree(type(1), depthLimit - 1, node.child(0, split));
+    processSubtree(type(0), depthLimit - 1, node.child(split, split));
 }
 
 } } // namespace imgproc::mappedqtree

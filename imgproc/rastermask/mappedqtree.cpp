@@ -88,6 +88,17 @@ RasterMask::RasterMask(const boost::filesystem::path &path
 {
 }
 
+RasterMask::RasterMask(const boost::optional<boost::filesystem::path> &path
+                       , std::size_t offset)
+    : memory_(path ? std::make_shared<Memory>(*path, offset)
+              : nullptr)
+    , data_(memory_ ? memory_->data :nullptr)
+    , dataSize_(memory_ ? memory_->size : 0)
+    , depth_(memory_ ? memory_->depth : 0)
+    , start_(memory_ ? memory_->treeStart : 0)
+{
+}
+
 void RasterMask::write(std::ostream &f, const quadtree::RasterMask &mask
                        , unsigned int depth, unsigned int x, unsigned int y)
 {
