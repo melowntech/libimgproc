@@ -48,11 +48,12 @@ namespace gil = boost::gil;
  *      valid(int x, int y) const;
  *
  *      // Converts computed value to channel_type and saturates it if it is
- *      //  out of bound
+ *      // out of bound
  *      channel_type saturate(double value) const;
  *
  *      // Handles undefined value; can throw an UndefinedValueError exception
- *      channel_type undefined() const
+ *      // Works with whole value (i.e. pixel) at once.
+ *      value_type undefined() const
  * };
  */
 
@@ -129,7 +130,7 @@ public:
         return cv::saturate_cast<channel_type>(value);
     }
 
-    channel_type undefined() const { return {}; }
+    value_type undefined() const { return {}; }
 
     int width() const { return mat_.cols; }
     int height() const { return mat_.rows; }
@@ -230,7 +231,7 @@ public:
             ::clamp(value);
     }
 
-    channel_type undefined() const { return {}; }
+    value_type undefined() const { return {}; }
 
     int width() const { return view_.width(); }
     int height() const { return view_.height(); }
