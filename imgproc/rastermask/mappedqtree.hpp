@@ -76,9 +76,15 @@ public:
         }
 
         void shift(int diff) {
-            size >>= diff;
-            x >>= diff;
-            y >>= diff;
+            if (diff >= 0) {
+                size >>= diff;
+                x >>= diff;
+                y >>= diff;
+            } else {
+                size <<= -diff;
+                x <<= -diff;
+                y <<= -diff;
+            }
         }
     };
 
