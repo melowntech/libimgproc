@@ -33,15 +33,18 @@ RasterMask transform(const RasterMask &mask, const math::Size2 &size
         return i;
     });
 
+    // both ends of kernel are inclusive -> clip to -1 and use <=
+    const int xMax(m.cols - 1);
+    const int yMax(m.rows - 1);
     auto scan([&](const math::Point2 &p) -> bool
     {
-        for (int y(clamp(std::floor(p(1) - kh), m.rows))
-                 , ey(clamp(std::ceil(p(1) + kh), m.rows));
-             y != ey; ++y)
+        for (int y(clamp(std::floor(p(1) - kh), yMax))
+                 , ey(clamp(std::ceil(p(1) + kh), yMax));
+             y <= ey; ++y)
         {
-            for (int x(clamp(std::floor(p(0) - kw), m.cols))
-                     , ex(clamp(std::ceil(p(0) + kw), m.cols));
-                 x != ex; ++x)
+            for (int x(clamp(std::floor(p(0) - kw), xMax))
+                     , ex(clamp(std::ceil(p(0) + kw), xMax));
+                 x <= ex; ++x)
             {
                 if (!m.at<std::uint8_t>(y, x)) {
                     return false;
