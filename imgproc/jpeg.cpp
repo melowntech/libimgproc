@@ -32,13 +32,30 @@ math::Size2 jpegSize(std::istream &is, const fs::path &path)
 math::Size2 jpegSize(const void *data, std::size_t size
                      , const fs::path &path)
 {
-    ::jpeg_decompress_struct cinfo;
-    ::jpeg_error_mgr jerr;
-    cinfo.err = ::jpeg_std_error(&jerr);
-    ::jpeg_create_decompress(&cinfo);
+    struct Decompressor {
+        Decompressor()
+            : init_(false)
+        {
+            cinfo.err = ::jpeg_std_error(&jerr_);
+            ::jpeg_create_decompress(&cinfo);
+            init_ = true;
+        }
 
-    ::jpeg_mem_src(&cinfo, (unsigned char*)(data), size);
-    auto res(::jpeg_read_header(&cinfo, TRUE));
+        ~Decompressor() {
+            if (init_) {
+                ::jpeg_destroy_decompress(&cinfo);
+            }
+        }
+
+        ::jpeg_decompress_struct cinfo;
+
+    private:
+        bool init_;
+        ::jpeg_error_mgr jerr_;
+    } dc;
+
+    ::jpeg_mem_src(&dc.cinfo, (unsigned char*)(data), size);
+    auto res(::jpeg_read_header(&dc.cinfo, TRUE));
 
     if (res != JPEG_HEADER_OK) {
         LOGTHROW(err4, std::runtime_error)
@@ -46,7 +63,7 @@ math::Size2 jpegSize(const void *data, std::size_t size
     }
 
     // fine
-    return math::Size2(cinfo.image_width, cinfo.image_height);
+    return math::Size2(dc.cinfo.image_width, dc.cinfo.image_height);
 }
 
 } // namespace imgproc
