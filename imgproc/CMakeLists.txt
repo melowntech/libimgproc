@@ -17,6 +17,9 @@ if(PNG_FOUND)
 
   list(APPEND imgproc_DEPENDS PNG)
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_PNG=1)
+
+  set(imgproc_PNG_SOURCES
+    png.hpp png.cpp)
 else()
   message(STATUS "imgproc: compiling without PNG support")
 endif()
@@ -121,6 +124,7 @@ add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_OPENCV_SOURCES}
   ${imgproc_EIGEN3_SOURCES}
   ${imgproc_GIF_SOURCES}
+  ${imgproc_PNG_SOURCES}
   )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
