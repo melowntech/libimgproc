@@ -57,7 +57,8 @@ private:
 
 } // namespace
 
-SerializedPng serialize(const boost::gil::gray8_image_t &image)
+SerializedPng serialize(const boost::gil::gray8_image_t &image
+                        , int compressionLevel)
 {
     SerializedPng out;
     PngWriter writer(out);
@@ -65,6 +66,10 @@ SerializedPng serialize(const boost::gil::gray8_image_t &image)
     ::png_set_IHDR(writer.png(), writer.info(), image.width(), image.height()
                    , 8, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE
                    , PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+    if ((compressionLevel >= 0) && (compressionLevel <= 9)) {
+        ::png_set_compression_level(writer.png(), compressionLevel);
+    }
 
     ::png_write_info(writer.png(), writer.info());
 

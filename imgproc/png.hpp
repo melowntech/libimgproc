@@ -9,7 +9,14 @@ namespace imgproc {
 
 typedef std::vector<char> SerializedPng;
 
-SerializedPng serialize(const boost::gil::gray8_image_t &image);
+/** Serialize grayscale GIL image as in-memory PNG file.
+ *
+ * \param image image to serialize
+ * \param compressionLevel 0-9, other values map to default (whatever it is)
+ * \return serialized image
+ */
+SerializedPng serialize(const boost::gil::gray8_image_t &image
+                        , int compressionLevel = -1);
 
 } // namespace imgproc
 
