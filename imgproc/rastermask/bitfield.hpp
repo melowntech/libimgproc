@@ -94,6 +94,12 @@ public:
     /** Read binary data representation from stream */
     void readData(std::istream &f);
 
+    /** Byte count from size.
+     */
+    static std::size_t byteCount(const math::Size2 &size) {
+        return (size.height * size.width + 7) >> 3;
+    }
+
 private:
     math::Size2 size_;
     std::size_t bytes_;
@@ -113,7 +119,7 @@ int radius(const RasterMask &m
 // Inline method implementation
 
 inline RasterMask::RasterMask(const math::Size2 &size, InitMode mode)
-    : size_(size), bytes_((size.height * size.width + 7) >> 3)
+    : size_(size), bytes_(byteCount(size_))
     , mask_(new std::uint8_t[bytes_])
     , count_((mode == EMPTY) ? 0 : size.height * size.width)
 {
@@ -123,7 +129,7 @@ inline RasterMask::RasterMask(const math::Size2 &size, InitMode mode)
 
 inline RasterMask::RasterMask(std::size_t width, std::size_t height
                               , InitMode mode)
-    : size_(width, height), bytes_((height * width + 7) >> 3)
+    : size_(width, height), bytes_(byteCount(size_))
     , mask_(new std::uint8_t[bytes_])
     , count_((mode == EMPTY) ? 0 : height * width)
 {
