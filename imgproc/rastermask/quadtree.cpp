@@ -757,7 +757,7 @@ void RasterMask::setSubtree(int depth, int x, int y, const RasterMask &mask)
         return;
     }
 
-    if ((depth + mask.depth_) > int(depth_)) {
+    if (int(depth + mask.depth_) > int(depth_)) {
         // too deep tree
         return;
     }
