@@ -59,10 +59,10 @@ TIFF* TH(const std::shared_ptr<void> &handle)
     return static_cast<TIFF*>(handle.get());
 }
 
-TIFF* TH(TIFF *handle)
+/*TIFF* TH(TIFF *handle)
 {
     return handle;
-}
+}*/
 
 TiffHandle openTiff(const boost::filesystem::path &file
                     , const char *mode
