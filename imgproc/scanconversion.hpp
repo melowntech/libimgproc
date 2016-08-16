@@ -61,7 +61,7 @@ inline void scanConvertTriangle(
     scanConvertTriangle(pt, ymin, ymax, scanlines);
 }
 
-//! Helper to call scanConvertTriangle with math::Point2
+//! Helper to call scanConvertTriangle with math::Point3
 inline void scanConvertTriangle(
         const math::Point3 &a, const math::Point3 &b, const math::Point3 &c,
         int ymin, int ymax, std::vector<Scanline>& scanlines)
