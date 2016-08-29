@@ -93,6 +93,46 @@ void bilinearInterpolate(const T *data, size_t pitch, const math::Size2 &size
                                , channels, point, result, resultChannels);
 }
 
+/** Bilinear interpolation of a color image stored in a cv::Mat.
+ *  Example RgbType: cv::Vec<float,3>
+ */
+template <typename RgbType, typename MatType = uchar>
+inline RgbType rgbInterpolate(const cv::Mat &mat, float x, float y)
+{
+    const float eps = 1e-3f;
+    float xmax = (float) mat.cols - (1.f + eps);
+    float ymax = (float) mat.rows - (1.f + eps);
+
+    if (x < 0.0) { x = 0.0; }
+    else if (x > xmax) { x = xmax; }
+
+    if (y < 0.0) { y = 0.0; }
+    else if (y > ymax) { y = ymax; }
+
+    int x0 = floor(x);
+    int y0 = floor(y);
+
+    float fx = x - x0;
+    float fy = y - y0;
+
+    const MatType* p00 = mat.ptr<MatType>(y0, x0);
+    const MatType* p01 = mat.ptr<MatType>(y0, x0+1);
+
+    RgbType v00(p00[0], p00[1], p00[2]);
+    RgbType v01(p01[0], p01[1], p01[2]);
+    RgbType w0 = v00 + (v01 - v00)*fx;
+
+    const MatType* p10 = mat.ptr<MatType>(y0+1, x0);
+    const MatType* p11 = mat.ptr<MatType>(y0+1, x0+1);
+
+    RgbType v10(p10[0], p10[1], p10[2]);
+    RgbType v11(p11[0], p11[1], p11[2]);
+    RgbType w1 = v10 + (v11 - v10)*fx;
+
+    return w0 + (w1 - w0)*fy;
+}
+
+
 } // namespace imgproc
 
 #endif // imgproc_binterpolate_hpp_included_
