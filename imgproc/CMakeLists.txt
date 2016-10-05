@@ -72,7 +72,8 @@ if(EIGEN3_FOUND)
   list(APPEND imgproc_DEPENDS EIGEN3)
 
   set(imgproc_EIGEN3_SOURCES
-    scattered-interpolation.hpp scattered-interpolation.cpp)
+    scattered-interpolation.hpp scattered-interpolation.cpp
+    inpaint.hpp inpaint.cpp)
 else()
   message(STATUS "imgproc: compiling without Eigen3 support")
 endif()

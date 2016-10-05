@@ -8,8 +8,9 @@
 
 namespace imgproc {
 
-typedef Eigen::SparseMatrix<double> SparseMatrix;
-typedef Eigen::Triplet<double> Triplet;
+typedef double Real;
+typedef Eigen::SparseMatrix<Real> SparseMatrix;
+typedef Eigen::Triplet<Real> Triplet;
 
 
 void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask)
@@ -21,6 +22,8 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask)
     LOG(info1) << "Assembling " << n << "x" << n << " sparse system.";
 
     std::vector<Triplet> coefs;
+    coefs.reserve(5*w*h);
+
     Eigen::VectorXd rhs(n);
 
     for (int i = 0; i < h; i++)
@@ -71,9 +74,13 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask)
     LOG(debug) << "mat = \n" << mat;
     LOG(debug) << "rhs = \n" << rhs;
 
+    typedef Eigen::DiagonalPreconditioner<Real> Precond;
+    typedef Eigen::BiCGSTAB<SparseMatrix, Precond> Solver;
+
     // solve the system
     LOG(info1) << "Solving system.";
-    Eigen::BiCGSTAB<SparseMatrix, Eigen::IncompleteLUT<double> > solver(mat);
+    Solver solver(mat);
+    solver.setTolerance(1e-3);
     Eigen::VectorXd sln(solver.solve(rhs));
 
     LOG(info1) << "#iterations: " << solver.iterations();
