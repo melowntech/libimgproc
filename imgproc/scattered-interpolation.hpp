@@ -23,7 +23,8 @@ namespace imgproc {
  *
  *  NOTE: 'data' must be of type CV_32F.
  */
-void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask);
+void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask,
+                        double tol = 1e-12);
 
 } // imgproc
 

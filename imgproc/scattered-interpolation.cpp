@@ -13,7 +13,7 @@ typedef Eigen::SparseMatrix<Real> SparseMatrix;
 typedef Eigen::Triplet<Real> Triplet;
 
 
-void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask)
+void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask, double tol)
 {
     int w = data.cols, h = data.rows;
     int n = w * h; // # of unknowns
@@ -80,7 +80,7 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask)
     // solve the system
     LOG(info1) << "Solving system.";
     Solver solver(mat);
-    solver.setTolerance(1e-3);
+    solver.setTolerance(tol);
     Eigen::VectorXd sln(solver.solve(rhs));
 
     LOG(info1) << "#iterations: " << solver.iterations();
