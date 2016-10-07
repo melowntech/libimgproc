@@ -19,10 +19,13 @@ void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
     for (int by = 0; by < img.rows; by += blkHeight)
     for (int bx = 0; bx < img.cols; bx += blkWidth)
     {
+        int w = std::min(blkWidth,  img.cols - bx);
+        int h = std::min(blkHeight, img.rows - by);
+
         bool full = true, empty = true;
 
-        for (int y = 0; y < blkHeight; y++)
-        for (int x = 0; x < blkWidth;  x++)
+        for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++)
         {
             bool m = mask.at<uchar>(by+y, bx+x);
             if (m) { empty = false; }
@@ -36,17 +39,17 @@ void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
         {
             for (int ch = 0; ch < nch; ch++)
             {
-                for (int y = 0; y < blkHeight; y++)
-                for (int x = 0; x < blkWidth;  x++)
+                for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
                 {
                     block.at<float>(y, x) =
                         img.ptr<uchar>(by+y)[(bx+x)*nch + ch];
                 }
 
-                laplaceInterpolate(block, blkMask);
+                laplaceInterpolate(block, blkMask, 1e-3);
 
-                for (int y = 0; y < blkHeight; y++)
-                for (int x = 0; x < blkWidth;  x++)
+                for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
                 {
                     if (!blkMask.get(x, y)) {
                         img.ptr<uchar>(by+y)[(bx+x)*nch + ch] =
@@ -58,8 +61,8 @@ void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
         else // make sure empty block is black
         {
             for (int ch = 0; ch < nch; ch++)
-            for (int y = 0; y < blkHeight; y++)
-            for (int x = 0; x < blkWidth;  x++)
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w;  x++)
             {
                 img.ptr<uchar>(by+y)[(bx+x)*nch + ch] = 0;
             }
