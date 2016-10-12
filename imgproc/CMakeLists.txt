@@ -68,15 +68,22 @@ endif()
 
 if(EIGEN3_FOUND)
   message(STATUS "imgproc: compiling in Eigen3 support")
+  list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_EIGEN3=1)
 
   list(APPEND imgproc_DEPENDS EIGEN3)
 
-  set(imgproc_EIGEN3_SOURCES
-    scattered-interpolation.hpp scattered-interpolation.cpp
-    inpaint.hpp inpaint.cpp)
+  set(imgproc_EIGEN3_SOURCES)
 else()
   message(STATUS "imgproc: compiling without Eigen3 support")
 endif()
+
+if(OpenCV_FOUND AND EIGEN3_FOUND)
+  # inpaint and scatteed interpolation depend on both OpenCV and Eigen3
+  list(APPEND imgproc_EIGEN3_SOURCES
+    scattered-interpolation.hpp scattered-interpolation.cpp
+    inpaint.hpp inpaint.cpp)
+endif()
+
 
 if(GIF_FOUND AND OpenCV_FOUND)
   message(STATUS "imgproc: compiling in GIF support")
@@ -117,7 +124,7 @@ set(imgproc_SOURCES
 
   jp2.hpp jp2.cpp
   ${imgproc_JPEG_SOURCES}
-)
+  )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_EXIF_SOURCES}
