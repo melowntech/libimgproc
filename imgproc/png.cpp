@@ -6,7 +6,7 @@
 #include "./png.hpp"
 #include "./error.hpp"
 
-namespace imgproc {
+namespace imgproc { namespace png {
 
 namespace {
 
@@ -55,6 +55,28 @@ private:
     ::png_infop info_;
 };
 
+template <typename PixelType, typename ConstView>
+void serializeView(const ConstView &view, PngWriter &writer
+                   , int compressionLevel)
+{
+    if ((compressionLevel >= 0) && (compressionLevel <= 9)) {
+        ::png_set_compression_level(writer.png(), compressionLevel);
+    }
+
+    ::png_write_info(writer.png(), writer.info());
+
+    std::vector<PixelType> row(view.width());
+
+    // copy row by row
+    for(int y(0), ey(view.height()); y != ey; ++y) {
+        std::copy(view.row_begin(y), view.row_end(y), row.begin());
+        ::png_write_row(writer.png()
+                        , reinterpret_cast< ::png_bytep>(&row.front()));
+    }
+
+    ::png_write_end(writer.png(), writer.info());
+}
+
 } // namespace
 
 SerializedPng serialize(const boost::gil::gray8_image_t &image
@@ -67,24 +89,26 @@ SerializedPng serialize(const boost::gil::gray8_image_t &image
                    , 8, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE
                    , PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-    if ((compressionLevel >= 0) && (compressionLevel <= 9)) {
-        ::png_set_compression_level(writer.png(), compressionLevel);
-    }
-
-    ::png_write_info(writer.png(), writer.info());
-
-    // copy row by row
-    auto view(boost::gil::const_view(image));
-    std::vector<boost::gil::gray8_pixel_t> row(view.width());
-
-    for(int y(0), ey(view.height()); y != ey; ++y) {
-        std::copy(view.row_begin(y), view.row_end(y), row.begin());
-        ::png_write_row(writer.png()
-                        , reinterpret_cast< ::png_bytep>(&row.front()));
-    }
-    ::png_write_end(writer.png(), writer.info());
+    serializeView<boost::gil::gray8_pixel_t>
+        (boost::gil::const_view(image), writer, compressionLevel);
 
     return out;
 }
 
-} // namespace imgproc
+SerializedPng serialize(const boost::gil::rgb8_image_t &image
+                        , int compressionLevel)
+{
+    SerializedPng out;
+    PngWriter writer(out);
+
+    ::png_set_IHDR(writer.png(), writer.info(), image.width(), image.height()
+                   , 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE
+                   , PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+    serializeView<boost::gil::rgb8_pixel_t>
+        (boost::gil::const_view(image), writer, compressionLevel);
+
+    return out;
+}
+
+} } // namespace imgproc::png
