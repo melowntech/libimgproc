@@ -1,6 +1,8 @@
 #include <memory>
 #include <algorithm>
 
+#include <png.h>
+
 #include "dbglog/dbglog.hpp"
 
 #include "./png.hpp"
@@ -56,9 +58,16 @@ private:
 };
 
 template <typename PixelType, typename ConstView>
-void serializeView(const ConstView &view, PngWriter &writer
-                   , int compressionLevel)
+SerializedPng serializeView(const ConstView &view, int compressionLevel
+                   , int type)
 {
+    SerializedPng out;
+    PngWriter writer(out);
+
+    ::png_set_IHDR(writer.png(), writer.info(), view.width(), view.height()
+                   , 8, type, PNG_INTERLACE_NONE
+                   , PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
     if ((compressionLevel >= 0) && (compressionLevel <= 9)) {
         ::png_set_compression_level(writer.png(), compressionLevel);
     }
@@ -75,6 +84,8 @@ void serializeView(const ConstView &view, PngWriter &writer
     }
 
     ::png_write_end(writer.png(), writer.info());
+
+    return out;
 }
 
 } // namespace
@@ -82,33 +93,22 @@ void serializeView(const ConstView &view, PngWriter &writer
 SerializedPng serialize(const boost::gil::gray8_image_t &image
                         , int compressionLevel)
 {
-    SerializedPng out;
-    PngWriter writer(out);
-
-    ::png_set_IHDR(writer.png(), writer.info(), image.width(), image.height()
-                   , 8, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE
-                   , PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-
-    serializeView<boost::gil::gray8_pixel_t>
-        (boost::gil::const_view(image), writer, compressionLevel);
-
-    return out;
+    return serializeView<boost::gil::gray8_pixel_t>
+        (boost::gil::const_view(image), compressionLevel, PNG_COLOR_TYPE_GRAY);
 }
 
 SerializedPng serialize(const boost::gil::rgb8_image_t &image
                         , int compressionLevel)
 {
-    SerializedPng out;
-    PngWriter writer(out);
+    return serializeView<boost::gil::rgb8_pixel_t>
+        (boost::gil::const_view(image), compressionLevel, PNG_COLOR_TYPE_RGB);
+}
 
-    ::png_set_IHDR(writer.png(), writer.info(), image.width(), image.height()
-                   , 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE
-                   , PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-
-    serializeView<boost::gil::rgb8_pixel_t>
-        (boost::gil::const_view(image), writer, compressionLevel);
-
-    return out;
+SerializedPng serialize(const boost::gil::rgba8_image_t &image
+                        , int compressionLevel)
+{
+    return serializeView<boost::gil::rgba8_pixel_t>
+        (boost::gil::const_view(image), compressionLevel, PNG_COLOR_TYPE_RGBA);
 }
 
 } } // namespace imgproc::png
