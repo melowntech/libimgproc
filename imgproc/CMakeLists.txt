@@ -1,4 +1,7 @@
-set(imgproc_DEPENDS math utility dbglog Boost)
+# bump version here
+set(imgproc_VERSION 1.17)
+
+set(imgproc_DEPENDS math>=1.2 utility>=1.11 dbglog>=1.4 Boost)
 set(imgproc_DEFINITIONS)
 
 if(EXIF_FOUND)
@@ -97,7 +100,7 @@ else()
   message(STATUS "imgproc: compiling without GIF support")
 endif()
 
-define_module(LIBRARY imgproc
+define_module(LIBRARY imgproc=${imgproc_VERSION}
   DEPENDS ${imgproc_DEPENDS}
   DEFINITIONS ${imgproc_DEFINITIONS})
 
