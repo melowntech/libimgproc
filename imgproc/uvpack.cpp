@@ -71,7 +71,7 @@ RectPacker::Node* RectPacker::Node::findSpace(int rw, int rh)
 
 void RectPacker::pack()
 {
-    LOG(info2) << "Packing " << list.size() << " rectangles.";
+    LOG(debug) << "Packing " << list.size() << " rectangles.";
 
     // sort rectangles by width
     std::sort(list.begin(), list.end(),
@@ -82,7 +82,7 @@ void RectPacker::pack()
     long total = 0;
     for (UVRect* rect : list)
         total += rect->width() * rect->height();
-    LOG(info2) << "Total area: " << total << " pixels";
+    LOG(debug) << "Total area: " << total << " pixels";
 
     // initialize packing area
     packWidth = packHeight = 64;
@@ -93,7 +93,7 @@ void RectPacker::pack()
         else
             packHeight *= 2;
     }
-    LOG(info2) << "Initial packing area: " << packWidth << "x" << packHeight;
+    LOG(debug) << "Initial packing area: " << packWidth << "x" << packHeight;
 
  retry:
     if (packWidth > (1<<17) || packHeight > (1<<17)) {
@@ -120,7 +120,7 @@ void RectPacker::pack()
             else
                 packHeight *= 2;
 
-            LOG(info2) << "Rectangles won't fit, retrying with "
+            LOG(debug) << "Rectangles won't fit, retrying with "
                        << packWidth << "x" << packHeight;
 
             delete root;
