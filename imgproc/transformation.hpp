@@ -63,6 +63,29 @@ private:
     float scaleX_, scaleY_, offX_, offY_;
 };
 
+/**
+ * GridScaling2 is a 2D scaling in grid registration (pixel is a point).
+ * Models Mapping2 concept
+ */
+class GridScaling2 {
+public:
+    GridScaling2(const math::Size2 &srcSize, const math::Size2 &dstSize)
+        : scaleX_(double(dstSize.width - 1) / (srcSize.width - 1))
+        , scaleY_(double(dstSize.height - 1) / (srcSize.height - 1))
+    {}
+
+    template<typename T>
+    math::Point2 map(const math::Point2_<T> &op) const {
+        return math::Point2(scaleX_ * op(0), scaleY_ * op(1));
+    }
+
+    math::Point2 derivatives(const math::Point2i&) const {
+        return math::Point2(scaleX_, scaleY_);
+    }
+
+private:
+    double scaleX_, scaleY_;
+};
 
 /** Maps pixels from destination view to source crop
  */
