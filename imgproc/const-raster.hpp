@@ -53,18 +53,32 @@ namespace gil = boost::gil;
  *
  *      // Handles undefined value; can throw an UndefinedValueError exception
  *      // Works with whole value (i.e. pixel) at once.
+ *      // NB: Return value be can anything value_type is convertible to.
  *      value_type undefined() const
  * };
+ *
+ * NB: Reconstruction function (from reconstruct.hpp) doesn't return
+ * ConstRaster::value_type but result of ConstRaster::undefined() which usually
+ * equals to ConstRaster::value_type but allows us to return special value for
+ * undefined pixels, like using boost<ConstRaster::value_type> to return
+ * boost::none.
+ *
  */
 
 struct UndefinedValueError : std::runtime_error {
     UndefinedValueError(const std::string &msg) : std::runtime_error(msg) {}
 };
 
-template<typename ConstRaster, typename Filter2>
-typename ConstRaster::value_type
-reconstruct(const ConstRaster &r, const Filter2 &filter
-            , const math::Point2 &pos);
+namespace detail {
+
+/** Helper class for getting result value of reconstruction function from result
+ *  of ConstRaster::undefined();
+ */
+template <typename ConstRaster> struct ReconstructResult {
+    typedef decltype(static_cast<ConstRaster*>(nullptr)->undefined()) type;
+};
+
+} // namespace detail
 
 /** CRTP base for pixel in-bounds validation
  */

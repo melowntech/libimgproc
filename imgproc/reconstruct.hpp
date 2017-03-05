@@ -13,16 +13,15 @@
 namespace imgproc {
 
 template<typename ConstRaster, typename Filter2>
-typename ConstRaster::value_type
+typename detail::ReconstructResult<ConstRaster>::type
 reconstruct(const ConstRaster &r, const Filter2 &filter
             , const math::Point2 &pos);
-
 
 // implementation
 
 // Reconstruction core itself
 template<typename ConstRaster, typename Filter2>
-typename ConstRaster::value_type
+typename detail::ReconstructResult<ConstRaster>::type
 reconstruct(const ConstRaster &raster, const Filter2 &filter
             , const math::Point2 &pos)
 {
