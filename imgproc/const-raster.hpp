@@ -14,8 +14,11 @@
 #include <opencv2/core/core.hpp>
 #endif // IMGPROC_HAS_OPENCV
 
+#include "utility/has_member.hpp"
+
 #include "math/math.hpp"
 #include "math/geometry_core.hpp"
+
 #include "./rastermask/quadtree.hpp"
 
 namespace imgproc {
@@ -69,12 +72,31 @@ struct UndefinedValueError : std::runtime_error {
     UndefinedValueError(const std::string &msg) : std::runtime_error(msg) {}
 };
 
+/** Reconstruct return value support
+ */
 namespace detail {
 
 /** Helper class for getting result value of reconstruction function from result
  *  of ConstRaster::undefined();
  */
-template <typename ConstRaster> struct ReconstructResult {
+
+/** Default fallback.
+ */
+template <typename ConstRaster, typename Enable = void>
+struct ReconstructResult {};
+
+/** Specialization for types that have undefined method.
+ */
+
+/** Generate has_undefined<T> helper
+ */
+UTILITY_HAS_MEMBER(undefined);
+
+template <typename ConstRaster>
+struct ReconstructResult
+    <ConstRaster
+     , typename std::enable_if<has_undefined<ConstRaster>::value>::type>
+{
     typedef decltype(static_cast<ConstRaster*>(nullptr)->undefined()) type;
 };
 
