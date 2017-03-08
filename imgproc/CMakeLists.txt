@@ -1,7 +1,7 @@
 # bump version here
-set(imgproc_VERSION 1.19)
+set(imgproc_VERSION 1.20)
 
-set(imgproc_DEPENDS math>=1.2 utility>=1.11 dbglog>=1.4 Boost)
+set(imgproc_DEPENDS math>=1.3 utility>=1.11 dbglog>=1.4 Boost)
 set(imgproc_DEFINITIONS)
 
 if(EXIF_FOUND)
@@ -126,6 +126,9 @@ set(imgproc_SOURCES
   filtering.hpp reconstruct.hpp
 
   jp2.hpp jp2.cpp
+
+  texturing.hpp texturing.cpp
+
   ${imgproc_JPEG_SOURCES}
   )
 
