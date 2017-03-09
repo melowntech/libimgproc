@@ -11,9 +11,6 @@ typedef cv::Point2f UVCoord;
 ///
 struct UVRect
 {
-    struct PixelTag {};
-    static PixelTag Pixel;
-
     UVCoord min, max; ///< min-max corners in the source texture
     int packX, packY; ///< position in the packed texture
 
@@ -59,41 +56,6 @@ struct UVRect
     void adjustUV(UVCoordType& uv) const {
         uv.x += packX - x();
         uv.y += packY - y();
-    }
-
-    // Dimensions in pixel coordinates
-    int x(const PixelTag&) const { return std::round(min.x); }
-    int y(const PixelTag&) const { return std::round(min.y); }
-
-    int width(const PixelTag&) const {
-        return std::round(max.x) - std::round(min.x) + 1;
-    }
-    int height(const PixelTag&) const {
-        return std::round(max.y) - std::round(min.y) + 1;
-    }
-
-    /** Grab source rectangle (from (x, y) to (x + width, y + height)
-     */
-    cv::Rect srcRect(const PixelTag&) const {
-        const auto xs(std::round(min.x));
-        const auto ys(std::round(min.y));
-        return cv::Rect(xs, ys
-                        , std::round(max.x) - xs + 1
-                        , std::round(max.y) - ys + 1);
-    }
-
-    /** Grab destination rectangle (from (packX, packY)
-     *  to (x + width, y + height)
-     */
-    cv::Rect dstRect(const PixelTag &tag) const {
-        return cv::Rect(packX, packY, width(tag), height(tag));
-    }
-
-    /// Map UV from view UV space to atlas UV space
-    template<typename UVCoordType>
-    void adjustUV(UVCoordType& uv, const PixelTag &tag) const {
-        uv.x += packX - x(tag);
-        uv.y += packY - y(tag);
     }
 
     /// Return true if the given rectangle lies inside this rectangle.

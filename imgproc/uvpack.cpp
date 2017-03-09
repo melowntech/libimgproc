@@ -8,8 +8,6 @@
 
 namespace imgproc {
 
-UVRect::PixelTag UVRect::Pixel{};
-
 void UVRect::update(UVCoord uv)
 {
     if (uv.x < min.x) min.x = uv.x;
