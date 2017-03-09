@@ -7,6 +7,16 @@
 
 namespace imgproc { namespace tx {
 
+/** Uv patch.
+ */
+struct UvPatch : math::Extents2 {
+    UvPatch() : math::Extents2(math::InvalidExtents{}) {}
+
+    void inflate(double size);
+    void update(const UvPatch &other);
+    void update(double x, double y);
+};
+
 /** Texture patch. Maps source region to destination region.
  */
 class Patch {
@@ -14,11 +24,15 @@ public:
     struct InplaceTag {};
     static InplaceTag Inplace;
 
-    typedef std::vector<Patch> list;
+    typedef std::vector<Patch*> list;
+
+    /** Construct default, unusable patch.
+     */
+    Patch() = default;
 
     /** Creates patch for given texturing coordinates bounds.
      */
-    Patch(const math::Extents2 &uvPatch);
+    Patch(const UvPatch &uvPatch);
 
     /** Places patch at given location.
      */
@@ -30,9 +44,15 @@ public:
 
     /** Maps source texturing coordinates to destination texturing coordinates.
      *
-     *  Inplace version.
+     *  In place version.
      */
     void map(const InplaceTag&, math::Point2d &uv) const;
+
+    /** Maps source texturing coordinates to destination texturing coordinates.
+     *  Modifies arguments in place.
+     */
+    template <typename T>
+    void map(T &x, T &y) const;
 
     /** Whole pixel rectangle circumscribed around subpixel patch.
      */
@@ -42,7 +62,7 @@ public:
 
         Rect() = default;
         Rect(const Rect&) = default;
-        Rect(const math::Extents2 &uvPatch);
+        Rect(const UvPatch &uvPatch);
     };
 
     const Rect& src() const { return src_; }
@@ -50,6 +70,9 @@ public:
     const Rect& dst() const { return dst_; }
 
     const math::Size2& size() const { return src_.size; }
+
+    int width() const { return src_.size.width; }
+    int height() const { return src_.size.height; }
 
 private:
     /** Source patch origin (subpixel). Input value.
@@ -69,27 +92,21 @@ private:
     math::Point2 shift_;
 };
 
-/** Packed texture.
+/** Packs texture patches.
+ *  Returns size of resulting texture.
  */
-struct PackedTexture {
-    Patch::list patches;
-    math::Size2 size;
-};
-
-/** Packs texture from source uv patches.
- */
-PackedTexture pack(const std::vector<math::Extents2> &uvPatches);
+math::Size2 pack(const Patch::list &patches);
 
 // inlines
 
 // TODO: make right for bilinear interpolation.
-inline Patch::Rect::Rect(const math::Extents2 &uvPatch)
+inline Patch::Rect::Rect(const UvPatch &uvPatch)
     : point(std::round(uvPatch.ll(0)), std::round(uvPatch.ll(1)))
     , size(std::round(uvPatch.ur(0)) - point(0) + 1
            , std::round(uvPatch.ur(1)) - point(1) + 1)
 {}
 
-inline Patch::Patch(const math::Extents2 &uvPatch)
+inline Patch::Patch(const UvPatch &uvPatch)
     : origin_(uvPatch.ll)
     , src_(uvPatch), dst_(src_)
 {}
@@ -110,6 +127,30 @@ inline void Patch::map(const InplaceTag&, math::Point2d &uv) const
 {
     uv(0) += shift_(0);
     uv(1) += shift_(1);
+}
+
+template <typename T>
+void Patch::map(T &x, T &y) const
+{
+    x += shift_(0);
+    y += shift_(1);
+}
+
+inline void UvPatch::inflate(double size)
+{
+    auto &self(static_cast<math::Extents2&>(*this));
+    self = self + size;
+}
+
+inline void UvPatch::update(double x, double y)
+{
+    math::update(*this, double(x), double(y));
+}
+
+inline void UvPatch::update(const UvPatch &other)
+{
+    math::update(*this, other.ll);
+    math::update(*this, other.ur);
 }
 
 } } // namespace imgproc::tx

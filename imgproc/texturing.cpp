@@ -12,77 +12,113 @@ namespace {
 typedef decltype(math::area(*static_cast<math::Size2*>(nullptr)))
     AreaType;
 
-struct Node {
-    bool allocated; ///< node is allocated
-    int x, y; ///< this node position
-    math::Size2 size; ///< this node size
-    AreaType remaining; ///< space remaining in this node and its subtree
-    Node *son[2]; ///< son[0] is space below, son[1] is space to the right
+const math::Size2 MaxSize(1 << 17, 1 << 17);
 
-    Node(int x, int y, const math::Size2 &size)
-        : allocated(false), x(x), y(y), size(size), remaining(math::area(size))
-    {
-        son[0] = son[1] = nullptr;
-    }
+class Node {
+public:
+    Node(int x, int y, int width, int height)
+        : allocated(false), x(x), y(y), width(width), height(height)
+        , remaining(width * height)
+        , below(), right()
+    {}
 
     Node(const math::Size2 &size)
-        : allocated(false), x(0), y(0), size(size), remaining(math::area(size))
-    {
-        son[0] = son[1] = nullptr;
-    }
+        : allocated(false), x(0), y(0)
+        , width(size.width), height(size.height)
+        , remaining(math::area(size))
+        , below(), right()
+    {}
 
     ~Node() {
-        delete son[0];
-        delete son[1];
+        delete below;
+        delete right;
     }
 
-    ///< find leaf large enough
-    Node* findSpace(const math::Size2 &expected);
+    ///< allocate leaf for patch
+    bool allocateSpace(Patch &patch) {
+        const auto &patchSize(patch.size());
+        return allocateSpace(patch, patchSize, math::area(patchSize));
+    }
+
+private:
+    bool allocateSpace(Patch &patch, const math::Size2 &patchSize
+                       , AreaType patchArea);
+
+    void assign(Patch &patch, const math::Size2 &patchSize, AreaType area);
+
+    bool allocated; ///< node is allocated
+    int x, y; ///< this node position
+    int width; ///< this node width
+    int height; ///< this node height
+    AreaType remaining; ///< space remaining in this node and its subtree
+    Node *below;
+    Node *right;
 };
 
-Node* Node::findSpace(const math::Size2 &expected)
+void Node::assign(Patch &patch, const math::Size2 &psize, AreaType patchArea)
+{
+    // mark as allocated
+    allocated = true;
+
+    // update current area
+    remaining -= patchArea;
+
+    // we have the final position for the rect
+    patch.place(math::Point2i(x, y));
+
+    // create node below this node if there is any space left
+    if (psize.height < height) {
+        below = new Node(x, y + psize.height
+                         , psize.width, height - psize.height);
+    }
+
+    // create node to the right of this node if there is any space left
+    if (psize.width < width) {
+        right = new Node(x + psize.width, y
+                         , width - psize.width, height);
+    }
+}
+
+bool Node::allocateSpace(Patch &patch, const math::Size2 &patchSize
+                         , AreaType patchArea)
 {
     // if the node is too small (whether it's free or not), return immediately
-    if ((expected.width > size.width) || (expected.height > size.height)) {
-        return nullptr;
+    if ((patchSize.width > width) || (patchSize.height > height)) {
+        return false;
     }
 
     // the node is large enough and free, we're finished
-    const auto area(math::area(expected));
-
-    if (!allocated)  {
-        remaining -= area;
-        return this;
+    if (!allocated) {
+        // node is available, assign patch
+        assign(patch, patchSize, patchArea);
+        return true;
     }
 
-    // try searching in both subtrees
-    for (int i = 0; i < 2; ++i) {
-        Node *node(nullptr);
-        if (son[i] && (son[i]->remaining >= area)
-            && (node = son[i]->findSpace(expected)))
-        {
-            remaining -= area;
-            return node;
-        }
-    }
+    // descend to child node
+    auto descend([&](Node *child) -> bool
+    {
+        // sanity check before descent
+        if (!child || (child->remaining < patchArea)) { return {}; }
 
-    // the rectangle won't fit
-    return nullptr;
+        // descend to child
+        auto spaceAllocated(child->allocateSpace(patch, patchSize, patchArea));
+
+        // update area if patch has been assigned its new position
+        if (spaceAllocated) { remaining -= patchArea; }
+
+        // return result
+        return spaceAllocated;
+    });
+
+    // try searching in both subtrees and return result
+    return descend(below) || descend(right);
 }
 
 } // namespace
 
-PackedTexture pack(const std::vector<math::Extents2> &uvPatches)
+math::Size2 pack(const Patch::list &inPatches)
 {
-    PackedTexture result;
-    result.patches.assign(uvPatches.begin(), uvPatches.end());
-    auto &packSize(result.size);
-
-    std::vector<Patch*> patches;
-    patches.reserve(result.patches.size());
-    for (auto &patch : result.patches) {
-        patches.push_back(&patch);
-    }
+    auto patches(inPatches);
 
     LOG(debug) << "Packing " << patches.size() << " rectangles.";
 
@@ -93,12 +129,24 @@ PackedTexture pack(const std::vector<math::Extents2> &uvPatches)
         return l->size().width > r->size().width;
     });
 
+    // initial size
+    math::Size2 packSize(64, 64);
+
     auto inflate([&]()
     {
+        // inflate area
         if (packSize.width <= packSize.height) {
             packSize.width *= 2;
         } else {
             packSize.height *= 2;
+        }
+
+        // and check
+        if ((packSize.width > MaxSize.width)
+            || (packSize.height > MaxSize.height))
+        {
+            LOGTHROW(err2, AreaTooLarge)
+                << "Packing area too large (" << packSize << ").";
         }
     });
 
@@ -108,61 +156,36 @@ PackedTexture pack(const std::vector<math::Extents2> &uvPatches)
         for (const auto *patch : patches) {
             total += math::area(patch->size());
         }
+        // LOG(debug) << "Total area: " << total << " pixels";
         LOG(debug) << "Total area: " << total << " pixels";
 
-        // initialize packing area
-        packSize = math::Size2(64, 64);
-
+        // inflate to hold total area
         while (math::area(packSize) < total) { inflate(); }
     }
 
+    // LOG(debug) << "Initial packing area: " << packSize << ".";
     LOG(debug) << "Initial packing area: " << packSize << ".";
 
-    // tries to pack patches into one texture, returns true when bigger
+    // tries to pack patches into one texture, returns false when bigger
     // texturing pane is needed
     auto tryToPack([&]() -> bool
     {
-        if ((packSize.width > (1<<17)) || (packSize.height > (1<<17))) {
-            LOGTHROW(err2, AreaTooLarge)
-                << "Packing area too large (" << packSize << ").";
-        }
-
         Node root(packSize);
 
         for (auto *patch : patches) {
-            const auto &psize(patch->size());
-
-            // find a space to place the patchect
-            auto *node(root.findSpace(psize));
-
-            if (!node) { return true; }
-
-            // we have the final position for the rect
-            patch->place(math::Point2i(node->x, node->y));
-
-            // allocate the node and put the remaining free space into new nodes
-            node->allocated = true;
-
-            if (psize.height < node->size.height) {
-                node->son[0] = new Node
-                    (node->x, node->y + psize.height
-                     , math::Size2(psize.width
-                                   , node->size.height - psize.height));
-            }
-
-            if (psize.width < node->size.width) {
-                node->son[1] = new Node
-                    (node->x + psize.width, node->y
-                     , math::Size2(node->size.width - psize.width
-                                   , node->size.height));
+            // try to allocate space for this patch
+            if (!root.allocateSpace(*patch)) {
+                // report failure
+                return false;
             }
         }
 
-        return false;
+        // no failure
+        return true;
     });
 
     // try to pack until patches fit
-    while (tryToPack()) {
+    while (!tryToPack()) {
         // if there is not enough room, double the space and start over
         inflate();
 
@@ -170,7 +193,9 @@ PackedTexture pack(const std::vector<math::Extents2> &uvPatches)
                    << packSize.width << "x" << packSize.height << ".";
     }
 
-    return result;
+    LOG(debug) << "Packed size: " << packSize;
+
+    return packSize;
 }
 
 } } // namespace imgproc::tx
