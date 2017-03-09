@@ -116,10 +116,8 @@ bool Node::allocateSpace(Patch &patch, const math::Size2 &patchSize
 
 } // namespace
 
-math::Size2 pack(const Patch::list &inPatches)
+math::Size2 pack(Patch::list &patches)
 {
-    auto patches(inPatches);
-
     LOG(debug) << "Packing " << patches.size() << " rectangles.";
 
     // sort rectangles by width

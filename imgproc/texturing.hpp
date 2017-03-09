@@ -95,15 +95,42 @@ private:
 /** Packs texture patches.
  *  Returns size of resulting texture.
  */
+math::Size2 pack(Patch::list &patches);
+
+/** Packs texture patches.
+ *  Returns size of resulting texture.
+ *
+ * Const vector interface.
+ */
 math::Size2 pack(const Patch::list &patches);
+
+/** Generate container.
+ *  Function Patch* asPatch(*iterator) must exist.
+ */
+template <typename Iterator>
+math::Size2 pack(Iterator begin, Iterator end);
+
+/** Default implementaion of asPatch for, well, patch itself.
+ */
+Patch* asPatch(Patch &patch);
 
 // inlines
 
-// TODO: make right for bilinear interpolation.
+/**
+ * To cover all source pixels for bilinear interpolation we have to have all 4
+ * pixels aroud extreme patch edges, therefore we have to fix the extens as
+ * follows:
+ *
+ * ll' = floor(ll - half pixel)
+ * ur' = ceil(ur + half pixel)
+ *
+ * +1 is to get count of pixels between ll' (inclusive) and ur' (inclusive).
+ */
 inline Patch::Rect::Rect(const UvPatch &uvPatch)
-    : point(std::round(uvPatch.ll(0)), std::round(uvPatch.ll(1)))
-    , size(std::round(uvPatch.ur(0)) - point(0) + 1
-           , std::round(uvPatch.ur(1)) - point(1) + 1)
+    : point(std::floor(uvPatch.ll(0) - 0.5)
+            , std::floor(uvPatch.ll(1) - 0.5))
+    , size(std::ceil(uvPatch.ur(0) + 0.5) - point(0) + 1
+           , std::ceil(uvPatch.ur(1) + 0.5) - point(1) + 1)
 {}
 
 inline Patch::Patch(const UvPatch &uvPatch)
@@ -152,6 +179,23 @@ inline void UvPatch::update(const UvPatch &other)
     math::update(*this, other.ll);
     math::update(*this, other.ur);
 }
+
+inline math::Size2 pack(const Patch::list &patches) {
+    auto copy(patches);
+    return pack(copy);
+}
+
+template <typename Iterator>
+math::Size2 pack(Iterator begin, Iterator end)
+{
+    Patch::list patches;
+    for (; begin != end; ++begin) {
+        patches.push_back(asPatch(*begin));
+    }
+    return pack(patches);
+}
+
+inline Patch* asPatch(Patch &patch) { return &patch; }
 
 } } // namespace imgproc::tx
 
