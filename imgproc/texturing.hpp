@@ -11,11 +11,14 @@ namespace imgproc { namespace tx {
  */
 struct UvPatch : math::Extents2 {
     UvPatch() : math::Extents2(math::InvalidExtents{}) {}
+    UvPatch(const math::Extents2 &e) : math::Extents2(e) {}
 
     void inflate(double size);
     void update(const UvPatch &other);
     void update(double x, double y);
 };
+
+UvPatch inflate(const UvPatch &uvPatch, double size);
 
 /** Texture patch. Maps source region to destination region.
  */
@@ -31,8 +34,15 @@ public:
     Patch() = default;
 
     /** Creates patch for given texturing coordinates bounds.
+     *
+     * \param uvPatch source UV patch
+     * \param size source texture size, used to clip patch
      */
-    Patch(const UvPatch &uvPatch);
+    Patch(const UvPatch &uvPatch, const math::Size2 &size);
+
+    /** Manual patch creation.
+     */
+    Patch(int x, int y, int width, int height);
 
     /** Places patch at given location.
      */
@@ -54,6 +64,20 @@ public:
     template <typename T>
     void map(T &x, T &y) const;
 
+    math::Point2d imap(const math::Point2d &uv) const;
+
+    /** Maps destination texturing coordinates to source texturing coordinates.
+     *
+     *  In place version.
+     */
+    void imap(const InplaceTag&, math::Point2d &uv) const;
+
+    /** Maps destination texturing coordinates to source texturing coordinates.
+     *  Modifies arguments in place.
+     */
+    template <typename T>
+    void imap(T &x, T &y) const;
+
     /** Whole pixel rectangle circumscribed around subpixel patch.
      */
     struct Rect {
@@ -63,6 +87,12 @@ public:
         Rect() = default;
         Rect(const Rect&) = default;
         Rect(const UvPatch &uvPatch);
+
+        /** Manual rectangle creation.
+         */
+        Rect(int x, int y, int width, int height);
+
+        Rect& clip(const math::Size2 &limits);
     };
 
     const Rect& src() const { return src_; }
@@ -75,10 +105,6 @@ public:
     int height() const { return src_.size.height; }
 
 private:
-    /** Source patch origin (subpixel). Input value.
-     */
-    math::Point2 origin_;
-
     /** Source rectangle.
      */
     Rect src_;
@@ -133,9 +159,16 @@ inline Patch::Rect::Rect(const UvPatch &uvPatch)
            , std::ceil(uvPatch.ur(1) + 0.5) - point(1) + 1)
 {}
 
-inline Patch::Patch(const UvPatch &uvPatch)
-    : origin_(uvPatch.ll)
-    , src_(uvPatch), dst_(src_)
+inline Patch::Rect::Rect(int x, int y, int width, int height)
+    : point(x, y), size(width, height)
+{}
+
+inline Patch::Patch(const UvPatch &uvPatch, const math::Size2 &size)
+    : src_(Rect(uvPatch).clip(size)), dst_(src_)
+{}
+
+inline Patch::Patch(int x, int y, int width, int height)
+    : src_(x, y, width, height), dst_(src_)
 {}
 
 inline void Patch::place(const math::Point2i &location)
@@ -163,10 +196,33 @@ void Patch::map(T &x, T &y) const
     y += shift_(1);
 }
 
+inline math::Point2d Patch::imap(const math::Point2d &uv) const
+{
+    return { uv(0) - shift_(0), uv(1) - shift_(1) };
+}
+
+inline void Patch::imap(const InplaceTag&, math::Point2d &uv) const
+{
+    uv(0) -= shift_(0);
+    uv(1) -= shift_(1);
+}
+
+template <typename T>
+void Patch::imap(T &x, T &y) const
+{
+    x -= shift_(0);
+    y -= shift_(1);
+}
+
 inline void UvPatch::inflate(double size)
 {
     auto &self(static_cast<math::Extents2&>(*this));
     self = self + size;
+}
+
+inline UvPatch inflate(const UvPatch &uvPatch, double size)
+{
+    return static_cast<const math::Extents2&>(uvPatch) + size;
 }
 
 inline void UvPatch::update(double x, double y)
@@ -196,6 +252,34 @@ math::Size2 pack(Iterator begin, Iterator end)
 }
 
 inline Patch* asPatch(Patch &patch) { return &patch; }
+
+inline Patch::Rect& Patch::Rect::clip(const math::Size2 &limits)
+{
+    // clip origin to zero
+    if (point(0) < 0) {
+        size.width += point(0);
+        point(0) = 0;
+    }
+
+    if (point(1) < 0) {
+        size.height += point(1);
+        point(1) = 0;
+    }
+
+    // clip length
+    int xe(point(0) + size.width);
+    int ye(point(1) + size.height);
+
+    if (xe > limits.width) {
+        size.width -= (xe - limits.width);
+    }
+
+    if (ye > limits.height) {
+        size.height -= (ye - limits.height);
+    }
+
+    return *this;
+}
 
 } } // namespace imgproc::tx
 
