@@ -36,6 +36,12 @@ public:
     /** Creates patch for given texturing coordinates bounds.
      *
      * \param uvPatch source UV patch
+     */
+    Patch(const UvPatch &uvPatch);
+
+    /** Creates patch for given texturing coordinates bounds.
+     *
+     * \param uvPatch source UV patch
      * \param size source texture size, used to clip patch
      */
     Patch(const UvPatch &uvPatch, const math::Size2 &size);
@@ -161,6 +167,10 @@ inline Patch::Rect::Rect(const UvPatch &uvPatch)
 
 inline Patch::Rect::Rect(int x, int y, int width, int height)
     : point(x, y), size(width, height)
+{}
+
+inline Patch::Patch(const UvPatch &uvPatch)
+    : src_(uvPatch), dst_(src_)
 {}
 
 inline Patch::Patch(const UvPatch &uvPatch, const math::Size2 &size)
