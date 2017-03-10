@@ -111,6 +111,14 @@ public:
      */
     Patch& srcClip(int width, int height);
 
+    /** Returns patch for source rectangle clipped to given limits.
+     */
+    Patch srcClipped(const math::Size2 &limits) const;
+
+    /** Returns patch for source rectangle clipped to given limits.
+     */
+    Patch srcClipped(int width, int height) const;
+
 private:
     /** Source rectangle.
      */
@@ -289,6 +297,7 @@ inline Patch& Patch::srcClip(int width, int height)
     const auto xo(sp(0) + ss.width - width);
     const auto yo(sp(1) + ss.height - height);
 
+    // and apply to width
     if (xo > 0) {
         ss.width -= xo;
         ds.width -= xo;
@@ -305,6 +314,16 @@ inline Patch& Patch::srcClip(int width, int height)
 inline Patch& Patch::srcClip(const math::Size2 &limits)
 {
     return srcClip(limits.width, limits.height);
+}
+
+inline Patch Patch::srcClipped(int width, int height) const
+{
+    return Patch(*this).srcClip(width, height);
+}
+
+inline Patch Patch::srcClipped(const math::Size2 &limits) const
+{
+    return srcClipped(limits.width, limits.height);
 }
 
 } } // namespace imgproc::tx
