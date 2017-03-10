@@ -39,13 +39,6 @@ public:
      */
     Patch(const UvPatch &uvPatch);
 
-    /** Creates patch for given texturing coordinates bounds.
-     *
-     * \param uvPatch source UV patch
-     * \param size source texture size, used to clip patch
-     */
-    Patch(const UvPatch &uvPatch, const math::Size2 &size);
-
     /** Manual patch creation.
      */
     Patch(int x, int y, int width, int height);
@@ -97,8 +90,6 @@ public:
         /** Manual rectangle creation.
          */
         Rect(int x, int y, int width, int height);
-
-        Rect& clip(const math::Size2 &limits);
     };
 
     const Rect& src() const { return src_; }
@@ -109,6 +100,16 @@ public:
 
     int width() const { return src_.size.width; }
     int height() const { return src_.size.height; }
+
+    /** Clips source rectangle to given limits and updates destination one
+     *  accordingly.
+     */
+    Patch& srcClip(const math::Size2 &limits);
+
+    /** Clips source rectangle to given limits and updates destination one
+     *  accordingly.
+     */
+    Patch& srcClip(int width, int height);
 
 private:
     /** Source rectangle.
@@ -171,10 +172,6 @@ inline Patch::Rect::Rect(int x, int y, int width, int height)
 
 inline Patch::Patch(const UvPatch &uvPatch)
     : src_(uvPatch), dst_(src_)
-{}
-
-inline Patch::Patch(const UvPatch &uvPatch, const math::Size2 &size)
-    : src_(Rect(uvPatch).clip(size)), dst_(src_)
 {}
 
 inline Patch::Patch(int x, int y, int width, int height)
@@ -263,32 +260,51 @@ math::Size2 pack(Iterator begin, Iterator end)
 
 inline Patch* asPatch(Patch &patch) { return &patch; }
 
-inline Patch::Rect& Patch::Rect::clip(const math::Size2 &limits)
+inline Patch& Patch::srcClip(int width, int height)
 {
-    // clip origin to zero
-    if (point(0) < 0) {
-        size.width += point(0);
-        point(0) = 0;
+    auto &sp(src_.point);
+    auto &ss(src_.size);
+
+    auto &dp(dst_.point);
+    auto &ds(dst_.size);
+
+    // clip origin to zero, update destination accordingly
+    if (sp(0) < 0) {
+        ss.width += sp(0);
+        ds.width += sp(0);
+        dp(0) -= sp(0);
+        sp(0) = 0;
     }
 
-    if (point(1) < 0) {
-        size.height += point(1);
-        point(1) = 0;
+    if (sp(1) < 0) {
+        ss.height += sp(1);
+        ds.height += sp(1);
+        dp(1) -= sp(1);
+        sp(1) = 0;
     }
 
     // clip length
-    int xe(point(0) + size.width);
-    int ye(point(1) + size.height);
 
-    if (xe > limits.width) {
-        size.width -= (xe - limits.width);
+    // compute overflow in x and y
+    const auto xo(sp(0) + ss.width - width);
+    const auto yo(sp(1) + ss.height - height);
+
+    if (xo > 0) {
+        ss.width -= xo;
+        ds.width -= xo;
     }
 
-    if (ye > limits.height) {
-        size.height -= (ye - limits.height);
+    if (yo > 0) {
+        ss.height -= yo;
+        ds.height -= yo;
     }
 
     return *this;
+}
+
+inline Patch& Patch::srcClip(const math::Size2 &limits)
+{
+    return srcClip(limits.width, limits.height);
 }
 
 } } // namespace imgproc::tx
