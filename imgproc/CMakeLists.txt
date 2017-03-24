@@ -129,6 +129,8 @@ set(imgproc_SOURCES
 
   texturing.hpp texturing.cpp
 
+  colormap.hpp
+
   ${imgproc_JPEG_SOURCES}
   )
 
