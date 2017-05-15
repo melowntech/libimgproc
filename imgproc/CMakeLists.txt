@@ -64,6 +64,9 @@ if(OpenCV_FOUND)
     readimage.hpp readimage.cpp
     findrects.hpp detail/findrects.impl.hpp
     uvpack.hpp uvpack.cpp
+    clahe.cpp
+    spectral_analysis.hpp spectral_analysis.cpp
+    scanconversion.hpp scanconversion.cpp
     )
 else()
   message(STATUS "imgproc: compiling without OpenCV support")
@@ -107,14 +110,11 @@ define_module(LIBRARY imgproc=${imgproc_VERSION}
 set(imgproc_SOURCES
   color.cpp
   bitdepth.hpp
-  clahe.cpp
-  spectral_analysis.hpp spectral_analysis.cpp
   rastermask.hpp rastermask/bitfield.hpp rastermask/quadtree.hpp
   rastermask/bitfield.cpp rastermask/quadtree.cpp
   rastermask/mappedqtree.cpp rastermask/mappedqtree.cpp
 
   georeferencing.hpp
-  scanconversion.hpp scanconversion.cpp
   gil-float-image.hpp
   crop.hpp
 
