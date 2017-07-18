@@ -50,6 +50,40 @@
 
 /**** mappedqtree version of rastermask ****/
 
+/** Format:
+ *
+ *  File starts with a header.
+ *
+ *  Header = {
+ *      uint8[6] magic = "MQMASK"
+ *      uint8 reserved1; // reserved for future use
+ *      uint8 reserved2; // reserved for future use
+ *      uint8 depth;     // tree depth
+ *      uint32 size;     // tree size
+ *  }
+ *
+ *  The header is followed by the data tree.
+ *
+ *  Tree is either:
+ *      * uint8(0xff): while tree valid.
+ *      * uint8(0x00): whole tree invalid.
+ *
+ *      * actual tree; each node contains info about all 4 subnodes:
+ *
+ *      Node = {
+ *          aligned uint32 jumpOffset; // number of bytes to jump over
+ *                                     // to next node
+ *                                     // placed at address aligned to 4 bytes
+ *          uint8 children; // children values: UL|UR|LL|LR
+ *      }
+ *
+ *      Each child takes 2 bits:
+ *          00: black node
+ *          01: gray node
+ *          10: gray node
+ *          11: white node
+ */
+
 namespace imgproc { namespace quadtree {
 class RasterMask;
 } } // imgproc::quadtree
