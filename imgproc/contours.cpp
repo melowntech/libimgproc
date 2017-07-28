@@ -64,13 +64,13 @@ struct Segment {
 
     mutable const Segment *prev;
     mutable const Segment *next;
-    mutable const Segment *ring;
+    mutable const Segment *ringLeader;
 
     Segment(std::uint8_t fullType, std::uint8_t type
             , Vertex start, Vertex end
             , const Segment *prev, const Segment *next)
         : fullType(fullType), type(type), start(start), end(end)
-        , prev(prev), next(next), ring()
+        , prev(prev), next(next), ringLeader()
     {}
 };
 
@@ -93,20 +93,20 @@ typedef boost::multi_index_container<
           >
     > SegmentMap;
 
-inline void distributeRingPrev(const Segment *s)
+inline void distributeRingLeaderPrev(const Segment *s)
 {
-    // grab current ring, move skip current and write ring to all
+    // grab current ringLeader, move skip current and write ringLeader to all
     // previous segments
-    const auto &ring(s->ring);
-    for (s = s->prev; s; s = s->prev) { s->ring = ring; }
+    const auto &ringLeader(s->ringLeader);
+    for (s = s->prev; s; s = s->prev) { s->ringLeader = ringLeader; }
 }
 
-inline void distributeRingNext(const Segment *s)
+inline void distributeRingLeaderNext(const Segment *s)
 {
-    // grab current ring, move skip current and write ring to all
+    // grab current ringLeader, move skip current and write ringLeader to all
     // next segments
-    const auto &ring(s->ring);
-    for (s = s->next; s; s = s->next) { s->ring = ring; }
+    const auto &ringLeader(s->ringLeader);
+    for (s = s->next; s; s = s->next) { s->ringLeader = ringLeader; }
 }
 
 struct ContourBuilder {
@@ -143,42 +143,42 @@ struct ContourBuilder {
         // insert new segment
 
         // link prev
-        const Segment *pRing(nullptr);
+        const Segment *pRingLeader(nullptr);
         if (prev) {
             prev->next = &s;
-            pRing = prev->ring;
+            pRingLeader = prev->ringLeader;
         }
 
         // link next
-        const Segment *nRing(nullptr);
+        const Segment *nRingLeader(nullptr);
         if (next) {
             next->prev = &s;
-            nRing = next->ring;
+            nRingLeader = next->ringLeader;
         }
 
-        // unify/create ring
-        if (!pRing && !nRing) {
-            // no ring, create for this segment
-            s.ring = &s;
+        // unify/create ringLeader
+        if (!pRingLeader && !nRingLeader) {
+            // no ringLeader, create for this segment
+            s.ringLeader = &s;
             // and copy to others (there is at most one segment in each
             // direction -> simple assignment)
-            if (next) { next->ring = s.ring; }
-            if (prev) { prev->ring = s.ring; }
-        } else if (!pRing) {
-            // distribute ring from next node to all its previous segments
-            distributeRingPrev(next);
-        } else if (!nRing) {
-            // distribute ring from prev node to all its next segments
-            distributeRingNext(prev);
-        } else if (pRing != nRing) {
+            if (next) { next->ringLeader = s.ringLeader; }
+            if (prev) { prev->ringLeader = s.ringLeader; }
+        } else if (!pRingLeader) {
+            // distribute ringLeader from next node to all its previous segments
+            distributeRingLeaderPrev(next);
+        } else if (!nRingLeader) {
+            // distribute ringLeader from prev node to all its next segments
+            distributeRingLeaderNext(prev);
+        } else if (pRingLeader != nRingLeader) {
             // both valid but different, prefer prev segment
-            distributeRingNext(prev);
+            distributeRingLeaderNext(prev);
         } else {
-            // both are the same -> we've just closed the ring
-            s.ring = pRing;
+            // both are the same -> we've just closed the ringLeader
+            s.ringLeader = pRingLeader;
 
-            // new ring, extract contour
-            extract(pRing);
+            // new ringLeader, extract contour
+            extract(pRingLeader);
         }
     }
 
@@ -311,18 +311,29 @@ struct ContourBuilder {
     }
 
     void extract(const Segment *head) {
-        LOG(info4) << "Processing ring starting at: " << head;
+        LOG(info4) << "Processing ring from: " << head;
         contours.emplace_back();
         auto &points(contours.back());
 
-        const auto *s(head);
-        do {
+        const auto addVertex([&](const Vertex &v) {
+                points.emplace_back(v(0) / 2.0, v(1) / 2.0);
+            });
+
+        // add first vertex
+        addVertex(head->start);
+
+        // end segment
+        const auto end((head->type != head->prev->type) ? head : head->prev);
+
+        // process full ringLeader
+        for (const auto *p(head), *s(head->next); s != end; p = s, s = s->next)
+        {
             LOG(info4) << "    adding: " << s;
 
-            if (s->ring != head) {
+            if (s->ringLeader != head) {
                 LOGTHROW(info4, std::runtime_error)
                     << "Segment: " << s << " doesn't belong to ring "
-                    << head << " but " << s->ring << ".";
+                    << head << " but " << s->ringLeader << ".";
             }
 
             if (!s->next) {
@@ -330,13 +341,15 @@ struct ContourBuilder {
                     << "Segment: type: [" << std::bitset<4>(s->fullType) << "/"
                     << std::bitset<4>(s->type) << "] "
                     << "<" << s->start << " -> " << s->end << "> "
-                    << s << " in ring "
-                    << s->ring << " has no next segment.";
+                    << s << " in ringLeader "
+                    << s->ringLeader << " has no next segment.";
             }
 
-            points.emplace_back(s->start(0) / 2.0, s->start(1) / 2.0);
-            s = s->next;
-        } while (s != head);
+            // add vertex only when type (i.e. direction) differs
+            if (s->type != p->type) {
+                addVertex(s->start);
+            }
+        }
     }
 
     SegmentMap segments;
