@@ -131,7 +131,7 @@ set(imgproc_SOURCES
 
   colormap.hpp
 
-  ${imgproc_JPEG_SOURCES}
+  contours.hpp contours.cpp
   )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
@@ -141,6 +141,7 @@ add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_EIGEN3_SOURCES}
   ${imgproc_GIF_SOURCES}
   ${imgproc_PNG_SOURCES}
+  ${imgproc_JPEG_SOURCES}
   )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
