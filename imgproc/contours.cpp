@@ -56,41 +56,21 @@ enum {
 typedef math::Point2i Vertex;
 typedef math::Points2i Vertices;
 
-struct Segment;
-
-struct Ring {
-    typedef std::shared_ptr<Ring> pointer;
-
-    Ring(const Segment *head) : head(head) {}
-
-    const Segment *head;
-
-    typedef std::set<const Ring*> set;
-};
-
 struct Segment {
     std::uint8_t fullType;
     std::uint8_t type;
     Vertex start;
     Vertex end;
 
-    struct Links {
-        const Segment *prev;
-        const Segment *next;
-        Ring::pointer ring;
-
-        Links(const Segment *prev, const Segment *next)
-            : prev(prev), next(next)
-        {}
-    };
-
-    mutable Links links;
+    mutable const Segment *prev;
+    mutable const Segment *next;
+    mutable const Segment *ring;
 
     Segment(std::uint8_t fullType, std::uint8_t type
             , Vertex start, Vertex end
             , const Segment *prev, const Segment *next)
         : fullType(fullType), type(type), start(start), end(end)
-        , links(prev, next)
+        , prev(prev), next(next), ring()
     {}
 };
 
@@ -113,6 +93,22 @@ typedef boost::multi_index_container<
           >
     > SegmentMap;
 
+inline void distributeRingPrev(const Segment *s)
+{
+    // grab current ring, move skip current and write ring to all
+    // previous segments
+    const auto &ring(s->ring);
+    for (s = s->prev; s; s = s->prev) { s->ring = ring; }
+}
+
+inline void distributeRingNext(const Segment *s)
+{
+    // grab current ring, move skip current and write ring to all
+    // next segments
+    const auto &ring(s->ring);
+    for (s = s->next; s; s = s->next) { s->ring = ring; }
+}
+
 struct ContourBuilder {
     template <typename Index>
     const Segment* find(Index &idx, const Vertex &v) {
@@ -126,17 +122,6 @@ struct ContourBuilder {
 
     const Segment* findByEnd(const Vertex &v) {
         return find(segments.get<EndIdx>(), v);
-    }
-
-    Ring::pointer newRing(const Segment *head) {
-        Ring::pointer ring(new Ring(head)
-                           , [&](Ring *ring) {
-                               rings.erase(ring);
-                               delete ring;
-                           });
-
-        rings.insert(ring.get());
-        return ring;
     }
 
     void addSegment(std::uint8_t fullType, std::uint8_t type
@@ -157,46 +142,28 @@ struct ContourBuilder {
 
         // insert new segment
 
-        // link
-        Ring::pointer pRing;
-        Ring::pointer nRing;
+        // link prev
+        const Segment *pRing(nullptr);
         if (prev) {
-            prev->links.next = &s;
-            pRing = prev->links.ring;
+            prev->next = &s;
+            pRing = prev->ring;
         }
+
+        // link next
+        const Segment *nRing(nullptr);
         if (next) {
-            next->links.prev = &s;
-            nRing = next->links.ring;
+            next->prev = &s;
+            nRing = next->ring;
         }
-
-        const auto distributeRingPrev([&](const Segment *s) -> void
-        {
-            // grab current ring, move skip current and write ring to all
-            // previous segments
-            const auto &ring(s->links.ring);
-            for (s = s->links.prev; s; s = s->links.prev) {
-                s->links.ring = ring;
-            }
-        });
-
-        const auto distributeRingNext([&](const Segment *s) -> void
-        {
-            // grab current ring, move skip current and write ring to all
-            // next segments
-            const auto &ring(s->links.ring);
-            for (s = s->links.next; s; s = s->links.next) {
-                s->links.ring = ring;
-            }
-        });
 
         // unify/create ring
         if (!pRing && !nRing) {
             // no ring, create for this segment
-            s.links.ring = newRing(&s);
+            s.ring = &s;
             // and copy to others (there is at most one segment in each
             // direction -> simple assignment)
-            if (next) { next->links.ring = s.links.ring; }
-            if (prev) { prev->links.ring = s.links.ring; }
+            if (next) { next->ring = s.ring; }
+            if (prev) { prev->ring = s.ring; }
         } else if (!pRing) {
             // distribute ring from next node to all its previous segments
             distributeRingPrev(next);
@@ -207,8 +174,11 @@ struct ContourBuilder {
             // both valid but different, prefer prev segment
             distributeRingNext(prev);
         } else {
-            // both are the same, just assing
-            s.links.ring = pRing;
+            // both are the same -> we've just closed the ring
+            s.ring = pRing;
+
+            // new ring, extract contour
+            extract(pRing);
         }
     }
 
@@ -340,58 +310,43 @@ struct ContourBuilder {
         }
     }
 
-    math::Points2 extract(const Ring *ring) {
-        LOG(info4) << "Processing ring starting at: " << ring->head;
-        math::Points2 points;
+    void extract(const Segment *head) {
+        LOG(info4) << "Processing ring starting at: " << head;
+        contours.emplace_back();
+        auto &points(contours.back());
 
-        const Segment *s(ring->head);
+        const auto *s(head);
         do {
             LOG(info4) << "    adding: " << s;
 
-            if (s->links.ring.get() != ring) {
+            if (s->ring != head) {
                 LOGTHROW(info4, std::runtime_error)
                     << "Segment: " << s << " doesn't belong to ring "
-                    << ring << " but " << s->links.ring << ".";
+                    << head << " but " << s->ring << ".";
             }
 
-            if (!s->links.next) {
+            if (!s->next) {
                 LOGTHROW(info4, std::runtime_error)
                     << "Segment: type: [" << std::bitset<4>(s->fullType) << "/"
                     << std::bitset<4>(s->type) << "] "
                     << "<" << s->start << " -> " << s->end << "> "
                     << s << " in ring "
-                    << s->links.ring << " has no next segment.";
+                    << s->ring << " has no next segment.";
             }
 
             points.emplace_back(s->start(0) / 2.0, s->start(1) / 2.0);
-            s = s->links.next;
-        } while (s != ring->head);
-
-        return points;
+            s = s->next;
+        } while (s != head);
     }
 
-    Contours extract() {
-        Contours contours;
-
-        LOG(info4) << "Rings: " << rings.size();
-
-        for (const auto &ring : rings) {
-            contours.push_back(extract(ring));
-        }
-
-        return contours;
-    }
-
-    Ring::set rings;
     SegmentMap segments;
+    Contours contours;
 };
 
 } // namespace
 
 Contours findContours(const bitfield::RasterMask &mask)
 {
-    (void) mask;
-
     ContourBuilder cb;
 
     const auto size(mask.dims());
@@ -438,7 +393,7 @@ Contours findContours(const bitfield::RasterMask &mask)
     // last row
     for (int i(-1); i <= xend; ++i) { addBorder(i, yend); }
 
-    return cb.extract();
+    return cb.contours;
 }
 
 } // namespace imgproc
