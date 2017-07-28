@@ -46,6 +46,13 @@ namespace imgproc {
 
 namespace {
 
+enum {
+    b0000 = 0x0, b0001 = 0x1, b0010 = 0x2, b0011 = 0x3
+    , b0100 = 0x4, b0101 = 0x5, b0110 = 0x6, b0111 = 0x7
+    , b1000 = 0x8, b1001 = 0x9, b1010 = 0xa, b1011 = 0xb
+    , b1100 = 0xc, b1101 = 0xd, b1110 = 0xe, b1111 = 0xf
+};
+
 typedef math::Point2i Vertex;
 typedef math::Points2i Vertices;
 
@@ -213,53 +220,53 @@ struct ContourBuilder {
         // LOG(info4) << "Adding inner: " << x << ", " << y;
 
         switch (type) {
-        case 0x0: return;
+        case b0000: return;
 
-        case 0x1:
+        case b0001:
             return addSegment(type, type, { x, y + 1 }, { x + 1, y + 2 });
 
-        case 0x2:
+        case b0010:
             return addSegment(type, type, { x + 1, y + 2 }, { x + 2, y + 1 });
 
-        case 0x3:
+        case b0011:
             return addSegment(type, type, { x, y + 1 }, { x + 2, y + 1 });
 
-        case 0x4:
+        case b0100:
             return addSegment(type, type, { x + 2, y + 1 }, { x + 1, y });
 
-        case 0x5: // 0x7 + 0xd
-            addSegment(type, 0x7, { x, y + 1 }, { x + 1, y });
-            return addSegment(type, 0xd, { x + 2, y + 1 }, { x + 1, y + 2 });
+        case b0101: // b0111 + b1101
+            addSegment(type, b0111, { x, y + 1 }, { x + 1, y });
+            return addSegment(type, b1101, { x + 2, y + 1 }, { x + 1, y + 2 });
 
-        case 0x6:
+        case b0110:
             return addSegment(type, type, { x + 1, y + 2 }, { x + 1, y });
 
-        case 0x7:
+        case b0111:
             return addSegment(type, type, { x, y + 1 }, { x + 1, y });
 
-        case 0x8:
+        case b1000:
             return addSegment(type, type, { x + 1, y }, { x, y + 1 });
 
-        case 0x9:
+        case b1001:
             return addSegment(type, type, { x + 1, y }, { x + 1, y + 2 });
 
-        case 0xa: // 0xb + 0xe
-            addSegment(type, 0xb, { x + 1, y }, { x + 2, y + 1 });
-            return addSegment(type, 0xe, { x + 1, y + 2 }, { x, y + 1 });
+        case b1010: // b1011 + b1110
+            addSegment(type, b1011, { x + 1, y }, { x + 2, y + 1 });
+            return addSegment(type, b1110, { x + 1, y + 2 }, { x, y + 1 });
 
-        case 0xb:
+        case b1011:
             return addSegment(type, type, { x + 1, y }, { x + 2, y + 1 });
 
-        case 0xc:
+        case b1100:
             return addSegment(type, type, { x + 2, y + 1 }, { x, y + 1 });
 
-        case 0xd:
+        case b1101:
             return addSegment(type, type, { x + 2, y + 1 }, { x + 1, y + 2 });
 
-        case 0xe:
+        case b1110:
             return addSegment(type, type, { x + 1, y + 2 }, { x, y + 1 });
 
-        case 0xf: return;
+        case b1111: return;
         }
     }
 
@@ -271,65 +278,65 @@ struct ContourBuilder {
         // LOG(info4) << "Adding border: " << x << ", " << y;
 
         switch (type) {
-        case 0x0: return;
+        case b0000: return;
 
-        case 0x1:
-            addSegment(type, 0x3, { x, y + 1 }, { x + 1, y + 1 });
-            return addSegment(type, 0x9, { x + 1, y + 1 }, { x + 1, y + 2 });
+        case b0001:
+            addSegment(type, b0011, { x, y + 1 }, { x + 1, y + 1 });
+            return addSegment(type, b1001, { x + 1, y + 1 }, { x + 1, y + 2 });
 
-        case 0x2:
-            addSegment(type, 0x6, { x + 1, y + 2 }, { x + 1, y + 1 });
-            return addSegment(type, 0x3, { x + 1, y + 1 }, { x + 2, y + 1 });
+        case b0010:
+            addSegment(type, b0110, { x + 1, y + 2 }, { x + 1, y + 1 });
+            return addSegment(type, b0011, { x + 1, y + 1 }, { x + 2, y + 1 });
 
-        case 0x3:
+        case b0011:
             return addSegment(type, type, { x, y + 1 }, { x + 2, y + 1 });
 
-        case 0x4:
-            addSegment(type, 0xc, { x + 2, y + 1 }, { x + 1, y + 1 });
-            return addSegment(type, 0x6, { x + 1, y + 1 }, { x + 1, y });
+        case b0100:
+            addSegment(type, b1100, { x + 2, y + 1 }, { x + 1, y + 1 });
+            return addSegment(type, b0110, { x + 1, y + 1 }, { x + 1, y });
 
-        case 0x5: // 0x7 + 0xd
-            addSegment(type, 0x6, { x, y + 1 }, { x, y });
-            addSegment(type, 0x3, { x, y }, { x + 1, y });
-            addSegment(type, 0x9, { x + 2, y + 1 }, { x + 2, y + 2 });
-            return addSegment(type, 0xc, { x + 2, y + 2 }, { x + 1, y + 2 });
+        case b0101: // b0111 + b1101
+            addSegment(type, b0110, { x, y + 1 }, { x, y });
+            addSegment(type, b0011, { x, y }, { x + 1, y });
+            addSegment(type, b1001, { x + 2, y + 1 }, { x + 2, y + 2 });
+            return addSegment(type, b1100, { x + 2, y + 2 }, { x + 1, y + 2 });
 
-        case 0x6:
+        case b0110:
             return addSegment(type, type, { x + 1, y + 2 }, { x + 1, y });
 
-        case 0x7:
-            addSegment(type, 0x6, { x, y + 1 }, { x, y });
-            return addSegment(type, 0x3, { x, y }, { x + 1, y });
+        case b0111:
+            addSegment(type, b0110, { x, y + 1 }, { x, y });
+            return addSegment(type, b0011, { x, y }, { x + 1, y });
 
-        case 0x8:
-            addSegment(type, 0x9, { x + 1, y }, { x + 1, y + 1 });
-            return addSegment(type, 0xc, { x + 1, y + 1 }, { x, y + 1 });
+        case b1000:
+            addSegment(type, b1001, { x + 1, y }, { x + 1, y + 1 });
+            return addSegment(type, b1100, { x + 1, y + 1 }, { x, y + 1 });
 
-        case 0x9:
+        case b1001:
             return addSegment(type, type, { x + 1, y }, { x + 1, y + 2 });
 
-        case 0xa: // 0xb + 0xe
-            addSegment(type, 0x3, { x + 1, y }, { x + 2, y });
-            addSegment(type, 0x9, { x + 2, y }, { x + 2, y + 1 });
-            addSegment(type, 0xc, { x + 1, y + 2 }, { x, y + 2 });
-            return addSegment(type, 0x6, { x, y + 2 }, { x, y + 1 });
+        case b1010: // b1011 + b1110
+            addSegment(type, b0011, { x + 1, y }, { x + 2, y });
+            addSegment(type, b1001, { x + 2, y }, { x + 2, y + 1 });
+            addSegment(type, b1100, { x + 1, y + 2 }, { x, y + 2 });
+            return addSegment(type, b0110, { x, y + 2 }, { x, y + 1 });
 
-        case 0xb:
-            addSegment(type, 0x3, { x + 1, y }, { x + 2, y });
-            return addSegment(type, 0x9, { x + 2, y }, { x + 2, y + 1 });
+        case b1011:
+            addSegment(type, b0011, { x + 1, y }, { x + 2, y });
+            return addSegment(type, b1001, { x + 2, y }, { x + 2, y + 1 });
 
-        case 0xc:
+        case b1100:
             return addSegment(type, type, { x + 2, y + 1 }, { x, y + 1 });
 
-        case 0xd:
-            addSegment(type, 0x9, { x + 2, y + 1 }, { x + 2, y + 2 });
-            return addSegment(type, 0xc, { x + 2, y + 2 }, { x + 1, y + 2 });
+        case b1101:
+            addSegment(type, b1001, { x + 2, y + 1 }, { x + 2, y + 2 });
+            return addSegment(type, b1100, { x + 2, y + 2 }, { x + 1, y + 2 });
 
-        case 0xe:
-            addSegment(type, 0xc, { x + 1, y + 2 }, { x, y + 2 });
-            return addSegment(type, 0x6, { x, y + 2 }, { x, y + 1 });
+        case b1110:
+            addSegment(type, b1100, { x + 1, y + 2 }, { x, y + 2 });
+            return addSegment(type, b0110, { x, y + 2 }, { x, y + 1 });
 
-        case 0xf: return;
+        case b1111: return;
         }
     }
 
