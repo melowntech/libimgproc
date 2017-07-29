@@ -27,12 +27,10 @@
 #ifndef imgproc_detail_contours_hpp_included_
 #define imgproc_detail_contours_hpp_included_
 
+#include <cstdint>
 #include <map>
-#include <bitset>
 
 #include <boost/noncopyable.hpp>
-
-#include "dbglog/dbglog.hpp"
 
 #include "math/geometry_core.hpp"
 
@@ -47,17 +45,9 @@ struct FindContoursImpl : boost::noncopyable {
     CellType ambiguousType(const math::Point2i &p, CellType type) {
         auto fambiguousCells(ambiguousCells_.find(p));
         if (fambiguousCells == ambiguousCells_.end()) {
-            LOG(info4) << this << ": ambiguous[" << p << "]: "
-                       << std::bitset<4>(type) << " -> "
-                       << std::bitset<4>(type);
-            LOG(info4) << "amb size: " << ambiguousCells_.size();
             ambiguousCells_.insert(AmbiguousCells::value_type(p, type));
-            LOG(info4) << "amb size: " << ambiguousCells_.size();
             return type;
         }
-        LOG(info4) << this << ": ambiguous[" << p << "]: "
-                   << std::bitset<4>(type) << " -> "
-                   << std::bitset<4>(fambiguousCells->second);
         return fambiguousCells->second;
     }
 };
