@@ -46,7 +46,9 @@ namespace imgproc {
 
 namespace {
 
-enum {
+typedef detail::FindContoursImpl::CellType CellType;
+
+enum : CellType {
     b0000 = 0x0, b0001 = 0x1, b0010 = 0x2, b0011 = 0x3
     , b0100 = 0x4, b0101 = 0x5, b0110 = 0x6, b0111 = 0x7
     , b1000 = 0x8, b1001 = 0x9, b1010 = 0xa, b1011 = 0xb
@@ -57,8 +59,8 @@ typedef math::Point2i Vertex;
 typedef math::Points2i Vertices;
 
 struct Segment {
-    std::uint8_t fullType;
-    std::uint8_t type;
+    CellType fullType;
+    CellType type;
     Vertex start;
     Vertex end;
 
@@ -66,7 +68,7 @@ struct Segment {
     mutable const Segment *next;
     mutable const Segment *ringLeader;
 
-    Segment(std::uint8_t fullType, std::uint8_t type
+    Segment(CellType fullType, CellType type
             , Vertex start, Vertex end
             , const Segment *prev, const Segment *next)
         : fullType(fullType), type(type), start(start), end(end)
@@ -109,7 +111,11 @@ inline void distributeRingLeaderNext(const Segment *s)
     for (s = s->next; s; s = s->next) { s->ringLeader = ringLeader; }
 }
 
-struct ContourBuilder {
+} // namespace
+
+struct FindContours::Builder {
+    Builder(FindContours &cf) : cf(cf) {}
+
     template <typename Index>
     const Segment* find(Index &idx, const Vertex &v) {
         auto fidx(idx.find(v));
@@ -124,7 +130,7 @@ struct ContourBuilder {
         return find(segments.get<EndIdx>(), v);
     }
 
-    void addSegment(std::uint8_t fullType, std::uint8_t type
+    void addSegment(CellType fullType, CellType type
                     , const Vertex &start, const Vertex &end)
     {
         auto *prev(findByEnd(start));
@@ -182,7 +188,41 @@ struct ContourBuilder {
         }
     }
 
-    void add(int x, int y, std::uint8_t type) {
+    void addAmbiguous(CellType type, int x, int y) {
+        Vertex v(x, y);
+
+        auto mtype(cf.ambiguousType(v, type));
+
+        if (mtype == type) {
+            // same type
+            switch (mtype) {
+            case b0101: // b0111 + b1101
+                addSegment(mtype, b0111, { x, y + 1 }, { x + 1, y });
+                addSegment(mtype, b1101, { x + 2, y + 1 }, { x + 1, y + 2 });
+                return;
+
+            case b1010: // b1011 + b1110
+                addSegment(mtype, b1011, { x + 1, y }, { x + 2, y + 1 });
+                addSegment(mtype, b1110, { x + 1, y + 2 }, { x, y + 1 });
+                return;
+            }
+        } else {
+            // inverse type -> switch direction
+            switch (mtype) {
+            case b0101: // b1000 + b0010
+                addSegment(mtype, b1000, { x + 1, y }, { x, y + 1 });
+                addSegment(mtype, b0010, { x + 1, y + 2 }, { x + 2, y + 1 });
+                return;
+
+            case b1010: // b0100 + b0001
+                addSegment(mtype, b0100, { x + 2, y + 1 }, { x + 1, y });
+                addSegment(mtype, b0001, { x, y + 1 }, { x + 1, y + 2 });
+                return;
+            }
+        }
+    }
+
+    void add(int x, int y, CellType type) {
         // 2x scale to get rid of non-integral values
         x *= 2;
         y *= 2;
@@ -204,9 +244,8 @@ struct ContourBuilder {
         case b0100:
             return addSegment(type, type, { x + 2, y + 1 }, { x + 1, y });
 
-        case b0101: // b0111 + b1101
-            addSegment(type, b0111, { x, y + 1 }, { x + 1, y });
-            return addSegment(type, b1101, { x + 2, y + 1 }, { x + 1, y + 2 });
+        case b0101:
+            return addAmbiguous(type, x, y);
 
         case b0110:
             return addSegment(type, type, { x + 1, y + 2 }, { x + 1, y });
@@ -220,9 +259,8 @@ struct ContourBuilder {
         case b1001:
             return addSegment(type, type, { x + 1, y }, { x + 1, y + 2 });
 
-        case b1010: // b1011 + b1110
-            addSegment(type, b1011, { x + 1, y }, { x + 2, y + 1 });
-            return addSegment(type, b1110, { x + 1, y + 2 }, { x, y + 1 });
+        case b1010:
+            return addAmbiguous(type, x, y);
 
         case b1011:
             return addSegment(type, type, { x + 1, y }, { x + 2, y + 1 });
@@ -240,7 +278,7 @@ struct ContourBuilder {
         }
     }
 
-    void addBorder(int x, int y, std::uint8_t type) {
+    void addBorder(int x, int y, CellType type) {
         // 2x scale to get rid of non-integral values
         x *= 2;
         y *= 2;
@@ -328,8 +366,6 @@ struct ContourBuilder {
         // process full ringLeader
         for (const auto *p(head), *s(head->next); s != end; p = s, s = s->next)
         {
-            LOG(info4) << "    adding: " << s;
-
             if (s->ringLeader != head) {
                 LOGTHROW(info4, std::runtime_error)
                     << "Segment: " << s << " doesn't belong to ring "
@@ -352,19 +388,18 @@ struct ContourBuilder {
         }
     }
 
+    FindContours &cf;
     SegmentMap segments;
     Contours contours;
 };
 
-} // namespace
-
-Contours findContours(const bitfield::RasterMask &mask)
+Contours FindContours::operator()(const bitfield::RasterMask &mask)
 {
-    ContourBuilder cb;
+    Builder cb(*this);
 
     const auto size(mask.dims());
 
-    const auto getFlag([&](int x, int y, std::uint8_t flag) -> std::uint8_t
+    const auto getFlag([&](int x, int y, CellType flag) -> CellType
     {
         return (mask.get(x, y) ? flag : 0);
     });
