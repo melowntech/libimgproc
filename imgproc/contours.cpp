@@ -349,7 +349,7 @@ struct FindContours::Builder {
     }
 
     void extract(const Segment *head) {
-        LOG(info4) << "Processing ring from: " << head;
+        // LOG(info4) << "Processing ring from: " << head;
         contours.emplace_back();
         auto &points(contours.back());
 
