@@ -46,7 +46,7 @@ namespace imgproc {
 
 namespace {
 
-typedef detail::FindContoursImpl::CellType CellType;
+typedef detail::FindContourImpl::CellType CellType;
 
 enum : CellType {
     b0000 = 0x0, b0001 = 0x1, b0010 = 0x2, b0011 = 0x3
@@ -54,6 +54,13 @@ enum : CellType {
     , b1000 = 0x8, b1001 = 0x9, b1010 = 0xa, b1011 = 0xb
     , b1100 = 0xc, b1101 = 0xd, b1110 = 0xe, b1111 = 0xf
 };
+
+struct PointPosition { enum : CellType {
+    ll = 0x0
+    , lr = 0x2
+    , ur = 0x4
+    , ul = 0x8
+}; };
 
 typedef math::Point2i Vertex;
 typedef math::Points2i Vertices;
@@ -68,8 +75,7 @@ struct Segment {
     mutable const Segment *next;
     mutable const Segment *ringLeader;
 
-    Segment(CellType fullType, CellType type
-            , Vertex start, Vertex end
+    Segment(CellType fullType, CellType type, Vertex start, Vertex end
             , const Segment *prev, const Segment *next)
         : fullType(fullType), type(type), start(start), end(end)
         , prev(prev), next(next), ringLeader()
@@ -113,8 +119,10 @@ inline void distributeRingLeaderNext(const Segment *s)
 
 } // namespace
 
-struct FindContours::Builder {
-    Builder(FindContours &cf) : cf(cf) {}
+struct FindContour::Builder {
+    Builder(FindContour &cf, const math::Size2 &rasterSize)
+        : cf(cf), contour(rasterSize)
+    {}
 
     template <typename Index>
     const Segment* find(Index &idx, const Vertex &v) {
@@ -130,278 +138,319 @@ struct FindContours::Builder {
         return find(segments.get<EndIdx>(), v);
     }
 
-    void addSegment(CellType fullType, CellType type
-                    , const Vertex &start, const Vertex &end)
-    {
-        auto *prev(findByEnd(start));
-        auto *next(findByStart(end));
+    void addSegment(CellType fullType, CellType type, int i, int j
+                    , const Vertex &start, const Vertex &end);
 
-        const auto &s
-            (*segments.insert(Segment(fullType, type, start, end
-                                      , prev, next)).first);
+    void add(int i, int j, CellType type);
 
-        // LOG(info4) << "Segment " << s.start << " -> " << s.end << "> "
-        //            << &s;
+    void addBorder(int i, int j, CellType type);
 
-        // stranded segment -> we're done here
-        if (!prev && !next) { return; }
+    void addAmbiguous(CellType type, int i, int j);
 
-        // insert new segment
+    void extract(const Segment *head);
 
-        // link prev
-        const Segment *pRingLeader(nullptr);
-        if (prev) {
-            prev->next = &s;
-            pRingLeader = prev->ringLeader;
-        }
+    void setBorder(CellType type, int i, int j);
 
-        // link next
-        const Segment *nRingLeader(nullptr);
-        if (next) {
-            next->prev = &s;
-            nRingLeader = next->ringLeader;
-        }
-
-        // unify/create ringLeader
-        if (!pRingLeader && !nRingLeader) {
-            // no ringLeader, create for this segment
-            s.ringLeader = &s;
-            // and copy to others (there is at most one segment in each
-            // direction -> simple assignment)
-            if (next) { next->ringLeader = s.ringLeader; }
-            if (prev) { prev->ringLeader = s.ringLeader; }
-        } else if (!pRingLeader) {
-            // distribute ringLeader from next node to all its previous segments
-            distributeRingLeaderPrev(next);
-        } else if (!nRingLeader) {
-            // distribute ringLeader from prev node to all its next segments
-            distributeRingLeaderNext(prev);
-        } else if (pRingLeader != nRingLeader) {
-            // both valid but different, prefer prev segment
-            distributeRingLeaderNext(prev);
-        } else {
-            // both are the same -> we've just closed the ringLeader
-            s.ringLeader = pRingLeader;
-
-            // new ringLeader, extract contour
-            extract(pRingLeader);
-        }
-    }
-
-    void addAmbiguous(CellType type, int x, int y) {
-        Vertex v(x, y);
-
-        auto mtype(cf.ambiguousType(v, type));
-
-        if (mtype == type) {
-            // same type
-            switch (mtype) {
-            case b0101: // b0111 + b1101
-                addSegment(mtype, b0111, { x, y + 1 }, { x + 1, y });
-                addSegment(mtype, b1101, { x + 2, y + 1 }, { x + 1, y + 2 });
-                return;
-
-            case b1010: // b1011 + b1110
-                addSegment(mtype, b1011, { x + 1, y }, { x + 2, y + 1 });
-                addSegment(mtype, b1110, { x + 1, y + 2 }, { x, y + 1 });
-                return;
-            }
-        } else {
-            // inverse type -> switch direction
-            switch (mtype) {
-            case b0101: // b1000 + b0010
-                addSegment(mtype, b1000, { x + 1, y }, { x, y + 1 });
-                addSegment(mtype, b0010, { x + 1, y + 2 }, { x + 2, y + 1 });
-                return;
-
-            case b1010: // b0100 + b0001
-                addSegment(mtype, b0100, { x + 2, y + 1 }, { x + 1, y });
-                addSegment(mtype, b0001, { x, y + 1 }, { x + 1, y + 2 });
-                return;
-            }
-        }
-    }
-
-    void add(int x, int y, CellType type) {
-        // 2x scale to get rid of non-integral values
-        x *= 2;
-        y *= 2;
-
-        // LOG(info4) << "Adding inner: " << x << ", " << y;
-
-        switch (type) {
-        case b0000: return;
-
-        case b0001:
-            return addSegment(type, type, { x, y + 1 }, { x + 1, y + 2 });
-
-        case b0010:
-            return addSegment(type, type, { x + 1, y + 2 }, { x + 2, y + 1 });
-
-        case b0011:
-            return addSegment(type, type, { x, y + 1 }, { x + 2, y + 1 });
-
-        case b0100:
-            return addSegment(type, type, { x + 2, y + 1 }, { x + 1, y });
-
-        case b0101:
-            return addAmbiguous(type, x, y);
-
-        case b0110:
-            return addSegment(type, type, { x + 1, y + 2 }, { x + 1, y });
-
-        case b0111:
-            return addSegment(type, type, { x, y + 1 }, { x + 1, y });
-
-        case b1000:
-            return addSegment(type, type, { x + 1, y }, { x, y + 1 });
-
-        case b1001:
-            return addSegment(type, type, { x + 1, y }, { x + 1, y + 2 });
-
-        case b1010:
-            return addAmbiguous(type, x, y);
-
-        case b1011:
-            return addSegment(type, type, { x + 1, y }, { x + 2, y + 1 });
-
-        case b1100:
-            return addSegment(type, type, { x + 2, y + 1 }, { x, y + 1 });
-
-        case b1101:
-            return addSegment(type, type, { x + 2, y + 1 }, { x + 1, y + 2 });
-
-        case b1110:
-            return addSegment(type, type, { x + 1, y + 2 }, { x, y + 1 });
-
-        case b1111: return;
-        }
-    }
-
-    void addBorder(int x, int y, CellType type) {
-        // 2x scale to get rid of non-integral values
-        x *= 2;
-        y *= 2;
-
-        // LOG(info4) << "Adding border: " << x << ", " << y;
-
-        switch (type) {
-        case b0000: return;
-
-        case b0001:
-            addSegment(type, b0011, { x, y + 1 }, { x + 1, y + 1 });
-            return addSegment(type, b1001, { x + 1, y + 1 }, { x + 1, y + 2 });
-
-        case b0010:
-            addSegment(type, b0110, { x + 1, y + 2 }, { x + 1, y + 1 });
-            return addSegment(type, b0011, { x + 1, y + 1 }, { x + 2, y + 1 });
-
-        case b0011:
-            return addSegment(type, type, { x, y + 1 }, { x + 2, y + 1 });
-
-        case b0100:
-            addSegment(type, b1100, { x + 2, y + 1 }, { x + 1, y + 1 });
-            return addSegment(type, b0110, { x + 1, y + 1 }, { x + 1, y });
-
-        case b0101: // b0111 + b1101
-            addSegment(type, b0110, { x, y + 1 }, { x, y });
-            addSegment(type, b0011, { x, y }, { x + 1, y });
-            addSegment(type, b1001, { x + 2, y + 1 }, { x + 2, y + 2 });
-            return addSegment(type, b1100, { x + 2, y + 2 }, { x + 1, y + 2 });
-
-        case b0110:
-            return addSegment(type, type, { x + 1, y + 2 }, { x + 1, y });
-
-        case b0111:
-            addSegment(type, b0110, { x, y + 1 }, { x, y });
-            return addSegment(type, b0011, { x, y }, { x + 1, y });
-
-        case b1000:
-            addSegment(type, b1001, { x + 1, y }, { x + 1, y + 1 });
-            return addSegment(type, b1100, { x + 1, y + 1 }, { x, y + 1 });
-
-        case b1001:
-            return addSegment(type, type, { x + 1, y }, { x + 1, y + 2 });
-
-        case b1010: // b1011 + b1110
-            addSegment(type, b0011, { x + 1, y }, { x + 2, y });
-            addSegment(type, b1001, { x + 2, y }, { x + 2, y + 1 });
-            addSegment(type, b1100, { x + 1, y + 2 }, { x, y + 2 });
-            return addSegment(type, b0110, { x, y + 2 }, { x, y + 1 });
-
-        case b1011:
-            addSegment(type, b0011, { x + 1, y }, { x + 2, y });
-            return addSegment(type, b1001, { x + 2, y }, { x + 2, y + 1 });
-
-        case b1100:
-            return addSegment(type, type, { x + 2, y + 1 }, { x, y + 1 });
-
-        case b1101:
-            addSegment(type, b1001, { x + 2, y + 1 }, { x + 2, y + 2 });
-            return addSegment(type, b1100, { x + 2, y + 2 }, { x + 1, y + 2 });
-
-        case b1110:
-            addSegment(type, b1100, { x + 1, y + 2 }, { x, y + 2 });
-            return addSegment(type, b0110, { x, y + 2 }, { x, y + 1 });
-
-        case b1111: return;
-        }
-    }
-
-    void extract(const Segment *head) {
-        // LOG(info4) << "Processing ring from: " << head;
-        contours.emplace_back();
-        auto &points(contours.back());
-
-        const auto addVertex([&](const Vertex &v) {
-                points.emplace_back(v(0) / 2.0, v(1) / 2.0);
-            });
-
-        // add first vertex
-        addVertex(head->start);
-
-        // end segment
-        const auto end((head->type != head->prev->type) ? head : head->prev);
-
-        // process full ringLeader
-        for (const auto *p(head), *s(head->next); s != end; p = s, s = s->next)
-        {
-            if (s->ringLeader != head) {
-                LOGTHROW(info4, std::runtime_error)
-                    << "Segment: " << s << " doesn't belong to ring "
-                    << head << " but " << s->ringLeader << ".";
-            }
-
-            if (!s->next) {
-                LOGTHROW(info4, std::runtime_error)
-                    << "Segment: type: [" << std::bitset<4>(s->fullType) << "/"
-                    << std::bitset<4>(s->type) << "] "
-                    << "<" << s->start << " -> " << s->end << "> "
-                    << s << " in ringLeader "
-                    << s->ringLeader << " has no next segment.";
-            }
-
-            // add vertex only when type (i.e. direction) differs
-            if (s->type != p->type) {
-                addVertex(s->start);
-            }
-        }
-    }
-
-    FindContours &cf;
+    FindContour &cf;
     SegmentMap segments;
-    Contours contours;
+    Contour contour;
 };
 
-Contours FindContours::operator()(const bitfield::RasterMask &mask)
-{
-    Builder cb(*this);
 
-    const auto size(mask.dims());
+void FindContour::Builder::setBorder(CellType type, int i, int j)
+{
+#define SET_BORDER(X, Y) contour.border.set(i + X, j + Y)
+
+    switch (type) {
+    case b0000: return;
+
+    case b0001: return SET_BORDER(0, 1);
+    case b0010: return SET_BORDER(1, 1);
+    case b0100: return SET_BORDER(1, 0);
+    case b1000: return SET_BORDER(0, 0);
+
+    case b0011:
+        SET_BORDER(0, 1);
+        return SET_BORDER(1, 1);
+    case b0110:
+        SET_BORDER(1, 0);
+        return SET_BORDER(1, 1);
+    case b1100:
+        SET_BORDER(0, 0);
+        return SET_BORDER(1, 0);
+    case b1001:
+        SET_BORDER(0, 0);
+        return SET_BORDER(0, 1);
+
+    case b0101:
+    case b0111:
+    case b1010:
+    case b1011:
+    case b1101:
+    case b1110:
+        SET_BORDER(0, 0);
+        SET_BORDER(1, 0);
+        SET_BORDER(0, 1);
+        return SET_BORDER(1, 1);
+
+    case b1111: return;
+    }
+
+#undef SET_BORDER
+}
+
+void FindContour::Builder::addSegment(CellType fullType, CellType type
+                                      , int i, int j
+                                      , const Vertex &start, const Vertex &end)
+{
+    setBorder(fullType, i, j);
+
+    // mark in raster
+    auto *prev(findByEnd(start));
+    auto *next(findByStart(end));
+
+    const auto &s
+        (*segments.insert(Segment(fullType, type, start, end
+                                  , prev, next)).first);
+
+    // LOG(info4) << "Segment " << s.start << " -> " << s.end << "> "
+    //            << &s;
+
+    // stranded segment -> we're done here
+    if (!prev && !next) { return; }
+
+    // insert new segment
+
+    // link prev
+    const Segment *pRingLeader(nullptr);
+    if (prev) {
+        prev->next = &s;
+        pRingLeader = prev->ringLeader;
+    }
+
+    // link next
+    const Segment *nRingLeader(nullptr);
+    if (next) {
+        next->prev = &s;
+        nRingLeader = next->ringLeader;
+    }
+
+    // unify/create ringLeader
+    if (!pRingLeader && !nRingLeader) {
+        // no ringLeader, create for this segment
+        s.ringLeader = &s;
+        // and copy to others (there is at most one segment in each
+        // direction -> simple assignment)
+        if (next) { next->ringLeader = s.ringLeader; }
+        if (prev) { prev->ringLeader = s.ringLeader; }
+    } else if (!pRingLeader) {
+        // distribute ringLeader from next node to all its previous segments
+        distributeRingLeaderPrev(next);
+    } else if (!nRingLeader) {
+        // distribute ringLeader from prev node to all its next segments
+        distributeRingLeaderNext(prev);
+    } else if (pRingLeader != nRingLeader) {
+        // both valid but different, prefer prev segment
+        distributeRingLeaderNext(prev);
+    } else {
+        // both are the same -> we've just closed the ringLeader
+        s.ringLeader = pRingLeader;
+
+        // new ringLeader, extract contour
+        extract(pRingLeader);
+    }
+}
+
+#define ADD_SEGMENT(X1, Y1, X2, Y2)                                     \
+    addSegment(type, type, i, j, { x + X1, y + Y1 }, { x + X2, y + Y2 })
+
+#define ADD_SEGMENT1(TYPE, X1, Y1, X2, Y2)                              \
+    addSegment(type, TYPE, i, j, { x + X1, y + Y1 }, { x + X2, y + Y2 })
+
+void FindContour::Builder::addAmbiguous(CellType otype, int i, int j)
+{
+    // 2x scale to get rid of non-integral values
+    auto x(i * 2);
+    auto y(j * 2);
+
+    Vertex v(x, y);
+
+    auto type(cf.ambiguousType(v, otype));
+
+    if (type == otype) {
+        // same type
+        switch (type) {
+        case b0101: // b0111 + b1101
+            ADD_SEGMENT1(b0111, 0, 1, 1, 0);
+            return ADD_SEGMENT1(b1101, 2, 1, 1, 2);
+
+        case b1010: // b1011 + b1110
+            ADD_SEGMENT1(b1011, 1, 0, 2, 1);
+            return ADD_SEGMENT1(b1110, 1, 2, 0, 1);
+        }
+    } else {
+        // inverse type -> switch direction
+        switch (type) {
+        case b0101: // b1000 + b0010
+            ADD_SEGMENT1(b1000, 1, 0, 0, 1);
+            return ADD_SEGMENT1(b0010, 1, 2, 2, 1);
+
+        case b1010: // b0100 + b0001
+            ADD_SEGMENT1(b0100, 2, 1, 1, 0);
+            return ADD_SEGMENT1(b0001, 0, 1, 1, 2);
+        }
+    }
+}
+
+void FindContour::Builder::add(int i, int j, CellType type)
+{
+    // 2x scale to get rid of non-integral values
+    auto x(i * 2);
+    auto y(j * 2);
+
+    // LOG(info4) << "Adding inner: " << x << ", " << y;
+
+    switch (type) {
+    case b0000: return;
+    case b0001: return ADD_SEGMENT(0, 1, 1, 2);
+    case b0010: return ADD_SEGMENT(1, 2, 2, 1);
+    case b0011: return ADD_SEGMENT(0, 1, 2, 1);
+    case b0100: return ADD_SEGMENT(2, 1, 1, 0);
+    case b0101: return addAmbiguous(type, i, j);
+    case b0110: return ADD_SEGMENT(1, 2, 1, 0);
+    case b0111: return ADD_SEGMENT(0, 1, 1, 0);
+    case b1000: return ADD_SEGMENT(1, 0, 0, 1);
+    case b1001: return ADD_SEGMENT(1, 0, 1, 2);
+    case b1010: return addAmbiguous(type, i, j);
+    case b1011: return ADD_SEGMENT(1, 0, 2, 1);
+    case b1100: return ADD_SEGMENT(2, 1, 0, 1);
+    case b1101: return ADD_SEGMENT(2, 1, 1, 2);
+    case b1110: return ADD_SEGMENT(1, 2, 0, 1);
+    case b1111: return;
+    }
+}
+
+void FindContour::Builder::addBorder(int i, int j, CellType type)
+{
+    // 2x scale to get rid of non-integral values
+    auto x(i * 2);
+    auto y(j * 2);
+
+    // LOG(info4) << "Adding border: " << x << ", " << y;
+
+    switch (type) {
+    case b0000: return;
+
+    case b0001:
+        ADD_SEGMENT1(b0011, 0, 1, 1, 1);
+        return ADD_SEGMENT1(b1001, 1, 1, 1, 2);
+
+    case b0010:
+        ADD_SEGMENT1(b0110, 1, 2, 1, 1);
+        ADD_SEGMENT1(b0011, 1, 1, 2, 1);
+
+    case b0011: return ADD_SEGMENT(0, 1, 2, 1);
+
+    case b0100:
+        ADD_SEGMENT1(b1100, 2, 1, 1, 1);
+        return ADD_SEGMENT1(b0110, 1, 1, 1, 0);
+
+    case b0101: // b0111 + b1101
+        ADD_SEGMENT1(b0110, 0, 1, 0, 0);
+        ADD_SEGMENT1(b0011, 0, 0, 1, 0);
+        ADD_SEGMENT1(b1001, 2, 1, 2, 2);
+        return ADD_SEGMENT1(b1100, 2, 2, 1, 2);
+
+    case b0110: return ADD_SEGMENT(1, 2, 1, 0);
+
+    case b0111:
+        ADD_SEGMENT1(b0110, 0, 1, 0, 0);
+        return ADD_SEGMENT1(b0011, 0, 0, 1, 0);
+
+    case b1000:
+        ADD_SEGMENT1(b1001, 1, 0, 1, 1);
+        return ADD_SEGMENT1(b1100, 1, 1, 0, 1);
+
+    case b1001: return ADD_SEGMENT(1, 0, 1, 2);
+
+    case b1010: // b1011 + b1110
+        ADD_SEGMENT1(b0011, 1, 0, 2, 0);
+        ADD_SEGMENT1(b1001, 2, 0, 2, 1);
+        ADD_SEGMENT1(b1100, 1, 2, 0, 2);
+        return ADD_SEGMENT1(b0110, 0, 2, 0, 1);
+
+    case b1011:
+        ADD_SEGMENT1(b0011, 1, 0, 2, 0);
+        return ADD_SEGMENT1(b1001, 2, 0, 2, 1);
+
+    case b1100: return ADD_SEGMENT(2, 1, 0, 1);
+
+    case b1101:
+        ADD_SEGMENT1(b1001, 2, 1, 2, 2);
+        return ADD_SEGMENT1(b1100, 2, 2, 1, 2);
+
+    case b1110:
+        ADD_SEGMENT1(b1100, 1, 2, 0, 2);
+        return ADD_SEGMENT1(b0110, 0, 2, 0, 1);
+
+    case b1111: return;
+    }
+}
+
+#undef ADD_SEGMENT
+#undef ADD_SEGMENT1
+
+
+void FindContour::Builder::extract(const Segment *head)
+{
+    // LOG(info4) << "Processing ring from: " << head;
+    contour.rings.emplace_back();
+    auto &ring(contour.rings.back());
+
+    const auto addVertex([&](const Vertex &v) {
+            ring.emplace_back(v(0) / 2.0, v(1) / 2.0);
+        });
+
+    // add first vertex
+    addVertex(head->start);
+
+    // end segment
+    const auto end((head->type != head->prev->type) ? head : head->prev);
+
+    // process full ringLeader
+    for (const auto *p(head), *s(head->next); s != end; p = s, s = s->next)
+    {
+        if (s->ringLeader != head) {
+            LOGTHROW(info4, std::runtime_error)
+                << "Segment: " << s << " doesn't belong to ring "
+                << head << " but " << s->ringLeader << ".";
+        }
+
+        if (!s->next) {
+            LOGTHROW(info4, std::runtime_error)
+                << "Segment: type: [" << std::bitset<4>(s->fullType) << "/"
+                << std::bitset<4>(s->type) << "] "
+                << "<" << s->start << " -> " << s->end << "> "
+                << s << " in ringLeader "
+                << s->ringLeader << " has no next segment.";
+            }
+
+        // add vertex only when type (i.e. direction) differs
+        if (s->type != p->type) {
+            addVertex(s->start);
+        }
+    }
+}
+
+Contour FindContour::operator()(const Contour::Raster &raster)
+{
+    const auto size(raster.dims());
+
+    Builder cb(*this, size);
 
     const auto getFlag([&](int x, int y, CellType flag) -> CellType
     {
-        return (mask.get(x, y) ? flag : 0);
+        return (raster.get(x, y) ? flag : 0);
     });
 
     const auto add([&](int x, int y)
@@ -441,7 +490,7 @@ Contours FindContours::operator()(const bitfield::RasterMask &mask)
     // last row
     for (int i(-1); i <= xend; ++i) { addBorder(i, yend); }
 
-    return cb.contours;
+    return cb.contour;
 }
 
 } // namespace imgproc

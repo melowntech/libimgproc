@@ -36,7 +36,7 @@
 
 namespace imgproc { namespace detail {
 
-struct FindContoursImpl : boost::noncopyable {
+struct FindContourImpl : boost::noncopyable {
     typedef std::uint8_t CellType;
     typedef std::map<math::Point2i, CellType> AmbiguousCells;
 
