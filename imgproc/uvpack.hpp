@@ -71,10 +71,10 @@ struct UVRect
     }
 
     // Dimensions in whole pixels
-    int x() const { return floor(min.x - 0.5f); }
-    int y() const { return floor(min.y - 0.5f); }
-    int width() const { return ceil(max.x + 0.5f) - x(); }
-    int height() const { return ceil(max.y + 0.5f) - y(); }
+    int x() const { return floor(min.x); }
+    int y() const { return floor(min.y); }
+    int width() const { return ceil(max.x) - x() + 1; }
+    int height() const { return ceil(max.y) - y() + 1; }
 
     /// Map UV from view UV space to atlas UV space
     template<typename UVCoordType>
