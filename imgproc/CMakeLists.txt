@@ -132,6 +132,8 @@ set(imgproc_SOURCES
   colormap.hpp
 
   contours.hpp contours.cpp
+
+  svg.hpp
   )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
