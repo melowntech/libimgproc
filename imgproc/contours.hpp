@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "math/geometry_core.hpp"
+#include "math/geometry.hpp"
 
 #include "./rastermask/bitfield.hpp"
 #include "./detail/contours.hpp"
@@ -44,11 +45,12 @@ struct Contour {
     typedef bitfield::RasterMask Raster;
     typedef bitfield::RasterMask Border;
 
-    typedef math::Points2 Ring;
+    typedef math::Polygon Ring;
+    typedef math::MultiPolygon Rings;
 
     /** Found rings.
      */
-    std::vector<Ring> rings;
+    Rings rings;
 
     /** Border pixels.
      */
