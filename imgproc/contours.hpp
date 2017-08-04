@@ -58,17 +58,30 @@ struct Contour {
     Contour(const math::Size2 &size = math::Size2(1, 1))
         : border(size, Border::InitMode::EMPTY)
     {}
+
+    operator bool() const { return !rings.empty(); }
+    bool operator!() const { return rings.empty(); }
 };
 
 /** Find region contrours in const raster. Region is defined by pixels for wich
  *  threshold(x, y) return true.
  */
 template <typename ConstRaster, typename Threshold>
-Contour findContour(const ConstRaster &raster
-                                , const Threshold &threshold);
+Contour findContour(const ConstRaster &raster, const Threshold &threshold);
 
 /** Find region contrours in binary image represented by bitfield raster mask.
  *  Region is defined by pixels which are set in tha mask.
+ *
+ *  Contour orientation: if raster X grows to the right and raster Y grows
+ *  downward then the extracted contour rings have this properties:
+ *
+ *      * contoured region is always to the right of the contour edges
+ *      * outer rings have CW orientation
+ *      * inner rings (holes) have CCW orientation
+ *
+ *  NB: If Y is flipped upside down (i.e. Y grows upward) then the properties
+ *  are exactly oppsite: region is to the left of the edges, outer rings have
+ *  CCW orientation and inner rings (holes) have CW orientation.
  */
 Contour findContour(const Contour::Raster &raster);
 
@@ -78,8 +91,7 @@ Contour findContour(const Contour::Raster &raster);
 class FindContour : private detail::FindContourImpl {
 public:
     template <typename ConstRaster, typename Threshold>
-    Contour operator()(const ConstRaster &raster
-                             , const Threshold &threshold);
+    Contour operator()(const ConstRaster &raster, const Threshold &threshold);
 
     Contour operator()(const Contour::Raster &raster);
 
@@ -97,8 +109,7 @@ Contour FindContour::operator()(const ConstRaster &raster
 }
 
 template <typename ConstRaster, typename Threshold>
-Contour findContour(const ConstRaster &raster
-                                , const Threshold &threshold)
+Contour findContour(const ConstRaster &raster, const Threshold &threshold)
 {
     return FindContour()(raster, threshold);
 }

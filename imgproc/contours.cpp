@@ -38,6 +38,8 @@
 
 #include "dbglog/dbglog.hpp"
 
+#include "utility/enum-io.hpp"
+
 #include "./contours.hpp"
 
 namespace bmi = boost::multi_index;
@@ -55,6 +57,18 @@ enum : CellType {
     , b1100 = 0xc, b1101 = 0xd, b1110 = 0xe, b1111 = 0xf
 };
 
+
+UTILITY_GENERATE_ENUM(Direction,
+                      ((r))
+                      ((l))
+                      ((u))
+                      ((d))
+                      ((lu))
+                      ((ld))
+                      ((ru))
+                      ((rd))
+                      )
+
 struct PointPosition { enum : CellType {
     ll = 0x0
     , lr = 0x2
@@ -66,8 +80,8 @@ typedef math::Point2i Vertex;
 typedef math::Points2i Vertices;
 
 struct Segment {
-    CellType fullType;
     CellType type;
+    Direction direction;
     Vertex start;
     Vertex end;
 
@@ -75,9 +89,11 @@ struct Segment {
     mutable const Segment *next;
     mutable const Segment *ringLeader;
 
-    Segment(CellType fullType, CellType type, Vertex start, Vertex end
+    Segment(CellType type, Direction direction
+            , Vertex start, Vertex end
             , const Segment *prev, const Segment *next)
-        : fullType(fullType), type(type), start(start), end(end)
+        : type(type), direction(direction)
+        , start(start), end(end)
         , prev(prev), next(next), ringLeader()
     {}
 };
@@ -138,7 +154,7 @@ struct FindContour::Builder {
         return find(segments.get<EndIdx>(), v);
     }
 
-    void addSegment(CellType fullType, CellType type, int i, int j
+    void addSegment(CellType type, Direction direction, int i, int j
                     , const Vertex &start, const Vertex &end);
 
     void add(int i, int j, CellType type);
@@ -199,18 +215,19 @@ void FindContour::Builder::setBorder(CellType type, int i, int j)
 #undef SET_BORDER
 }
 
-void FindContour::Builder::addSegment(CellType fullType, CellType type
+void FindContour::Builder::addSegment(CellType type
+                                      , Direction direction
                                       , int i, int j
                                       , const Vertex &start, const Vertex &end)
 {
-    setBorder(fullType, i, j);
+    setBorder(type, i, j);
 
     // mark in raster
     auto *prev(findByEnd(start));
     auto *next(findByStart(end));
 
     const auto &s
-        (*segments.insert(Segment(fullType, type, start, end
+        (*segments.insert(Segment(type, direction, start, end
                                   , prev, next)).first);
 
     // LOG(info4) << "Segment " << s.start << " -> " << s.end << "> "
@@ -261,11 +278,9 @@ void FindContour::Builder::addSegment(CellType fullType, CellType type
     }
 }
 
-#define ADD_SEGMENT(X1, Y1, X2, Y2)                                     \
-    addSegment(type, type, i, j, { x + X1, y + Y1 }, { x + X2, y + Y2 })
-
-#define ADD_SEGMENT1(TYPE, X1, Y1, X2, Y2)                              \
-    addSegment(type, TYPE, i, j, { x + X1, y + Y1 }, { x + X2, y + Y2 })
+#define ADD_SEGMENT(D, X1, Y1, X2, Y2)                                  \
+    addSegment(type, Direction::D, i, j                                 \
+               , { x + X1, y + Y1 }, { x + X2, y + Y2 })
 
 void FindContour::Builder::addAmbiguous(CellType otype, int i, int j)
 {
@@ -281,23 +296,23 @@ void FindContour::Builder::addAmbiguous(CellType otype, int i, int j)
         // same type
         switch (type) {
         case b0101: // b0111 + b1101
-            ADD_SEGMENT1(b0111, 0, 1, 1, 0);
-            return ADD_SEGMENT1(b1101, 2, 1, 1, 2);
+            ADD_SEGMENT(ru, 0, 1, 1, 0);
+            return ADD_SEGMENT(ld, 2, 1, 1, 2);
 
         case b1010: // b1011 + b1110
-            ADD_SEGMENT1(b1011, 1, 0, 2, 1);
-            return ADD_SEGMENT1(b1110, 1, 2, 0, 1);
+            ADD_SEGMENT(rd, 1, 0, 2, 1);
+            return ADD_SEGMENT(ru, 1, 2, 0, 1);
         }
     } else {
         // inverse type -> switch direction
         switch (type) {
         case b0101: // b1000 + b0010
-            ADD_SEGMENT1(b1000, 1, 0, 0, 1);
-            return ADD_SEGMENT1(b0010, 1, 2, 2, 1);
+            ADD_SEGMENT(ld, 1, 0, 0, 1);
+            return ADD_SEGMENT(ru, 1, 2, 2, 1);
 
         case b1010: // b0100 + b0001
-            ADD_SEGMENT1(b0100, 2, 1, 1, 0);
-            return ADD_SEGMENT1(b0001, 0, 1, 1, 2);
+            ADD_SEGMENT(lu, 2, 1, 1, 0);
+            return ADD_SEGMENT(rd, 0, 1, 1, 2);
         }
     }
 }
@@ -312,20 +327,20 @@ void FindContour::Builder::add(int i, int j, CellType type)
 
     switch (type) {
     case b0000: return;
-    case b0001: return ADD_SEGMENT(0, 1, 1, 2);
-    case b0010: return ADD_SEGMENT(1, 2, 2, 1);
-    case b0011: return ADD_SEGMENT(0, 1, 2, 1);
-    case b0100: return ADD_SEGMENT(2, 1, 1, 0);
+    case b0001: return ADD_SEGMENT(rd, 0, 1, 1, 2);
+    case b0010: return ADD_SEGMENT(ru, 1, 2, 2, 1);
+    case b0011: return ADD_SEGMENT(r, 0, 1, 2, 1);
+    case b0100: return ADD_SEGMENT(lu, 2, 1, 1, 0);
     case b0101: return addAmbiguous(type, i, j);
-    case b0110: return ADD_SEGMENT(1, 2, 1, 0);
-    case b0111: return ADD_SEGMENT(0, 1, 1, 0);
-    case b1000: return ADD_SEGMENT(1, 0, 0, 1);
-    case b1001: return ADD_SEGMENT(1, 0, 1, 2);
+    case b0110: return ADD_SEGMENT(u, 1, 2, 1, 0);
+    case b0111: return ADD_SEGMENT(lu, 0, 1, 1, 0);
+    case b1000: return ADD_SEGMENT(ld, 1, 0, 0, 1);
+    case b1001: return ADD_SEGMENT(d, 1, 0, 1, 2);
     case b1010: return addAmbiguous(type, i, j);
-    case b1011: return ADD_SEGMENT(1, 0, 2, 1);
-    case b1100: return ADD_SEGMENT(2, 1, 0, 1);
-    case b1101: return ADD_SEGMENT(2, 1, 1, 2);
-    case b1110: return ADD_SEGMENT(1, 2, 0, 1);
+    case b1011: return ADD_SEGMENT(rd, 1, 0, 2, 1);
+    case b1100: return ADD_SEGMENT(l, 2, 1, 0, 1);
+    case b1101: return ADD_SEGMENT(ld, 2, 1, 1, 2);
+    case b1110: return ADD_SEGMENT(ru, 1, 2, 0, 1);
     case b1111: return;
     }
 }
@@ -342,64 +357,62 @@ void FindContour::Builder::addBorder(int i, int j, CellType type)
     case b0000: return;
 
     case b0001:
-        ADD_SEGMENT1(b0011, 0, 1, 1, 1);
-        return ADD_SEGMENT1(b1001, 1, 1, 1, 2);
+        ADD_SEGMENT(r, 0, 1, 1, 1);
+        return ADD_SEGMENT(d, 1, 1, 1, 2);
 
     case b0010:
-        ADD_SEGMENT1(b0110, 1, 2, 1, 1);
-        ADD_SEGMENT1(b0011, 1, 1, 2, 1);
+        ADD_SEGMENT(u, 1, 2, 1, 1);
+        ADD_SEGMENT(r, 1, 1, 2, 1);
 
-    case b0011: return ADD_SEGMENT(0, 1, 2, 1);
+    case b0011: return ADD_SEGMENT(r, 0, 1, 2, 1);
 
     case b0100:
-        ADD_SEGMENT1(b1100, 2, 1, 1, 1);
-        return ADD_SEGMENT1(b0110, 1, 1, 1, 0);
+        ADD_SEGMENT(l, 2, 1, 1, 1);
+        return ADD_SEGMENT(u, 1, 1, 1, 0);
 
     case b0101: // b0111 + b1101
-        ADD_SEGMENT1(b0110, 0, 1, 0, 0);
-        ADD_SEGMENT1(b0011, 0, 0, 1, 0);
-        ADD_SEGMENT1(b1001, 2, 1, 2, 2);
-        return ADD_SEGMENT1(b1100, 2, 2, 1, 2);
+        ADD_SEGMENT(u, 0, 1, 0, 0);
+        ADD_SEGMENT(r, 0, 0, 1, 0);
+        ADD_SEGMENT(d, 2, 1, 2, 2);
+        return ADD_SEGMENT(l, 2, 2, 1, 2);
 
-    case b0110: return ADD_SEGMENT(1, 2, 1, 0);
+    case b0110: return ADD_SEGMENT(u, 1, 2, 1, 0);
 
     case b0111:
-        ADD_SEGMENT1(b0110, 0, 1, 0, 0);
-        return ADD_SEGMENT1(b0011, 0, 0, 1, 0);
+        ADD_SEGMENT(u, 0, 1, 0, 0);
+        return ADD_SEGMENT(r, 0, 0, 1, 0);
 
     case b1000:
-        ADD_SEGMENT1(b1001, 1, 0, 1, 1);
-        return ADD_SEGMENT1(b1100, 1, 1, 0, 1);
+        ADD_SEGMENT(d, 1, 0, 1, 1);
+        return ADD_SEGMENT(l, 1, 1, 0, 1);
 
-    case b1001: return ADD_SEGMENT(1, 0, 1, 2);
+    case b1001: return ADD_SEGMENT(d, 1, 0, 1, 2);
 
     case b1010: // b1011 + b1110
-        ADD_SEGMENT1(b0011, 1, 0, 2, 0);
-        ADD_SEGMENT1(b1001, 2, 0, 2, 1);
-        ADD_SEGMENT1(b1100, 1, 2, 0, 2);
-        return ADD_SEGMENT1(b0110, 0, 2, 0, 1);
+        ADD_SEGMENT(r, 1, 0, 2, 0);
+        ADD_SEGMENT(d, 2, 0, 2, 1);
+        ADD_SEGMENT(l, 1, 2, 0, 2);
+        return ADD_SEGMENT(u, 0, 2, 0, 1);
 
     case b1011:
-        ADD_SEGMENT1(b0011, 1, 0, 2, 0);
-        return ADD_SEGMENT1(b1001, 2, 0, 2, 1);
+        ADD_SEGMENT(r, 1, 0, 2, 0);
+        return ADD_SEGMENT(d, 2, 0, 2, 1);
 
-    case b1100: return ADD_SEGMENT(2, 1, 0, 1);
+    case b1100: return ADD_SEGMENT(l, 2, 1, 0, 1);
 
     case b1101:
-        ADD_SEGMENT1(b1001, 2, 1, 2, 2);
-        return ADD_SEGMENT1(b1100, 2, 2, 1, 2);
+        ADD_SEGMENT(d, 2, 1, 2, 2);
+        return ADD_SEGMENT(l, 2, 2, 1, 2);
 
     case b1110:
-        ADD_SEGMENT1(b1100, 1, 2, 0, 2);
-        return ADD_SEGMENT1(b0110, 0, 2, 0, 1);
+        ADD_SEGMENT(l, 1, 2, 0, 2);
+        return ADD_SEGMENT(u, 0, 2, 0, 1);
 
     case b1111: return;
     }
 }
 
 #undef ADD_SEGMENT
-#undef ADD_SEGMENT1
-
 
 void FindContour::Builder::extract(const Segment *head)
 {
@@ -428,15 +441,15 @@ void FindContour::Builder::extract(const Segment *head)
 
         if (!s->next) {
             LOGTHROW(info4, std::runtime_error)
-                << "Segment: type: [" << std::bitset<4>(s->fullType) << "/"
-                << std::bitset<4>(s->type) << "] "
+                << "Segment: type: [" << std::bitset<4>(s->type) << "/"
+                << s->direction << "] "
                 << "<" << s->start << " -> " << s->end << "> "
                 << s << " in ringLeader "
                 << s->ringLeader << " has no next segment.";
             }
 
-        // add vertex only when type (i.e. direction) differs
-        if (s->type != p->type) {
+        // add vertex only when direction differs
+        if (s->direction != p->direction) {
             addVertex(s->start);
         }
     }
@@ -453,42 +466,40 @@ Contour FindContour::operator()(const Contour::Raster &raster)
         return (raster.get(x, y) ? flag : 0);
     });
 
-    const auto add([&](int x, int y)
+    const auto getFlags([&](int x, int y) -> CellType
     {
-        cb.add(x, y, getFlag(x, y + 1, 1)
-               | getFlag(x + 1, y + 1, 2)
-               | getFlag(x + 1,  y, 4)
-               | getFlag(x, y, 8));
+        return (getFlag(x, y + 1, 1)
+                | getFlag(x + 1, y + 1, 2)
+                | getFlag(x + 1,  y, 4)
+                | getFlag(x, y, 8));
     });
 
-    const auto addBorder([&](int x, int y)
-    {
-        cb.addBorder(x, y, getFlag(x, y + 1, 1)
-                     | getFlag(x + 1, y + 1, 2)
-                     | getFlag(x + 1,  y, 4)
-                     | getFlag(x, y, 8));
-    });
+#define ADD(x, y) cb.add(x, y, getFlags(x, y))
+#define ADD_BORDER(x, y) cb.addBorder(x, y, getFlags(x, y))
 
     int xend(size.width - 1);
     int yend(size.height - 1);
 
     // first row
-    for (int i(-1); i <= xend; ++i) { addBorder(i, -1); }
+    for (int i(-1); i <= xend; ++i) { ADD_BORDER(i, -1); }
 
     // all inner rows
     for (int j(0); j < yend; ++j) {
         // first column
-        addBorder(-1, j);
+        ADD_BORDER(-1, j);
 
         // all inner columns
-        for (int i(0); i < xend; ++i) { add(i, j); }
+        for (int i(0); i < xend; ++i) { ADD(i, j); }
 
         // last column
-        addBorder(xend, j);
+        ADD_BORDER(xend, j);
     }
 
     // last row
-    for (int i(-1); i <= xend; ++i) { addBorder(i, yend); }
+    for (int i(-1); i <= xend; ++i) { ADD_BORDER(i, yend); }
+
+#undef ADD
+#undef ADD_BORDER
 
     return cb.contour;
 }
