@@ -461,17 +461,12 @@ Contour FindContour::operator()(const Contour::Raster &raster)
 
     Builder cb(*this, size);
 
-    const auto getFlag([&](int x, int y, CellType flag) -> CellType
-    {
-        return (raster.get(x, y) ? flag : 0);
-    });
-
     const auto getFlags([&](int x, int y) -> CellType
     {
-        return (getFlag(x, y + 1, 1)
-                | getFlag(x + 1, y + 1, 2)
-                | getFlag(x + 1,  y, 4)
-                | getFlag(x, y, 8));
+        return (raster.get(x, y + 1)
+                | (raster.get(x + 1, y + 1) << 1)
+                | (raster.get(x + 1, y) << 2)
+                | (raster.get(x, y) << 3));
     });
 
 #define ADD(x, y) cb.add(x, y, getFlags(x, y))
