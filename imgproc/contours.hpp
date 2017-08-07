@@ -32,6 +32,7 @@
 #include "math/geometry_core.hpp"
 #include "math/geometry.hpp"
 
+#include "./pixelorigin.hpp"
 #include "./rastermask/bitfield.hpp"
 #include "./detail/contours.hpp"
 
@@ -67,9 +68,15 @@ struct Contour {
 
 /** Find region contrours in const raster. Region is defined by pixels for wich
  *  threshold(x, y) return true.
+ *
+ * \param raster source raster
+ * \param threshold thresholding function
+ * \param pixelOrigin 0,0 is either at pixel center or at pixel corner
+ * \return found contour
  */
 template <typename ConstRaster, typename Threshold>
-Contour findContour(const ConstRaster &raster, const Threshold &threshold);
+Contour findContour(const ConstRaster &raster, const Threshold &threshold
+                    , PixelOrigin pixelOrigin = PixelOrigin::center);
 
 /** Find region contrours in binary image represented by bitfield raster mask.
  *  Region is defined by pixels which are set in tha mask.
@@ -84,21 +91,32 @@ Contour findContour(const ConstRaster &raster, const Threshold &threshold);
  *  NB: If Y is flipped upside down (i.e. Y grows upward) then the properties
  *  are exactly oppsite: region is to the left of the edges, outer rings have
  *  CCW orientation and inner rings (holes) have CW orientation.
+ *
+ * \param raster source binary raster
+ * \param pixelOrigin 0,0 is either at pixel center or at pixel corner
+ * \return found contour
  */
-Contour findContour(const Contour::Raster &raster);
+Contour findContour(const Contour::Raster &raster
+                    , PixelOrigin pixelOrigin = PixelOrigin::center);
 
 /** Contour finder with internal state. Handles stable region boundaries for
  *  different regions inside common input.
  */
 class FindContour : private detail::FindContourImpl {
 public:
+    FindContour(PixelOrigin pixelOrigin = PixelOrigin::center)
+        : pixelOrigin_(pixelOrigin) {}
+
     template <typename ConstRaster, typename Threshold>
     Contour operator()(const ConstRaster &raster, const Threshold &threshold);
 
     Contour operator()(const Contour::Raster &raster);
 
+private:
     struct Builder;
     friend class Builder;
+
+    PixelOrigin pixelOrigin_;
 };
 
 // inlines
@@ -111,14 +129,16 @@ Contour FindContour::operator()(const ConstRaster &raster
 }
 
 template <typename ConstRaster, typename Threshold>
-Contour findContour(const ConstRaster &raster, const Threshold &threshold)
+Contour findContour(const ConstRaster &raster, const Threshold &threshold
+                    , PixelOrigin pixelOrigin)
 {
-    return FindContour()(raster, threshold);
+    return FindContour(pixelOrigin)(raster, threshold);
 }
 
-inline Contour findContour(const Contour::Raster &raster)
+inline Contour findContour(const Contour::Raster &raster
+                           , PixelOrigin pixelOrigin)
 {
-    return FindContour()(raster);
+    return FindContour(pixelOrigin)(raster);
 }
 
 } // namespace imgproc

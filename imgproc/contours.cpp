@@ -50,6 +50,8 @@ namespace {
 
 typedef detail::FindContourImpl::CellType CellType;
 
+/** Image cell type
+ */
 enum : CellType {
     b0000 = 0x0, b0001 = 0x1, b0010 = 0x2, b0011 = 0x3
     , b0100 = 0x4, b0101 = 0x5, b0110 = 0x6, b0111 = 0x7
@@ -57,7 +59,8 @@ enum : CellType {
     , b1100 = 0xc, b1101 = 0xd, b1110 = 0xe, b1111 = 0xf
 };
 
-
+/** Segment orientation
+ */
 UTILITY_GENERATE_ENUM(Direction,
                       ((r))
                       ((l))
@@ -69,12 +72,20 @@ UTILITY_GENERATE_ENUM(Direction,
                       ((rd))
                       )
 
-struct PointPosition { enum : CellType {
-    ll = 0x0
-    , lr = 0x2
-    , ur = 0x4
-    , ul = 0x8
-}; };
+inline const char* arrow(Direction d)
+{
+    switch (d) {
+    case Direction::r: return "\xe2\x86\x92";
+    case Direction::l: return "\xe2\x86\x90";
+    case Direction::u: return "\xe2\x86\x91";
+    case Direction::d: return "\xe2\x86\x93";
+    case Direction::lu: return "\xe2\x86\x96";
+    case Direction::ld: return "\xe2\x86\x99";
+    case Direction::ru: return "\xe2\x86\x97";
+    case Direction::rd: return "\xe2\x86\x98";
+    }
+    return "?";
+}
 
 typedef math::Point2i Vertex;
 typedef math::Points2i Vertices;
@@ -136,8 +147,11 @@ inline void distributeRingLeaderNext(const Segment *s)
 } // namespace
 
 struct FindContour::Builder {
-    Builder(FindContour &cf, const math::Size2 &rasterSize)
+    Builder(FindContour &cf, const math::Size2 &rasterSize
+            , PixelOrigin pixelOrigin)
         : cf(cf), contour(rasterSize)
+        , offset(pixelOrigin == PixelOrigin::center
+                 ? math::Point2d() : math::Point2d(0.5, 0.5))
     {}
 
     template <typename Index>
@@ -170,6 +184,7 @@ struct FindContour::Builder {
     FindContour &cf;
     SegmentMap segments;
     Contour contour;
+    math::Point2d offset;
 };
 
 
@@ -296,11 +311,11 @@ void FindContour::Builder::addAmbiguous(CellType otype, int i, int j)
         // same type
         switch (type) {
         case b0101: // b0111 + b1101
-            ADD_SEGMENT(ru, 0, 1, 1, 0);
-            return ADD_SEGMENT(ld, 2, 1, 1, 2);
+            ADD_SEGMENT(lu, 0, 1, 1, 0);
+            return ADD_SEGMENT(rd, 2, 1, 1, 2);
 
         case b1010: // b1011 + b1110
-            ADD_SEGMENT(rd, 1, 0, 2, 1);
+            ADD_SEGMENT(ld, 1, 0, 2, 1);
             return ADD_SEGMENT(ru, 1, 2, 0, 1);
         }
     } else {
@@ -333,14 +348,14 @@ void FindContour::Builder::add(int i, int j, CellType type)
     case b0100: return ADD_SEGMENT(lu, 2, 1, 1, 0);
     case b0101: return addAmbiguous(type, i, j);
     case b0110: return ADD_SEGMENT(u, 1, 2, 1, 0);
-    case b0111: return ADD_SEGMENT(lu, 0, 1, 1, 0);
+    case b0111: return ADD_SEGMENT(ru, 0, 1, 1, 0);
     case b1000: return ADD_SEGMENT(ld, 1, 0, 0, 1);
     case b1001: return ADD_SEGMENT(d, 1, 0, 1, 2);
     case b1010: return addAmbiguous(type, i, j);
     case b1011: return ADD_SEGMENT(rd, 1, 0, 2, 1);
     case b1100: return ADD_SEGMENT(l, 2, 1, 0, 1);
     case b1101: return ADD_SEGMENT(ld, 2, 1, 1, 2);
-    case b1110: return ADD_SEGMENT(ru, 1, 2, 0, 1);
+    case b1110: return ADD_SEGMENT(lu, 1, 2, 0, 1);
     case b1111: return;
     }
 }
@@ -421,7 +436,7 @@ void FindContour::Builder::extract(const Segment *head)
     auto &ring(contour.rings.back());
 
     const auto addVertex([&](const Vertex &v) {
-            ring.emplace_back(v(0) / 2.0, v(1) / 2.0);
+            ring.emplace_back(v(0) / 2.0 + offset(0), v(1) / 2.0 + offset(1));
         });
 
     // add first vertex
@@ -448,6 +463,13 @@ void FindContour::Builder::extract(const Segment *head)
                 << s->ringLeader << " has no next segment.";
             }
 
+#if 0
+        LOG(info4) << "[" << std::bitset<4>(s->type) << "]: "
+                   << arrow(s->direction) << " (" << s->direction
+                   << "): " << (s->start / 2.0)
+                   << " -> " << (s->end / 2.0);
+#endif
+
         // add vertex only when direction differs
         if (s->direction != p->direction) {
             addVertex(s->start);
@@ -459,7 +481,7 @@ Contour FindContour::operator()(const Contour::Raster &raster)
 {
     const auto size(raster.dims());
 
-    Builder cb(*this, size);
+    Builder cb(*this, size, pixelOrigin_);
 
     const auto getFlags([&](int x, int y) -> CellType
     {
