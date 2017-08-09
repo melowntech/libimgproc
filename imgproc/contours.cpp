@@ -29,6 +29,9 @@
 
 #include <bitset>
 #include <map>
+#include <list>
+#include <algorithm>
+#include <limits>
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -147,10 +150,9 @@ inline void distributeRingLeaderNext(const Segment *s)
 } // namespace
 
 struct FindContour::Builder {
-    Builder(FindContour &cf, const math::Size2 &rasterSize
-            , PixelOrigin pixelOrigin)
+    Builder(FindContour &cf, const math::Size2 &rasterSize)
         : cf(cf), contour(rasterSize)
-        , offset(pixelOrigin == PixelOrigin::center
+        , offset(cf.params_.pixelOrigin == PixelOrigin::center
                  ? math::Point2d() : math::Point2d(0.5, 0.5))
     {}
 
@@ -471,7 +473,9 @@ void FindContour::Builder::extract(const Segment *head)
 #endif
 
         // add vertex only when direction differs
-        if (s->direction != p->direction) {
+        if (!cf.params_.joinStraightSegments
+            || (s->direction != p->direction))
+        {
             addVertex(s->start);
         }
     }
@@ -481,7 +485,7 @@ Contour FindContour::operator()(const Contour::Raster &raster)
 {
     const auto size(raster.dims());
 
-    Builder cb(*this, size, pixelOrigin_);
+    Builder cb(*this, size);
 
     const auto getFlags([&](int x, int y) -> CellType
     {
@@ -519,6 +523,178 @@ Contour FindContour::operator()(const Contour::Raster &raster)
 #undef ADD_BORDER
 
     return cb.contour;
+}
+
+namespace {
+
+typedef std::set<math::Point2d> LockedPoints;
+
+LockedPoints findLockedPoints(const Contour::list &contours)
+{
+    // TODO: lock border points as well
+
+    // compute cardinality of points (number of rings it belongs to)
+    std::map<math::Point2d, int> cardinality;
+    for (const auto &contour : contours) {
+        for (const auto &ring : contour.rings) {
+            for (const auto &p : ring) {
+                ++cardinality[p];
+            }
+        }
+    }
+
+    // extract points with cardinality > 2
+    LockedPoints locked;
+    for (const auto &item : cardinality) {
+        if (item.second > 2) { locked.insert(item.first); }
+    }
+    return locked;
+}
+
+/** Compute area of parellelogram defined three points.
+ *
+ *  Thus we get 2x area of triangle defined by the same three points.
+ */
+template <typename T>
+double area(const T &a, const T &b, const T &c)
+{
+    return std::abs(((b(0) - a(0)) * (c(1) - a(1)))
+                    - ((c(0) - a(0)) * (b(1) - a(1))));
+}
+
+math::Polygon simplifyRing(const math::Polygon &ring
+                           , const LockedPoints &lockedPoints
+                           , double stopCondition)
+{
+    const auto InvalidArea(std::numeric_limits<double>::infinity());
+
+    // double the stop condition becase we compute are of parallelograms
+    stopCondition *= 2;
+
+    // do nothing for too small rings
+    if (ring.size() <= 4) { return ring; }
+
+    typedef std::list<math::Point3> LinkedPoints;
+
+    // work heap
+    typedef std::vector<LinkedPoints::iterator> Heap;
+    Heap heap;
+    heap.reserve(ring.size());
+
+    // construct work area
+    LinkedPoints points;
+
+    // add point to liked list + add to heap if not locked
+    const auto &add([&](const math::Point2d &prev, const math::Point2d &p
+                        , const math::Point2d &next)
+    {
+        if (lockedPoints.find(p) == lockedPoints.end()) {
+            // unlocked
+            points.emplace_back(p(0), p(1), area(prev, p, next));
+            // not locked -> remember iterator
+            heap.push_back(std::prev(points.end()));
+        } else {
+            // locked
+            points.emplace_back(p(0), p(1), InvalidArea);
+        }
+    });
+
+    // add first point
+    add(ring.back(), ring.front(), ring[1]);
+
+    // process inner points
+    for (std::size_t i(1), e(ring.size() - 1); i != e; ++i) {
+        add(ring[i - 1], ring[i], ring[i + 1]);
+    }
+
+    // add last point
+    add(ring[ring.size() - 2], ring.back(), ring.front());
+
+    // NB: make_heap create max-heap => we need to invert order
+    const auto compare([&](const Heap::value_type &l
+                           , const Heap::value_type &r) -> bool
+    {
+        const auto &p1(*l);
+        const auto &p2(*r);
+
+        // first, compare triangle area
+        if (p1(2) < p2(2)) { return false; }
+        if (p1(2) > p2(2)) { return true; }
+
+        // same area, compare point position to get some stability
+        if (p1(0) < p2(0)) { return false; }
+        if (p1(0) > p2(0)) { return true; }
+
+        return (p1(1) < p2(1));
+    });
+
+    auto heapBegin(heap.begin());
+    auto heapEnd(heap.end());
+
+    const auto reheap([&]() -> void
+    {
+        std::make_heap(heapBegin, heapEnd, compare);
+    });
+
+    const auto getPrev([&](Heap::value_type it) -> Heap::value_type
+    {
+        if (it == points.begin()) { return std::prev(points.end()); }
+        return std::prev(it);
+    });
+
+    const auto getNext([&](Heap::value_type it) -> Heap::value_type
+    {
+        ++it;
+        if (it == points.end()) { return points.begin(); }
+        return it;
+    });
+
+    // simplify
+    while (heapBegin != heapEnd) {
+        // make sure we have a heap
+        reheap();
+        auto &point(*heapBegin);
+
+        // check stop condition
+        if ((*point)(2) > stopCondition) { break; }
+
+        // remove pointer for list of points
+        point = points.erase(point);
+        if (point == points.end()) { point = points.begin(); }
+        auto prev(getPrev(point));
+
+        if (std::isfinite((*prev)(2))) {
+            (*prev)(2) = area(*getPrev(prev), *prev, *point);
+        }
+        if (std::isfinite((*point)(2))) {
+            (*point)(2) = area(*prev, *point, *getNext(point));
+        }
+
+        // cut head from heap and recompute
+        ++heapBegin;
+    }
+
+    math::Polygon out;
+    for (const auto &p : points) { out.emplace_back(p(0), p(1)); }
+    return out;
+}
+
+} // namespace
+
+Contour::list simplify(Contour::list contours)
+{
+    // first, we need to identify points where more than two contours join
+    const auto lockedPoints(findLockedPoints(contours));
+
+    for (auto &contour : contours) {
+        if (!contour) { continue; }
+
+        for (auto &ring : contour.rings) {
+            ring = simplifyRing(ring, lockedPoints, 10.0);
+        }
+    }
+
+    return contours;
 }
 
 } // namespace imgproc
