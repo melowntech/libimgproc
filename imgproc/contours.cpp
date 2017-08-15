@@ -723,13 +723,12 @@ const math::Size2 FindContours::rasterSize() const {
 
 Contour::list FindContours::contours() {
     if (impl_->params.simplification == ChainSimplification::rdp) {
-        const auto MaxError(0.9);
-
         // simplify rings
         for (auto &builder : impl_->builders) {
             auto imultiKeystones(builder.multiKeystones.begin());
             for (auto &ring : builder.contour.rings) {
-                ring = RDP(ring, *imultiKeystones++, MaxError)();
+                ring = RDP(ring, *imultiKeystones++
+                           , impl_->params.rdpMaxError)();
             }
         }
     }

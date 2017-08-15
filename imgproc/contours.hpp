@@ -82,9 +82,14 @@ struct ContourParameters {
      */
     ChainSimplification simplification;
 
+    /** ChainSimplification::rdp algorithm maximum allowed segment error.
+     */
+    double rdpMaxError;
+
     ContourParameters()
         : pixelOrigin(PixelOrigin::center)
         , simplification(ChainSimplification::simple)
+        , rdpMaxError(0.9)
     {}
 
     ContourParameters(PixelOrigin pixelOrigin)
@@ -97,6 +102,10 @@ struct ContourParameters {
 
     ContourParameters& setSimplification(ChainSimplification simplification) {
         this->simplification = simplification; return *this;
+    }
+
+    ContourParameters& setRdpMaxError(double rdpMaxError) {
+        this->rdpMaxError = rdpMaxError; return *this;
     }
 };
 
