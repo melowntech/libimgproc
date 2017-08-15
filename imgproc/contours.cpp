@@ -24,9 +24,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef imgproc_contour_hpp_included_
-#define imgproc_contour_hpp_included_
-
 #include <bitset>
 #include <map>
 #include <list>
@@ -41,8 +38,6 @@
 
 #include "dbglog/dbglog.hpp"
 
-#include "utility/enum-io.hpp"
-
 #include "./contours.hpp"
 
 namespace bmi = boost::multi_index;
@@ -51,7 +46,7 @@ namespace imgproc {
 
 namespace {
 
-typedef detail::FindContourImpl::CellType CellType;
+typedef std::uint8_t CellType;
 
 /** Image cell type
  */
@@ -98,16 +93,17 @@ struct Segment {
     Direction direction;
     Vertex start;
     Vertex end;
+    bool keystone;
 
     mutable const Segment *prev;
     mutable const Segment *next;
     mutable const Segment *ringLeader;
 
-    Segment(CellType type, Direction direction
-            , Vertex start, Vertex end
-            , const Segment *prev, const Segment *next)
+    Segment(CellType type, Direction direction, Vertex start, Vertex end
+            , const Segment *prev, const Segment *next
+            , bool keystone = false)
         : type(type), direction(direction)
-        , start(start), end(end)
+        , start(start), end(end), keystone(keystone)
         , prev(prev), next(next), ringLeader()
     {}
 };
@@ -147,12 +143,15 @@ inline void distributeRingLeaderNext(const Segment *s)
     for (s = s->next; s; s = s->next) { s->ringLeader = ringLeader; }
 }
 
+typedef std::vector<int> RingKeystones;
+typedef std::vector<RingKeystones> MultiRingKeystones;
+
 } // namespace
 
-struct FindContour::Builder {
-    Builder(FindContour &cf, const math::Size2 &rasterSize)
-        : cf(cf), contour(rasterSize)
-        , offset(cf.params_.pixelOrigin == PixelOrigin::center
+struct Builder {
+    Builder(const math::Size2 &rasterSize, const ContourParameters &params)
+        : params(&params), contour(rasterSize)
+        , offset(params.pixelOrigin == PixelOrigin::center
                  ? math::Point2d() : math::Point2d(0.5, 0.5))
     {}
 
@@ -171,26 +170,27 @@ struct FindContour::Builder {
     }
 
     void addSegment(CellType type, Direction direction, int i, int j
-                    , const Vertex &start, const Vertex &end);
+                    , const Vertex &start, const Vertex &end
+                    , bool keystone = false);
 
-    void add(int i, int j, CellType type);
+    void addMitre(int i, int j, CellType type, CellType &mtype);
 
-    void addBorder(int i, int j, CellType type);
+    void add(int i, int j, CellType type, CellType &mtype);
 
-    void addAmbiguous(CellType type, int i, int j);
+    void addAmbiguous(CellType type, int i, int j, CellType &mtype);
 
     void extract(const Segment *head);
 
     void setBorder(CellType type, int i, int j);
 
-    FindContour &cf;
+    const ContourParameters *params;
     SegmentMap segments;
     Contour contour;
     math::Point2d offset;
+    MultiRingKeystones multiKeystones;
 };
 
-
-void FindContour::Builder::setBorder(CellType type, int i, int j)
+void Builder::setBorder(CellType type, int i, int j)
 {
 #define SET_BORDER(X, Y) contour.border.set(i + X, j + Y)
 
@@ -232,10 +232,9 @@ void FindContour::Builder::setBorder(CellType type, int i, int j)
 #undef SET_BORDER
 }
 
-void FindContour::Builder::addSegment(CellType type
-                                      , Direction direction
-                                      , int i, int j
-                                      , const Vertex &start, const Vertex &end)
+void Builder::addSegment(CellType type, Direction direction, int i, int j
+                         , const Vertex &start, const Vertex &end
+                         , bool keystone)
 {
     setBorder(type, i, j);
 
@@ -245,7 +244,7 @@ void FindContour::Builder::addSegment(CellType type
 
     const auto &s
         (*segments.insert(Segment(type, direction, start, end
-                                  , prev, next)).first);
+                                  , prev, next, keystone)).first);
 
     // LOG(info4) << "Segment " << s.start << " -> " << s.end << "> "
     //            << &s;
@@ -295,11 +294,15 @@ void FindContour::Builder::addSegment(CellType type
     }
 }
 
-#define ADD_SEGMENT(D, X1, Y1, X2, Y2)                                  \
-    addSegment(type, Direction::D, i, j                                 \
+#define ADD_SEGMENT(D, X1, Y1, X2, Y2)                         \
+    addSegment(type, Direction::D, i, j                        \
                , { x + X1, y + Y1 }, { x + X2, y + Y2 })
 
-void FindContour::Builder::addAmbiguous(CellType otype, int i, int j)
+#define ADD_KEY_SEGMENT(D, X1, Y1, X2, Y2)                     \
+    addSegment(type, Direction::D, i, j                        \
+               , { x + X1, y + Y1 }, { x + X2, y + Y2 }, true)
+
+void Builder::addAmbiguous(CellType type, int i, int j, CellType &mtype)
 {
     // 2x scale to get rid of non-integral values
     auto x(i * 2);
@@ -307,11 +310,12 @@ void FindContour::Builder::addAmbiguous(CellType otype, int i, int j)
 
     Vertex v(x, y);
 
-    auto type(cf.ambiguousType(v, otype));
+    // if mapped type not set, use it
+    if (!mtype) { mtype = type; }
 
-    if (type == otype) {
+    if (mtype == type) {
         // same type
-        switch (type) {
+        switch (mtype) {
         case b0101: // b0111 + b1101
             ADD_SEGMENT(lu, 0, 1, 1, 0);
             return ADD_SEGMENT(rd, 2, 1, 1, 2);
@@ -322,7 +326,7 @@ void FindContour::Builder::addAmbiguous(CellType otype, int i, int j)
         }
     } else {
         // inverse type -> switch direction
-        switch (type) {
+        switch (mtype) {
         case b0101: // b1000 + b0010
             ADD_SEGMENT(ld, 1, 0, 0, 1);
             return ADD_SEGMENT(ru, 1, 2, 2, 1);
@@ -334,13 +338,13 @@ void FindContour::Builder::addAmbiguous(CellType otype, int i, int j)
     }
 }
 
-void FindContour::Builder::add(int i, int j, CellType type)
+void Builder::addMitre(int i, int j, CellType type, CellType &mtype)
 {
     // 2x scale to get rid of non-integral values
     auto x(i * 2);
     auto y(j * 2);
 
-    // LOG(info4) << "Adding inner: " << x << ", " << y;
+    // LOG(info4) << "Adding mitre: " << x << ", " << y;
 
     switch (type) {
     case b0000: return;
@@ -348,12 +352,12 @@ void FindContour::Builder::add(int i, int j, CellType type)
     case b0010: return ADD_SEGMENT(ru, 1, 2, 2, 1);
     case b0011: return ADD_SEGMENT(r, 0, 1, 2, 1);
     case b0100: return ADD_SEGMENT(lu, 2, 1, 1, 0);
-    case b0101: return addAmbiguous(type, i, j);
+    case b0101: return addAmbiguous(type, i, j, mtype);
     case b0110: return ADD_SEGMENT(u, 1, 2, 1, 0);
     case b0111: return ADD_SEGMENT(ru, 0, 1, 1, 0);
     case b1000: return ADD_SEGMENT(ld, 1, 0, 0, 1);
     case b1001: return ADD_SEGMENT(d, 1, 0, 1, 2);
-    case b1010: return addAmbiguous(type, i, j);
+    case b1010: return addAmbiguous(type, i, j, mtype);
     case b1011: return ADD_SEGMENT(rd, 1, 0, 2, 1);
     case b1100: return ADD_SEGMENT(l, 2, 1, 0, 1);
     case b1101: return ADD_SEGMENT(ld, 2, 1, 1, 2);
@@ -362,68 +366,60 @@ void FindContour::Builder::add(int i, int j, CellType type)
     }
 }
 
-void FindContour::Builder::addBorder(int i, int j, CellType type)
+void Builder::add(int i, int j, CellType type, CellType &mtype)
 {
     // 2x scale to get rid of non-integral values
     auto x(i * 2);
     auto y(j * 2);
 
-    // LOG(info4) << "Adding border: " << x << ", " << y;
+    // LOG(info4) << "Adding : " << x << ", " << y;
 
     switch (type) {
     case b0000: return;
 
     case b0001:
         ADD_SEGMENT(r, 0, 1, 1, 1);
-        return ADD_SEGMENT(d, 1, 1, 1, 2);
+        return ADD_KEY_SEGMENT(d, 1, 1, 1, 2);
 
     case b0010:
         ADD_SEGMENT(u, 1, 2, 1, 1);
-        ADD_SEGMENT(r, 1, 1, 2, 1);
+        ADD_KEY_SEGMENT(r, 1, 1, 2, 1);
 
     case b0011: return ADD_SEGMENT(r, 0, 1, 2, 1);
 
     case b0100:
         ADD_SEGMENT(l, 2, 1, 1, 1);
-        return ADD_SEGMENT(u, 1, 1, 1, 0);
+        return ADD_KEY_SEGMENT(u, 1, 1, 1, 0);
 
-    case b0101: // b0111 + b1101
-        ADD_SEGMENT(u, 0, 1, 0, 0);
-        ADD_SEGMENT(r, 0, 0, 1, 0);
-        ADD_SEGMENT(d, 2, 1, 2, 2);
-        return ADD_SEGMENT(l, 2, 2, 1, 2);
+    case b0101: return addAmbiguous(type, i, j, mtype);
 
     case b0110: return ADD_SEGMENT(u, 1, 2, 1, 0);
 
     case b0111:
-        ADD_SEGMENT(u, 0, 1, 0, 0);
-        return ADD_SEGMENT(r, 0, 0, 1, 0);
+        ADD_SEGMENT(r, 0, 1, 1, 1);
+        return ADD_KEY_SEGMENT(u, 1, 1, 1, 0);
 
     case b1000:
         ADD_SEGMENT(d, 1, 0, 1, 1);
-        return ADD_SEGMENT(l, 1, 1, 0, 1);
+        return ADD_KEY_SEGMENT(l, 1, 1, 0, 1);
 
     case b1001: return ADD_SEGMENT(d, 1, 0, 1, 2);
 
-    case b1010: // b1011 + b1110
-        ADD_SEGMENT(r, 1, 0, 2, 0);
-        ADD_SEGMENT(d, 2, 0, 2, 1);
-        ADD_SEGMENT(l, 1, 2, 0, 2);
-        return ADD_SEGMENT(u, 0, 2, 0, 1);
+    case b1010: return addAmbiguous(type, i, j, mtype);
 
     case b1011:
-        ADD_SEGMENT(r, 1, 0, 2, 0);
-        return ADD_SEGMENT(d, 2, 0, 2, 1);
+        ADD_SEGMENT(d, 1, 0, 1, 1);
+        return ADD_KEY_SEGMENT(r, 1, 1, 2, 1);
 
     case b1100: return ADD_SEGMENT(l, 2, 1, 0, 1);
 
     case b1101:
-        ADD_SEGMENT(d, 2, 1, 2, 2);
-        return ADD_SEGMENT(l, 2, 2, 1, 2);
+        ADD_SEGMENT(l, 2, 1, 1, 1);
+        return ADD_KEY_SEGMENT(d, 1, 1, 1, 2);
 
     case b1110:
-        ADD_SEGMENT(l, 1, 2, 0, 2);
-        return ADD_SEGMENT(u, 0, 2, 0, 1);
+        ADD_SEGMENT(u, 1, 2, 1, 1);
+        return ADD_KEY_SEGMENT(l, 1, 1, 0, 1);
 
     case b1111: return;
     }
@@ -431,18 +427,29 @@ void FindContour::Builder::addBorder(int i, int j, CellType type)
 
 #undef ADD_SEGMENT
 
-void FindContour::Builder::extract(const Segment *head)
+void Builder::extract(const Segment *head)
 {
     // LOG(info4) << "Processing ring from: " << head;
     contour.rings.emplace_back();
     auto &ring(contour.rings.back());
 
-    const auto addVertex([&](const Vertex &v) {
-            ring.emplace_back(v(0) / 2.0 + offset(0), v(1) / 2.0 + offset(1));
+    multiKeystones.emplace_back();
+    auto &keystones(multiKeystones.back());
+
+    const auto addVertex([&](const Segment &s) {
+            ring.emplace_back(s.start(0) / 2.0 + offset(0)
+                              , s.start(1) / 2.0 + offset(1));
         });
 
     // add first vertex
-    addVertex(head->start);
+    addVertex(*head);
+
+    if ((params->simplification == ChainSimplification::rdp)
+        && head->keystone)
+    {
+        // remember keystone index of head
+        keystones.push_back(0);
+    }
 
     // end segment
     const auto end((head->type != head->prev->type) ? head : head->prev);
@@ -473,19 +480,35 @@ void FindContour::Builder::extract(const Segment *head)
 #endif
 
         // add vertex only when direction differs
-        if (!cf.params_.joinStraightSegments
-            || (s->direction != p->direction))
-        {
-            addVertex(s->start);
+        switch (params->simplification) {
+        case ChainSimplification::none:
+            addVertex(*s);
+            break;
+
+        case ChainSimplification::simple:
+            if (s->direction != p->direction) { addVertex(*s); }
+            break;
+
+        case ChainSimplification::rdp:
+            if (s->keystone) {
+                // remember keystone index
+                keystones.push_back(ring.size());
+                addVertex(*s);
+            } else if (s->direction != p->direction) {
+                addVertex(*s);
+            }
+            break;
         }
     }
 }
 
-Contour FindContour::operator()(const Contour::Raster &raster)
+
+Contour findContour(const Contour::Raster &raster
+                    , const ContourParameters &params)
 {
     const auto size(raster.dims());
 
-    Builder cb(*this, size);
+    Builder cb(size, params);
 
     const auto getFlags([&](int x, int y) -> CellType
     {
@@ -495,208 +518,262 @@ Contour FindContour::operator()(const Contour::Raster &raster)
                 | (raster.get(x, y) << 3));
     });
 
-#define ADD(x, y) cb.add(x, y, getFlags(x, y))
-#define ADD_BORDER(x, y) cb.addBorder(x, y, getFlags(x, y))
+    CellType dummy(0);
+
+#define ADD_MITRE(x, y) cb.addMitre(x, y, getFlags(x, y), dummy)
+#define ADD(x, y) cb.add(x, y, getFlags(x, y), dummy)
 
     int xend(size.width - 1);
     int yend(size.height - 1);
 
     // first row
-    for (int i(-1); i <= xend; ++i) { ADD_BORDER(i, -1); }
+    for (int i(-1); i <= xend; ++i) { ADD(i, -1); }
 
     // all inner rows
     for (int j(0); j < yend; ++j) {
         // first column
-        ADD_BORDER(-1, j);
+        ADD_MITRE(-1, j);
 
         // all inner columns
-        for (int i(0); i < xend; ++i) { ADD(i, j); }
+        for (int i(0); i < xend; ++i) { ADD_MITRE(i, j); }
 
         // last column
-        ADD_BORDER(xend, j);
+        ADD(xend, j);
     }
 
     // last row
-    for (int i(-1); i <= xend; ++i) { ADD_BORDER(i, yend); }
+    for (int i(-1); i <= xend; ++i) { ADD(i, yend); }
 
+#undef ADD_MITRE
 #undef ADD
-#undef ADD_BORDER
 
     return cb.contour;
 }
 
 namespace {
 
-typedef std::set<math::Point2d> LockedPoints;
+/** Perpendicular distance of point `p` from line defined by points `s` and `e`.
+ */
+class PointDistance {
+public:
+    PointDistance(const math::Point2d &s, const math::Point2d &e)
+        : s_(s), e_(e), diff_(e_ - s_)
+        , length_(boost::numeric::ublas::norm_2(diff_))
+        , tail_(e_(0) * s_(1) - e_(1) * s_(0))
+    {}
 
-LockedPoints findLockedPoints(const Contour::list &contours)
+    double operator()(const math::Point2d &p) const {
+        auto d(std::abs(p(0) * diff_(1) - p(1) * diff_(0) + tail_) / length_);
+        return d;
+    }
+
+private:
+    const math::Point2d s_;
+    const math::Point2d e_;
+    const math::Point2d diff_;
+    const double length_;
+    const double tail_;
+};
+
+const math::Point2d Infinity(std::numeric_limits<double>::max()
+                             , std::numeric_limits<double>::max());
+
+
+struct RDP {
+    RDP(const math::Polygon &ring, const RingKeystones &keystones
+        , double epsilon)
+        : ring_(ring), epsilon_(epsilon)
+        , size_(ring_.size())
+        , valid_(ring_.size(), false)
+    {
+        // start vertex: either first keystone or start of polygon
+        if (keystones.empty()) {
+            // no keystone, inject two artificial
+            const auto pivot(size_ / 2);
+            valid_[0] = valid_[pivot] = true;
+            process(0, pivot);
+            process(pivot, size_);
+            return;
+        }
+
+        if (keystones.size() == 1) {
+            // just one keystone, inject artificial one
+            const auto k(keystones.front());
+            auto pivot(size_ / 2);
+            valid_[k] = valid_[normalize(k + pivot)] = true;
+            process(k, k + pivot);
+            process(k + pivot, k + size_);
+            return;
+        }
+
+        // more keystones available, we can work piecewise
+        // two keystones available: use it as a full first segment
+        auto prev(keystones.back());
+        for (auto i : keystones) {
+            valid_[i] = true;
+            process(prev, (prev > i) ? i + size_ : i);
+            prev = i;
+        }
+    }
+
+    math::Polygon operator()() const {
+        math::Polygon out;
+
+        auto ivalid(valid_.begin());
+        for (const auto &p : ring_) {
+            if (*ivalid++) { out.push_back(p); }
+        }
+
+        return out;
+    }
+
+private:
+    inline std::size_t normalize(std::size_t index) const {
+        return index % size_;
+    }
+
+    inline const math::Point2d& get(std::size_t index) const {
+        return ring_[normalize(index)];
+    }
+
+    /** Simplify segment between points ring[start] and ring[end]
+     */
+    void process(std::size_t start, std::size_t end) {
+        if ((end - start) < 2) {
+            // too short segment, include
+            return;
+        }
+
+        const PointDistance distance(get(start), get(end));
+
+        double maxDistance(0.0);
+        std::size_t outlierIndex(0);
+        math::Point2d outlier(Infinity);
+        for (auto i(start + 1); i < end; ++i) {
+            const auto &p(get(i));
+            const auto d(distance(p));
+            if ((d > maxDistance) || ((d == maxDistance) && (p < outlier))) {
+                maxDistance = d;
+                outlierIndex = i;
+                outlier = p;
+            }
+        }
+
+        if (maxDistance > epsilon_) {
+            // too much curvature -> split
+            valid_[normalize(start)] = true;
+            valid_[normalize(outlierIndex)] = true;
+            valid_[normalize(end)] = true;
+            process(start, outlierIndex);
+            process(outlierIndex, end);
+            return;
+        }
+
+        // in bounds, can replace with straight segment
+        valid_[normalize(start)] = true;
+        valid_[normalize(end)] = true;
+    }
+
+    const math::Polygon &ring_;
+    const double epsilon_;
+    const std::size_t size_;
+    std::vector<char> valid_; // do not use bool, vector<bool> sucks
+};
+
+} // namespace
+
+struct FindContours::Impl {
+    Impl(const math::Size2 &rasterSize, int colorCount
+         , const ContourParameters &params)
+        : size(rasterSize), colors(colorCount), params(params)
+        , cells(colors)
+    {
+        for (int i(0); i < colors; ++i) {
+            builders.emplace_back(size, params);
+        }
+    }
+
+    void feed(int x, int y, int ul, int ur, int lr, int ll);
+
+    const math::Size2 size;
+    const int colors;
+    const ContourParameters params;
+
+    // this optimization of storage makes this class non-reentrant!
+    std::vector<CellType> cells;
+
+    std::vector<Builder> builders;
+};
+
+FindContours::FindContours(const math::Size2 &rasterSize, int colorCount
+                           , const ContourParameters &params)
+    : impl_(new Impl(rasterSize, colorCount, params))
+{}
+
+FindContours::~FindContours() {}
+
+void FindContours::operator()(int x, int y, int ul, int ur, int lr, int ll)
 {
-    // TODO: lock border points as well
+    impl_->feed(x, y, ul, ur, lr, ll);
+}
 
-    // compute cardinality of points (number of rings it belongs to)
-    std::map<math::Point2d, int> cardinality;
-    for (const auto &contour : contours) {
-        for (const auto &ring : contour.rings) {
-            for (const auto &p : ring) {
-                ++cardinality[p];
+const math::Size2 FindContours::rasterSize() const {
+    return impl_->size;
+}
+
+Contour::list FindContours::contours() {
+    if (impl_->params.simplification == ChainSimplification::rdp) {
+        const auto MaxError(0.9);
+
+        // simplify rings
+        for (auto &builder : impl_->builders) {
+            auto imultiKeystones(builder.multiKeystones.begin());
+            for (auto &ring : builder.contour.rings) {
+                ring = RDP(ring, *imultiKeystones++, MaxError)();
             }
         }
     }
 
-    // extract points with cardinality > 2
-    LockedPoints locked;
-    for (const auto &item : cardinality) {
-        if (item.second > 2) { locked.insert(item.first); }
+    // steal contours
+    Contour::list contours;
+    for (auto &builder : impl_->builders) {
+        contours.push_back(std::move(builder.contour));
     }
-    return locked;
-}
-
-/** Compute area of parellelogram defined three points.
- *
- *  Thus we get 2x area of triangle defined by the same three points.
- */
-template <typename T>
-double area(const T &a, const T &b, const T &c)
-{
-    return std::abs(((b(0) - a(0)) * (c(1) - a(1)))
-                    - ((c(0) - a(0)) * (b(1) - a(1))));
-}
-
-math::Polygon simplifyRing(const math::Polygon &ring
-                           , const LockedPoints &lockedPoints
-                           , double stopCondition)
-{
-    const auto InvalidArea(std::numeric_limits<double>::infinity());
-
-    // double the stop condition becase we compute are of parallelograms
-    stopCondition *= 2;
-
-    // do nothing for too small rings
-    if (ring.size() <= 4) { return ring; }
-
-    typedef std::list<math::Point3> LinkedPoints;
-
-    // work heap
-    typedef std::vector<LinkedPoints::iterator> Heap;
-    Heap heap;
-    heap.reserve(ring.size());
-
-    // construct work area
-    LinkedPoints points;
-
-    // add point to liked list + add to heap if not locked
-    const auto &add([&](const math::Point2d &prev, const math::Point2d &p
-                        , const math::Point2d &next)
-    {
-        if (lockedPoints.find(p) == lockedPoints.end()) {
-            // unlocked
-            points.emplace_back(p(0), p(1), area(prev, p, next));
-            // not locked -> remember iterator
-            heap.push_back(std::prev(points.end()));
-        } else {
-            // locked
-            points.emplace_back(p(0), p(1), InvalidArea);
-        }
-    });
-
-    // add first point
-    add(ring.back(), ring.front(), ring[1]);
-
-    // process inner points
-    for (std::size_t i(1), e(ring.size() - 1); i != e; ++i) {
-        add(ring[i - 1], ring[i], ring[i + 1]);
-    }
-
-    // add last point
-    add(ring[ring.size() - 2], ring.back(), ring.front());
-
-    // NB: make_heap create max-heap => we need to invert order
-    const auto compare([&](const Heap::value_type &l
-                           , const Heap::value_type &r) -> bool
-    {
-        const auto &p1(*l);
-        const auto &p2(*r);
-
-        // first, compare triangle area
-        if (p1(2) < p2(2)) { return false; }
-        if (p1(2) > p2(2)) { return true; }
-
-        // same area, compare point position to get some stability
-        if (p1(0) < p2(0)) { return false; }
-        if (p1(0) > p2(0)) { return true; }
-
-        return (p1(1) < p2(1));
-    });
-
-    auto heapBegin(heap.begin());
-    auto heapEnd(heap.end());
-
-    const auto reheap([&]() -> void
-    {
-        std::make_heap(heapBegin, heapEnd, compare);
-    });
-
-    const auto getPrev([&](Heap::value_type it) -> Heap::value_type
-    {
-        if (it == points.begin()) { return std::prev(points.end()); }
-        return std::prev(it);
-    });
-
-    const auto getNext([&](Heap::value_type it) -> Heap::value_type
-    {
-        ++it;
-        if (it == points.end()) { return points.begin(); }
-        return it;
-    });
-
-    // simplify
-    while (heapBegin != heapEnd) {
-        // make sure we have a heap
-        reheap();
-        auto &point(*heapBegin);
-
-        // check stop condition
-        if ((*point)(2) > stopCondition) { break; }
-
-        // remove pointer for list of points
-        point = points.erase(point);
-        if (point == points.end()) { point = points.begin(); }
-        auto prev(getPrev(point));
-
-        if (std::isfinite((*prev)(2))) {
-            (*prev)(2) = area(*getPrev(prev), *prev, *point);
-        }
-        if (std::isfinite((*point)(2))) {
-            (*point)(2) = area(*prev, *point, *getNext(point));
-        }
-
-        // cut head from heap and recompute
-        ++heapBegin;
-    }
-
-    math::Polygon out;
-    for (const auto &p : points) { out.emplace_back(p(0), p(1)); }
-    return out;
-}
-
-} // namespace
-
-Contour::list simplify(Contour::list contours)
-{
-    // first, we need to identify points where more than two contours join
-    const auto lockedPoints(findLockedPoints(contours));
-
-    for (auto &contour : contours) {
-        if (!contour) { continue; }
-
-        for (auto &ring : contour.rings) {
-            ring = simplifyRing(ring, lockedPoints, 10.0);
-        }
-    }
-
     return contours;
 }
 
-} // namespace imgproc
+void FindContours::Impl::feed(int x, int y, int ul, int ur, int lr, int ll)
+{
+    const auto cellValue([&](int c) -> CellType
+    {
+        return ((ul == c) << 3 | (ur == c) << 2 | (lr == c) << 1 | (ll == c));
+    });
 
-#endif // imgproc_contour_hpp_included_
+    // compute cell value for all cells and count non-zero cells (i.e. number of
+    // different areas meeting in this cell)
+    int cardinality(0);
+    for (int c(0); c < colors; ++c) {
+        cardinality += bool((cells[c] = cellValue(c)));
+    }
+    // virtual areas for invalid pixels (<0) and border pixels (>= colors)
+    cardinality += ((ul < 0) || (ur < 0) || (lr < 0) || (ll < 0));
+    cardinality += ((ul >= colors) || (ur  >= colors)
+                    || (lr  >= colors) || (ll  >= colors));
+
+    CellType ambiguous(0);
+
+    auto icells(cells.begin());
+    if (cardinality > 2) {
+        // more than two areas meet at this place, use 90 degree connection
+        for (auto &builder : builders) {
+            builder.add(x, y, *icells++, ambiguous);
+        }
+    } else {
+        // use mitre connections
+        for (auto &builder : builders) {
+            builder.addMitre(x, y, *icells++, ambiguous);
+        }
+    }
+}
+
+} // namespace imgproc

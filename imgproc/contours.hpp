@@ -27,14 +27,17 @@
 #ifndef imgproc_contours_hpp_included_
 #define imgproc_contours_hpp_included_
 
+#include <memory>
 #include <vector>
+#include <array>
+
+#include "utility/enum-io.hpp"
 
 #include "math/geometry_core.hpp"
 #include "math/geometry.hpp"
 
 #include "./pixelorigin.hpp"
 #include "./rastermask/bitfield.hpp"
-#include "./detail/contours.hpp"
 
 namespace imgproc {
 
@@ -66,6 +69,8 @@ struct Contour {
     bool operator!() const { return rings.empty(); }
 };
 
+enum class ChainSimplification { none, simple, rdp };
+
 /** Contour finding algorithm parameters.
  */
 struct ContourParameters {
@@ -75,23 +80,23 @@ struct ContourParameters {
 
     /** Join adjacent straight segments into one segment.
      */
-    bool joinStraightSegments;
+    ChainSimplification simplification;
 
     ContourParameters()
         : pixelOrigin(PixelOrigin::center)
-        , joinStraightSegments(true)
+        , simplification(ChainSimplification::simple)
     {}
 
     ContourParameters(PixelOrigin pixelOrigin)
-        : pixelOrigin(pixelOrigin), joinStraightSegments(true)
+        : pixelOrigin(pixelOrigin), simplification(ChainSimplification::simple)
     {}
 
     ContourParameters& setPixelOrigin(PixelOrigin pixelOrigin) {
         this->pixelOrigin = pixelOrigin; return *this;
     }
 
-    ContourParameters& setJoinStraightSegments(bool joinStraightSegments) {
-        this->joinStraightSegments = joinStraightSegments; return *this;
+    ContourParameters& setSimplification(ChainSimplification simplification) {
+        this->simplification = simplification; return *this;
     }
 };
 
@@ -128,51 +133,91 @@ Contour findContour(const ConstRaster &raster, const Threshold &threshold
 Contour findContour(const Contour::Raster &raster
                     , const ContourParameters &params = ContourParameters());
 
-/** Contour finder with internal state. Handles stable region boundaries for
- *  different regions inside common input.
- */
-class FindContour : private detail::FindContourImpl {
+class FindContours {
 public:
-    FindContour(const ContourParameters &params = ContourParameters())
-        : params_(params)
-    {}
+    FindContours(const math::Size2 &rasterSize, int colorCount
+                 , const ContourParameters &params = ContourParameters());
+    ~FindContours();
 
-    template <typename ConstRaster, typename Threshold>
-    Contour operator()(const ConstRaster &raster, const Threshold &threshold);
+    /** Feed contour finder with value at given cell.
+     */
+    void operator()(int x, int y, int ul, int ur, int lr, int ll);
 
-    Contour operator()(const Contour::Raster &raster);
+    const math::Size2 rasterSize() const;
+
+    Contour::list contours();
 
 private:
-    struct Builder;
-    friend class Builder;
-
-    const ContourParameters params_;
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
-/** Simplify contours.
+/** Helper function for whole raster feed.
  */
-Contour::list simplify(Contour::list contours);
+template <typename ConstRaster>
+Contour::list findContours(const ConstRaster &raster, int colorCount
+                           , const ContourParameters &params
+                           = ContourParameters());
 
 // inlines
-
-template <typename ConstRaster, typename Threshold>
-Contour FindContour::operator()(const ConstRaster &raster
-                                , const Threshold &threshold)
-{
-    return operator()(bitfield::fromRaster(raster, threshold));
-}
 
 template <typename ConstRaster, typename Threshold>
 Contour findContour(const ConstRaster &raster, const Threshold &threshold
                     , const ContourParameters &params)
 {
-    return FindContour(params)(raster, threshold);
+    return findContour(bitfield::fromRaster(raster, threshold), params);
 }
 
-inline Contour findContour(const Contour::Raster &raster
+template <typename ConstRaster>
+Contour::list findContours(const ConstRaster &raster, int colorCount
                            , const ContourParameters &params)
 {
-    return FindContour(params)(raster);
+    const auto size(raster.size());
+    auto xend(size.width - 1);
+    auto yend(size.height - 1);
+
+    FindContours fc(size, colorCount, params);
+
+    // first row
+    // first column
+    fc(-1, -1, -1, colorCount
+       , raster(0, 0)[0], colorCount);
+    for (int i(0); i < xend; ++i) {
+        fc(i, -1, colorCount, colorCount
+           , raster(i + 1, 0)[0], raster(i, 0)[0]);
+    }
+    // last column
+    fc(xend, -1, colorCount, -1
+       , colorCount, raster(xend, 0)[0]);
+
+    for (int j(0); j < yend; ++j) {
+        // first column
+        fc(-1, j, colorCount, raster(0, j)[0]
+           , raster(0, j + 1)[0], colorCount);
+
+        for (int i(0); i < xend; ++i) {
+            fc(i, j, raster(i, j)[0], raster(i + 1, j)[0]
+               , raster(i + 1, j + 1)[0], raster(i, j + 1)[0]);
+        }
+
+        // last column
+        fc(xend, j, raster(xend, j)[0], colorCount
+           , colorCount, raster(xend, j + 1)[0]);
+    }
+
+    // last row
+    // first column
+    fc(-1, yend, colorCount, raster(0, yend)[0]
+       , colorCount, -1);
+    for (int i(0); i < xend; ++i) {
+        fc(i, yend, raster(i, yend)[0], raster(i + 1, yend)[0]
+           , colorCount, colorCount);
+    }
+    // last column
+    fc(xend, yend, raster(xend, yend)[0], colorCount
+       , -1, colorCount);
+
+    return fc.contours();
 }
 
 } // namespace imgproc
