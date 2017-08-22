@@ -37,6 +37,7 @@ namespace imgproc {
 DECLARE_EXCEPTION(Error, std::runtime_error);
 DECLARE_EXCEPTION(TypeError, Error);
 DECLARE_EXCEPTION(AreaTooLarge, Error);
+DECLARE_EXCEPTION(FormatError, Error);
 
 #undef DECLARE_EXCEPTION
 

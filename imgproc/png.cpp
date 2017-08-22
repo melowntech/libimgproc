@@ -23,6 +23,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include <arpa/inet.h>
+
 #include <cstdio>
 #include <memory>
 #include <algorithm>
@@ -32,10 +35,13 @@
 
 #include "dbglog/dbglog.hpp"
 
+#include "utility/binaryio.hpp"
+
 #include "./png.hpp"
 #include "./error.hpp"
 
 namespace fs = boost::filesystem;
+namespace bin = utility::binaryio;
 
 namespace imgproc { namespace png {
 
@@ -43,15 +49,13 @@ namespace {
 
 extern "C" {
 
-    void imgproc_PngWrite(::png_structp png
-                          , ::png_bytep data
-                          , ::png_size_t length)
-    {
-        auto &out(*static_cast<SerializedPng*>(::png_get_io_ptr(png)));
-        out.insert(out.end(), data, data + length);
-    }
+void imgproc_PngWrite(::png_structp png, ::png_bytep data, ::png_size_t length)
+{
+    auto &out(*static_cast<SerializedPng*>(::png_get_io_ptr(png)));
+    out.insert(out.end(), data, data + length);
+}
 
-    void imgproc_PngFlush(::png_structp) {}
+void imgproc_PngFlush(::png_structp) {}
 
 } // extern "C"
 
@@ -219,6 +223,57 @@ void write(const fs::path &file
     return writeViewToFile<boost::gil::rgba8_pixel_t>
         (file, boost::gil::const_view(image)
          , compressionLevel, PNG_COLOR_TYPE_RGBA);
+}
+
+namespace constants {
+
+const unsigned char Signature[8] = {
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1A, 0x0a
+};
+const unsigned char IHDR[4] = { 'I', 'H', 'D', 'R' };
+
+} // namespace
+
+math::Size2 size(std::istream &is, const fs::path &path)
+{
+    // load header
+    unsigned char magic[sizeof(constants::Signature)];
+    bin::read(is, magic);
+
+    if (std::memcmp(magic, constants::Signature, sizeof(constants::Signature)))
+    {
+        LOGTHROW(err1, FormatError)
+            << "File " << path << " is not a PNG file.";
+    }
+
+    // load and decode IHDR
+    const auto length(ntohl(bin::read<std::uint32_t>(is)));
+
+    if (length != 13) {
+        LOGTHROW(err1, FormatError)
+            << "No IHDR found after header in PNG file " << path << ".";
+    }
+
+    unsigned char type[sizeof(constants::IHDR)];
+    bin::read(is, type);
+
+    if (std::memcmp(type, constants::IHDR, sizeof(constants::IHDR))) {
+        LOGTHROW(err1, FormatError)
+            << "No IHDR found after header in PNG file " << path << ".";
+    }
+
+    const auto width(ntohl(bin::read<std::uint32_t>(is)));
+    const auto height(ntohl(bin::read<std::uint32_t>(is)));
+
+    return math::Size2(width, height);
+}
+
+math::Size2 size(const void *data, std::size_t dataSize, const fs::path &path)
+{
+    (void) data;
+    (void) dataSize;
+    (void) path;
+    return {};
 }
 
 } } // namespace imgproc::png

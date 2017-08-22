@@ -44,8 +44,17 @@
 #  include "./tiff.hpp"
 #endif
 
+#ifdef IMGPROC_HAS_PNG
+#  include "./png.hpp"
+#endif
+
+#ifdef IMGPROC_HAS_JPEG
+#  include "./jpeg.hpp"
+#endif
+
 namespace gil = boost::gil;
 namespace ba = boost::algorithm;
+namespace fs = boost::filesystem;
 
 namespace imgproc {
 
@@ -68,7 +77,7 @@ cv::Mat readImage(const void *data, std::size_t size)
     return image;
 }
 
-cv::Mat readImage(const boost::filesystem::path &path)
+cv::Mat readImage(const fs::path &path)
 {
     std::string ext(path.extension().string());
     ba::to_lower(ext);
@@ -97,7 +106,7 @@ cv::Mat readImage(const boost::filesystem::path &path)
                       , CV_LOAD_IMAGE_COLOR | CV_LOAD_IMAGE_ANYDEPTH);
 }
 
-cv::Mat readImage8bit(const boost::filesystem::path &path)
+cv::Mat readImage8bit(const fs::path &path)
 {
     auto image(readImage(path));
     if (image.depth() == CV_16U) {
@@ -109,7 +118,7 @@ cv::Mat readImage8bit(const boost::filesystem::path &path)
     return image;
 }
 
-math::Size2 imageSize(const boost::filesystem::path &path)
+math::Size2 imageSize(const fs::path &path)
 {
     std::string ext(path.extension().string());
     ba::to_lower(ext);
@@ -163,6 +172,94 @@ math::Size2 imageSize(const boost::filesystem::path &path)
     LOGTHROW(err1, Error)
         << "Cannot determine size of image in file " << path
         << ": Unknown file format.";
+    throw;
+}
+
+math::Size2 imageSize(std::istream &is, const fs::path &path)
+{
+    // call format-based measuring function based on first byte of data; we do
+    // not check full magic because stream can be non-seekable
+
+    // peek at first byte
+    const auto head(is.peek());
+
+    switch (head) {
+    case 0xff:
+#ifdef IMGPROC_HAS_JPEG
+        // looks like JPEG
+        return jpegSize(is, path);
+#else
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": JPEG support not compiled in.";
+        break;
+#endif
+
+#ifdef IMGPROC_HAS_PNG
+    case 0x89:
+        return png::size(is, path);
+#else
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": PNG support not compiled in.";
+        break;
+#endif
+
+    case 'I': case 'M':
+#ifdef IMGPROC_HAS_TIFF
+        LOGTHROW(err1, Error)
+            << "FIXME: Cannot determine size of image in file " << path
+            << ": stream-based TIFF image measurement not implemented yet.";
+#else
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": TIFF support not compiled in.";
+        break;
+#endif
+
+        case 0x47:
+#ifdef IMGPROC_HAS_GIF
+        LOGTHROW(err1, Error)
+            << "FIXME: Cannot determine size of image in file " << path
+            << ": stream-based GIF image measurement not implemented yet.";
+#else
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": GIF support not compiled in.";
+        break;
+#endif
+
+    case 0x00:
+        LOGTHROW(err1, Error)
+            << "FIXME: Cannot determine size of image in file " << path
+            << ": stream-based JP2 image measurement not implemented yet.";
+    }
+
+    LOGTHROW(err1, Error)
+        << "Cannot determine size of image in file " << path
+        << ": Unknown file format.";
+    throw;
+}
+
+std::string imageType(std::istream &is, const fs::path &path)
+{
+    // TODO: do more peeks
+
+    // peek at first byte
+    const auto head(is.peek());
+
+    switch (head) {
+    case 0xff: return ".jpg";
+    case 0x89: return ".png";
+
+    case 'I': case 'M': return ".tif";
+    case 0x47: return ".gif";
+    case 0x00: return ".jp2"; // a bit stretch...
+    }
+
+    LOGTHROW(err1, Error)
+            << "Cannot determine type of image in file " << path
+            << ": Unknown file format.";
     throw;
 }
 
