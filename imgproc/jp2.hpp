@@ -36,6 +36,8 @@ namespace imgproc {
 
 math::Size2 jp2Size(const boost::filesystem::path &path);
 
+math::Size2 jp2Size(std::istream &is, const boost::filesystem::path &path);
+
 } // namespace imgproc
 
 #endif // imgproc_jp2_hpp_included_

@@ -134,6 +134,8 @@ set(imgproc_SOURCES
   contours.hpp contours.cpp
 
   svg.hpp
+
+  png-size.cpp
   )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}

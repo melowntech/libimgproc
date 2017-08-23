@@ -44,9 +44,7 @@
 #  include "./tiff.hpp"
 #endif
 
-#ifdef IMGPROC_HAS_PNG
-#  include "./png.hpp"
-#endif
+#include "./png.hpp"
 
 #ifdef IMGPROC_HAS_JPEG
 #  include "./jpeg.hpp"
@@ -195,15 +193,8 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
         break;
 #endif
 
-#ifdef IMGPROC_HAS_PNG
     case 0x89:
         return png::size(is, path);
-#else
-        LOGTHROW(err1, Error)
-            << "Cannot determine size of image in file " << path
-            << ": PNG support not compiled in.";
-        break;
-#endif
 
     case 'I': case 'M':
 #ifdef IMGPROC_HAS_TIFF
@@ -230,9 +221,7 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
 #endif
 
     case 0x00:
-        LOGTHROW(err1, Error)
-            << "FIXME: Cannot determine size of image in file " << path
-            << ": stream-based JP2 image measurement not implemented yet.";
+        return jp2Size(is, path);
     }
 
     LOGTHROW(err1, Error)
