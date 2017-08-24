@@ -33,6 +33,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <numeric>
+#include <cstdint>
 
 #include "dbglog/dbglog.hpp"
 #include "utility/binaryio.hpp"
@@ -49,10 +50,10 @@ namespace {
     using utility::binaryio::read;
     using utility::binaryio::write;
 
-    uint computeDepth(uint sizeX, uint sizeY)
+    unsigned int computeDepth(unsigned int sizeX, unsigned int sizeY)
     {
-        uint quadSize = 1;
-        uint depth(0);
+        unsigned int quadSize = 1;
+        unsigned int depth(0);
         while ((quadSize < sizeX) || (quadSize < sizeY)) {
             quadSize <<= 1;
             ++depth;
@@ -62,7 +63,7 @@ namespace {
 }
 
 
-RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
+RasterMask::RasterMask( unsigned int sizeX, unsigned int sizeY, const InitMode mode )
     : sizeX_( sizeX ), sizeY_( sizeY )
     , depth_(computeDepth(sizeX_, sizeY_))
     , quadSize_(1 << depth_)
@@ -77,7 +78,7 @@ RasterMask::RasterMask( uint sizeX, uint sizeY, const InitMode mode )
     case FULL :
     default :
         root_.type = WHITE;
-        count_ = ulong(sizeX_) * ulong(sizeY_);
+        count_ = (unsigned long)(sizeX_) * (unsigned long)(sizeY_);
         break;
     }
 }
@@ -97,7 +98,7 @@ RasterMask::RasterMask( const math::Size2 & size, const InitMode mode )
     case FULL :
     default :
         root_.type = WHITE;
-        count_ = ulong(sizeX_) * ulong(sizeY_);
+        count_ = (unsigned long)(sizeX_) * (unsigned long)(sizeY_);
         break;
     }
 }
@@ -133,7 +134,7 @@ void RasterMask::invert()
 bool RasterMask::get( int x, int y ) const {
 
     if ( x < 0 || x >= (int) sizeX_ || y < 0 || y >= (int) sizeY_ ) return false;
-    return root_.get( (uint) x, (uint) y, quadSize_ );
+    return root_.get( (unsigned int) x, (unsigned int) y, quadSize_ );
 }
 
 bool RasterMask::getClamped( int x, int y ) const {
@@ -144,13 +145,13 @@ bool RasterMask::getClamped( int x, int y ) const {
     if ( y < 0 ) y = 0;
     else if ( y >= (int) sizeY_ ) y = sizeY_ - 1;
 
-    return root_.get( (uint) x, (uint) y, quadSize_ );
+    return root_.get( (unsigned int) x, (unsigned int) y, quadSize_ );
 }
 
 void RasterMask::set( int x, int y, bool value ) {
 
     if ( x < 0 || x >= (int) sizeX_ || y < 0 || y >= (int) sizeY_ ) return;
-    root_.set( (uint) x, (uint ) y, value, quadSize_ );
+    root_.set( (unsigned int) x, (unsigned int ) y, value, quadSize_ );
 }
 
 void RasterMask::reset(bool value)
@@ -177,13 +178,13 @@ bool RasterMask::onBoundary( int x, int y ) const {
 void RasterMask::dump( std::ostream & f ) const
 {
     write(f, QT_RASTERMASK_IO_MAGIC); // 5 bytes
-    write(f, uint8_t(0)); // reserved
-    write(f, uint8_t(0)); // reserved
-    write(f, uint8_t(0)); // reserved
+    write(f, std::uint8_t(0)); // reserved
+    write(f, std::uint8_t(0)); // reserved
+    write(f, std::uint8_t(0)); // reserved
 
-    f.write( reinterpret_cast<const char *>( & sizeX_ ), sizeof( uint ) );
-    f.write( reinterpret_cast<const char *>( & sizeY_ ), sizeof( uint ) );
-    f.write( reinterpret_cast<const char *>( & quadSize_ ), sizeof( uint ) );
+    f.write( reinterpret_cast<const char *>( & sizeX_ ), sizeof( unsigned int ) );
+    f.write( reinterpret_cast<const char *>( & sizeY_ ), sizeof( unsigned int ) );
+    f.write( reinterpret_cast<const char *>( & quadSize_ ), sizeof( unsigned int ) );
     // count ignored
     std::uint32_t count(0);
     f.write( reinterpret_cast<const char *>( & count ), sizeof( count ) );
@@ -201,14 +202,14 @@ void RasterMask::load( std::istream & f )
         LOGTHROW(err2, std::runtime_error) << "RasterMask has wrong magic.";
     }
 
-    uint8_t reserved1, reserved2, reserved3;
+    std::uint8_t reserved1, reserved2, reserved3;
     read(f, reserved1); // reserved
     read(f, reserved2); // reserved
     read(f, reserved3); // reserved
 
-    f.read( reinterpret_cast<char *>( & sizeX_ ), sizeof( uint ) );
-    f.read( reinterpret_cast<char *>( & sizeY_ ), sizeof( uint ) );
-    f.read( reinterpret_cast<char *>( & quadSize_ ), sizeof( uint ) );
+    f.read( reinterpret_cast<char *>( & sizeX_ ), sizeof( unsigned int ) );
+    f.read( reinterpret_cast<char *>( & sizeY_ ), sizeof( unsigned int ) );
+    f.read( reinterpret_cast<char *>( & quadSize_ ), sizeof( unsigned int ) );
 
     // calculate depth and fix quad size
     depth_ = computeDepth(sizeX_, sizeY_);
@@ -286,7 +287,7 @@ void RasterMask::subtract(const RasterMask &other)
     recount();
 }
 
-void RasterMask::coarsen(const uint threshold)
+void RasterMask::coarsen(const unsigned int threshold)
 {
     // sanity check
     if (threshold < 2) {
@@ -304,9 +305,9 @@ void RasterMask::coarsen(const uint threshold)
 
 void RasterMask::recount()
 {
-    ulong count(0);
-    forEachQuad([&count](uint, uint, uint xsize, uint ysize, bool) {
-            count += ulong(xsize) * ulong(ysize);
+    unsigned long count(0);
+    forEachQuad([&count](unsigned int, unsigned int, unsigned long xsize, unsigned long ysize, bool) {
+            count += xsize * ysize;
         }, Filter::white);
     count_ = count;
 }
@@ -317,9 +318,9 @@ RasterMask::Node::~Node() {
     mask.free(children);
 }
 
-bool RasterMask::Node::get( uint x, uint y, uint size ) const {
+bool RasterMask::Node::get( unsigned int x, unsigned int y, unsigned int size ) const {
 
-    uint split = size >> 1;
+    unsigned int split = size >> 1;
 
     switch ( type ) {
     case WHITE :
@@ -349,9 +350,9 @@ bool RasterMask::Node::get( uint x, uint y, uint size ) const {
     }
 }
 
-void RasterMask::Node::set( uint x, uint y, bool value, uint size )
+void RasterMask::Node::set( unsigned int x, unsigned int y, bool value, unsigned int size )
 {
-    uint split = size >> 1;
+    unsigned int split = size >> 1;
 
     // split node if necessarry
     if ( ( ( type == BLACK && value ) || ( type == WHITE && ! value  ) )
@@ -432,7 +433,7 @@ RasterMask::Node & RasterMask::Node::operator = (
 
 void RasterMask::Node::dump( std::ostream & f ) const
 {
-    uint8_t c = type;
+    std::uint8_t c = type;
     write(f, c);
 
     if ( type == GRAY ) {
@@ -446,7 +447,7 @@ void RasterMask::Node::dump( std::ostream & f ) const
 
 void RasterMask::Node::load( std::istream & f )
 {
-    uint8_t c;
+    std::uint8_t c;
     read(f, c);
     type = static_cast<NodeType>(c);
 
@@ -472,21 +473,21 @@ imgproc::bitfield::RasterMask RasterMask::asBitfield() const
 }
 
 void RasterMask::Node::dump(imgproc::bitfield::RasterMask &m
-                              , uint x, uint y, uint size)
+                              , unsigned int x, unsigned int y, unsigned int size)
     const
 {
-    uint split = size / 2;
+    unsigned int split = size / 2;
 
     switch ( type ) {
     case WHITE: {
         // fill in quad
-        uint ex(x + size);
-        uint ey(y + size);
+        unsigned int ex(x + size);
+        unsigned int ey(y + size);
         if (ex > mask.sizeX_) { ex = mask.sizeX_; };
         if (ey > mask.sizeY_) { ey = mask.sizeY_; };
 
-        for (uint j(y); j < ey; ++j) {
-            for (uint i(x); i < ex; ++i) {
+        for (unsigned int j(y); j < ey; ++j) {
+            for (unsigned int i(x); i < ex; ++i) {
                 m.set(i, j);
             }
         }
@@ -645,7 +646,7 @@ void RasterMask::Node::subtract(const Node &other)
     contract();
 }
 
-void RasterMask::Node::coarsen(uint size, const uint threshold)
+void RasterMask::Node::coarsen(unsigned int size, const unsigned int threshold)
 {
     if (type != NodeType::GRAY) {
         // keep
@@ -670,7 +671,7 @@ void RasterMask::Node::coarsen(uint size, const uint threshold)
 }
 
 RasterMask::RasterMask(const RasterMask other, const math::Size2 &size
-                       , uint depth, uint x, uint y)
+                       , unsigned int depth, unsigned int x, unsigned int y)
     : sizeX_(size.width), sizeY_(size.height)
     , depth_(computeDepth(sizeX_, sizeY_))
     , quadSize_(1 << depth_)
@@ -681,22 +682,22 @@ RasterMask::RasterMask(const RasterMask other, const math::Size2 &size
     recount();
 }
 
-RasterMask RasterMask::subTree(const math::Size2 &size, uint depth
-                               , uint x, uint y) const
+RasterMask RasterMask::subTree(const math::Size2 &size, unsigned int depth
+                               , unsigned int x, unsigned int y) const
 {
     return RasterMask(*this, size, depth, x, y);
 }
 
 /** Finds quad in given subtree.
  */
-const RasterMask::Node& RasterMask::Node::find(uint depth, uint x, uint y)
+const RasterMask::Node& RasterMask::Node::find(unsigned int depth, unsigned int x, unsigned int y)
     const
 {
     // if we can descend down (i.e. both tree and depth allow)
     if (depth && (type == GRAY)) {
         // find node to descend
         --depth;
-        uint mask(1 << depth);
+        unsigned int mask(1 << depth);
         auto index(((x & mask) ? 1 : 0) | ((y & mask) ? 2 : 0));
 
         switch (index) {
@@ -736,10 +737,10 @@ void RasterMask::setQuad(int depth, int x, int y, bool value)
     root_.setQuad(depth, x, y, value, quadSize_);
 }
 
-void RasterMask::Node::setQuad(uint depth, uint x, uint y, bool value
-                               , uint size)
+void RasterMask::Node::setQuad(unsigned int depth, unsigned int x, unsigned int y, bool value
+                               , unsigned int size)
 {
-    uint split = size >> 1;
+    unsigned int split = size >> 1;
 
     // split node if necessarry
     if (depth && ((type == BLACK && value)
@@ -801,10 +802,10 @@ void RasterMask::setSubtree(int depth, int x, int y, const RasterMask &mask)
     root_.setSubtree(depth, x, y, mask, quadSize_);
 }
 
-void RasterMask::Node::setSubtree(uint depth, uint x, uint y
-                                  , const RasterMask &other, uint size)
+void RasterMask::Node::setSubtree(unsigned int depth, unsigned int x, unsigned int y
+                                  , const RasterMask &other, unsigned int size)
 {
-    uint split = size >> 1;
+    unsigned int split = size >> 1;
 
     // split node if necessarry
     if (depth && (type != GRAY)) {
@@ -865,9 +866,9 @@ const RasterMask::Node* RasterMask::findSubtree(int depth, int x, int y)
 }
 
 const RasterMask::Node*
-RasterMask::Node::findSubtree(uint depth, uint x, uint y, uint size) const
+RasterMask::Node::findSubtree(unsigned int depth, unsigned int x, unsigned int y, unsigned int size) const
 {
-    uint split = size >> 1;
+    unsigned int split = size >> 1;
 
     if (!depth) {
         // bottom -> return node
