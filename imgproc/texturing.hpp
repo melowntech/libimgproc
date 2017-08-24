@@ -361,6 +361,16 @@ inline Patch Patch::srcClipped(const math::Size2 &limits) const
     return srcClipped(limits.width, limits.height);
 }
 
+template<typename CharT, typename Traits>
+inline std::basic_ostream<CharT, Traits>&
+operator<<(std::basic_ostream<CharT, Traits> &os, const Patch::Rect &r)
+{
+    std::ios::fmtflags flags(os.flags());
+    os << r.size << std::showpos << r.point(0) << r.point(1);
+    os.flags(flags);
+    return os;
+}
+
 } } // namespace imgproc::tx
 
 #endif // imgproc_texturing_hpp_included_
