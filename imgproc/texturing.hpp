@@ -41,6 +41,9 @@ struct UvPatch : math::Extents2 {
     void inflate(double size);
     void update(const UvPatch &other);
     void update(double x, double y);
+    template <typename T> void update(const math::Point2_<T> &point);
+
+    typedef std::vector<UvPatch> list;
 };
 
 UvPatch inflate(const UvPatch &uvPatch, double size);
@@ -115,6 +118,8 @@ public:
         /** Manual rectangle creation.
          */
         Rect(int x, int y, int width, int height);
+
+        typedef std::vector<Rect> list;
     };
 
     const Rect& src() const { return src_; }
@@ -274,6 +279,11 @@ inline void UvPatch::update(const UvPatch &other)
 {
     math::update(*this, other.ll);
     math::update(*this, other.ur);
+}
+
+template <typename T> void UvPatch::update(const math::Point2_<T> &point)
+{
+    update(point(0), point(1));
 }
 
 inline math::Size2 pack(const Patch::list &patches) {
