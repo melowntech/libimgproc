@@ -41,8 +41,12 @@ struct UVRect
 
     UVRect() { clear(); }
 
+
     /// Inflate the rectangle to include the given point.
-    void update(UVCoord uv);
+    void update(double x, double y);
+
+    /// Inflate the rectangle to include the given point.
+    inline void update(UVCoord uv) { update(uv.x, uv.y); }
 
     /// Initialize for update().
     void clear() {
