@@ -178,7 +178,7 @@ float ccDiff( const YCCColor & color1, const YCCColor & color2 ) {
 
     hue2 = atan2( color2( 2 ), color2( 1 ) );
 
-    return std::min( fabs( hue1 - hue2 ), 2 * M_PI - fabs( hue1 - hue2 ) );
+    return std::min( fabs( hue1 - hue2 ), float(2 * M_PI) - fabs( hue1 - hue2 ) );
 
     //return sqr( color2( 1 ) - color1( 1 ) ) + sqr( color2( 2 ) - color1( 2 ) );
 }
