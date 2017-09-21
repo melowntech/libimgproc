@@ -79,7 +79,13 @@ cv::Mat readImage(const boost::filesystem::path &path)
         try {
             auto image(imgproc::readTiff(path));
             if (image.data) { return image; }
-        } catch (const std::runtime_error &e) {}
+            LOG(warn1) << "TIFF-specific reader failed with an unknown error; "
+                "trying generic OpenCV-provided loader.";
+        } catch (const std::exception &e) {
+            LOG(warn1) << "TIFF-specific reader failed with <"
+                       << e.what() << ">; trying generic OpenCV-provided "
+                "loader.";
+        }
     }
 #endif
 
@@ -88,7 +94,13 @@ cv::Mat readImage(const boost::filesystem::path &path)
         try {
             auto image(imgproc::readGif(path));
             if (image.data) { return image; }
-        } catch (const std::runtime_error &e) {}
+            LOG(warn1) << "GIF-specific reader failed with an unknown error; "
+                "trying generic OpenCV-provided loader.";
+        } catch (const std::exception&) {
+            LOG(warn1) << "GIF-specific reader failed with <"
+                       << e.what() << ">; trying generic OpenCV-provided "
+                "loader.";
+        }
     }
 #endif
 
