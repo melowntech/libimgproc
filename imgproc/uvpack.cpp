@@ -33,13 +33,13 @@
 
 namespace imgproc {
 
-void UVRect::update(UVCoord uv)
+void UVRect::update(double x, double y)
 {
-    if (uv.x < min.x) min.x = uv.x;
-    if (uv.x > max.x) max.x = uv.x;
+    if (x < min.x) min.x = x;
+    if (x > max.x) max.x = x;
 
-    if (uv.y < min.y) min.y = uv.y;
-    if (uv.y > max.y) max.y = uv.y;
+    if (y < min.y) min.y = y;
+    if (y > max.y) max.y = y;
 }
 
 

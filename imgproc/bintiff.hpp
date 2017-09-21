@@ -34,7 +34,9 @@
 #include <cstdint>
 #include <cstdio>
 
-#include <tiff.h>
+#if IMGPROC_HAS_TIFF
+    #include <tiff.h>
+#endif
 
 #include <boost/filesystem/path.hpp>
 

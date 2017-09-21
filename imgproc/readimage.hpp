@@ -42,6 +42,18 @@ cv::Mat readImage8bit(const boost::filesystem::path &path);
 
 math::Size2 imageSize(const boost::filesystem::path &path);
 
+/** Image size from generic stream.
+ */
+math::Size2 imageSize(std::istream &is, const boost::filesystem::path &path
+                      = "unknown");
+
+/** Detects image type without advancing provided stream.
+ *
+ *  Returns common file extension (.jpg, .png, ...).
+ */
+std::string imageType(std::istream &is, const boost::filesystem::path &path
+                      = "unknown");
+
 } // namespace imgproc
 
 #endif // imgproc_readimage_hpp_included_

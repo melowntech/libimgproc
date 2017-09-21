@@ -78,14 +78,10 @@ namespace jp2 {
     }
 }
 
-math::Size2 jp2Size(const boost::filesystem::path &path)
+math::Size2 jp2Size(std::istream &is, const boost::filesystem::path &path)
 {
-    std::ifstream f;
-    f.exceptions(std::ios::badbit | std::ios::failbit);
-    f.open(path.string(), std::ios_base::in);
-
     {
-        auto signature(jp2::readBox(f));
+        auto signature(jp2::readBox(is));
         if (signature.type != jp2::Signature) {
             LOGTHROW(err1, Error)
                 << "Not a JP2 file: " << path << ": expected signature box.";
@@ -99,19 +95,19 @@ math::Size2 jp2Size(const boost::filesystem::path &path)
         }
     }
 
-    if (jp2::readBox(f).type != jp2::FileType) {
+    if (jp2::readBox(is).type != jp2::FileType) {
         LOGTHROW(err1, Error)
             << "Not a JP2 file: " << path << ": expected file type box.";
     }
 
-    if (jp2::readBox(f).type != jp2::Header) {
+    if (jp2::readBox(is).type != jp2::Header) {
         LOGTHROW(err1, Error)
             << "Not a JP2 file: " << path << ": expected header box.";
     }
 
     // search for image header box
     for (int leftBoxes(10); leftBoxes; --leftBoxes) {
-        auto box(jp2::readBox(f));
+        auto box(jp2::readBox(is));
         if (box.type == jp2::ImageHader) {
             return { int(get32(box, 4)),  int(get32(box, 0)) };
         }
@@ -120,6 +116,15 @@ math::Size2 jp2Size(const boost::filesystem::path &path)
     LOGTHROW(err1, Error)
         << "Not a JP2 file: " << path << ": unable to find image header.";
     throw;
+}
+
+math::Size2 jp2Size(const boost::filesystem::path &path)
+{
+    std::ifstream f;
+    f.exceptions(std::ios::badbit | std::ios::failbit);
+    f.open(path.string(), std::ios_base::in);
+
+    return jp2Size(f, path);
 }
 
 } // namespace imgproc

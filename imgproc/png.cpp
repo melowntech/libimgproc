@@ -23,6 +23,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <cstdio>
 #include <memory>
 #include <algorithm>
@@ -32,10 +33,13 @@
 
 #include "dbglog/dbglog.hpp"
 
+#include "utility/binaryio.hpp"
+
 #include "./png.hpp"
 #include "./error.hpp"
 
 namespace fs = boost::filesystem;
+namespace bin = utility::binaryio;
 
 namespace imgproc { namespace png {
 
@@ -43,15 +47,13 @@ namespace {
 
 extern "C" {
 
-    void imgproc_PngWrite(::png_structp png
-                          , ::png_bytep data
-                          , ::png_size_t length)
-    {
-        auto &out(*static_cast<SerializedPng*>(::png_get_io_ptr(png)));
-        out.insert(out.end(), data, data + length);
-    }
+void imgproc_PngWrite(::png_structp png, ::png_bytep data, ::png_size_t length)
+{
+    auto &out(*static_cast<SerializedPng*>(::png_get_io_ptr(png)));
+    out.insert(out.end(), data, data + length);
+}
 
-    void imgproc_PngFlush(::png_structp) {}
+void imgproc_PngFlush(::png_structp) {}
 
 } // extern "C"
 

@@ -26,8 +26,12 @@
 #ifndef imgproc_png_hpp_included_
 #define imgproc_png_hpp_included_
 
+#include <iostream>
+
 #include <boost/filesystem/path.hpp>
 #include <boost/gil/gil_all.hpp>
+
+#include "math/geometry_core.hpp"
 
 namespace imgproc { namespace png {
 
@@ -89,6 +93,16 @@ void write(const boost::filesystem::path &file
 void write(const boost::filesystem::path &file
            , const boost::gil::rgba8_image_t &image
            , int compressionLevel = -1);
+
+/** Returns dimensions of PNG image without full decoding.
+ */
+math::Size2 size(std::istream &is
+                 , const boost::filesystem::path &path = "unknown");
+
+/** Returns dimensions of PNG image without full decoding.
+ */
+math::Size2 size(const void *data, std::size_t size
+                 , const boost::filesystem::path &path = "unknown");
 
 } } // namespace imgproc::png
 

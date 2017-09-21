@@ -41,6 +41,9 @@ struct UvPatch : math::Extents2 {
     void inflate(double size);
     void update(const UvPatch &other);
     void update(double x, double y);
+    template <typename T> void update(const math::Point2_<T> &point);
+
+    typedef std::vector<UvPatch> list;
 };
 
 UvPatch inflate(const UvPatch &uvPatch, double size);
@@ -115,6 +118,8 @@ public:
         /** Manual rectangle creation.
          */
         Rect(int x, int y, int width, int height);
+
+        typedef std::vector<Rect> list;
     };
 
     const Rect& src() const { return src_; }
@@ -276,6 +281,11 @@ inline void UvPatch::update(const UvPatch &other)
     math::update(*this, other.ur);
 }
 
+template <typename T> void UvPatch::update(const math::Point2_<T> &point)
+{
+    update(point(0), point(1));
+}
+
 inline math::Size2 pack(const Patch::list &patches) {
     auto copy(patches);
     return pack(copy);
@@ -349,6 +359,16 @@ inline Patch Patch::srcClipped(int width, int height) const
 inline Patch Patch::srcClipped(const math::Size2 &limits) const
 {
     return srcClipped(limits.width, limits.height);
+}
+
+template<typename CharT, typename Traits>
+inline std::basic_ostream<CharT, Traits>&
+operator<<(std::basic_ostream<CharT, Traits> &os, const Patch::Rect &r)
+{
+    std::ios::fmtflags flags(os.flags());
+    os << r.size << std::showpos << r.point(0) << r.point(1);
+    os.flags(flags);
+    return os;
 }
 
 } } // namespace imgproc::tx

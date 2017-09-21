@@ -23,24 +23,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef imgproc_error_hpp_included_
-#define imgproc_error_hpp_included_
 
-#include <stdexcept>
-#include <string>
+#ifndef imgproc_pixelorigin_hpp_included_
+#define imgproc_pixelorigin_hpp_included_
 
 namespace imgproc {
 
-#define DECLARE_EXCEPTION(type, base) \
-    struct type : public base { type(const std::string &msg) : base(msg) {} }
-
-DECLARE_EXCEPTION(Error, std::runtime_error);
-DECLARE_EXCEPTION(TypeError, Error);
-DECLARE_EXCEPTION(AreaTooLarge, Error);
-DECLARE_EXCEPTION(FormatError, Error);
-
-#undef DECLARE_EXCEPTION
+/** Where is pixel origin:
+ *      * pixel center: intergral indices are at pixel centers
+ *      * pixel corner: intergral indices are at pixel corners
+ */
+enum class PixelOrigin { center, corner };
 
 } // namespace imgproc
 
-#endif // imgproc_error_hpp_included_
+#endif // imgproc_pixelorigin_hpp_included_

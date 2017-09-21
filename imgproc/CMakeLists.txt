@@ -1,5 +1,5 @@
 # bump version here
-set(imgproc_VERSION 1.20)
+set(imgproc_VERSION 1.21)
 
 set(imgproc_DEPENDS math>=1.3 utility>=1.11 dbglog>=1.4 Boost)
 set(imgproc_DEFINITIONS)
@@ -64,6 +64,9 @@ if(OpenCV_FOUND)
     readimage.hpp readimage.cpp
     findrects.hpp detail/findrects.impl.hpp
     uvpack.hpp uvpack.cpp
+    clahe.cpp
+    spectral_analysis.hpp spectral_analysis.cpp
+    scanconversion.hpp scanconversion.cpp
     )
 else()
   message(STATUS "imgproc: compiling without OpenCV support")
@@ -107,14 +110,11 @@ define_module(LIBRARY imgproc=${imgproc_VERSION}
 set(imgproc_SOURCES
   color.cpp
   bitdepth.hpp
-  clahe.cpp
-  spectral_analysis.hpp spectral_analysis.cpp
   rastermask.hpp rastermask/bitfield.hpp rastermask/quadtree.hpp
   rastermask/bitfield.cpp rastermask/quadtree.cpp
   rastermask/mappedqtree.cpp rastermask/mappedqtree.cpp
 
   georeferencing.hpp
-  scanconversion.hpp scanconversion.cpp
   gil-float-image.hpp
   crop.hpp
 
@@ -131,7 +131,11 @@ set(imgproc_SOURCES
 
   colormap.hpp
 
-  ${imgproc_JPEG_SOURCES}
+  contours.hpp contours.cpp
+
+  svg.hpp
+
+  png-size.cpp
   )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
@@ -141,6 +145,7 @@ add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_EIGEN3_SOURCES}
   ${imgproc_GIF_SOURCES}
   ${imgproc_PNG_SOURCES}
+  ${imgproc_JPEG_SOURCES}
   )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})

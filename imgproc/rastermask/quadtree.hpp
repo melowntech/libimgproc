@@ -64,7 +64,7 @@ public :
     RasterMask() : sizeX_(0), sizeY_(0), count_(0), root_(*this) {}
 
     /** initialize mask */
-    RasterMask( uint sizeX, uint sizeY, const InitMode mode );
+    RasterMask( unsigned int sizeX, unsigned int sizeY, const InitMode mode );
 
     /** intialize mask */
     RasterMask( const math::Size2 & size, const InitMode mode );
@@ -75,7 +75,7 @@ public :
     /** Initialize mask from other mask's subtree at given coordinates.
      */
     RasterMask(const RasterMask other, const math::Size2 &size
-               , uint depth, uint x, uint y);
+               , unsigned int depth, unsigned int x, unsigned int y);
 
     /** return size of mask */
     math::Size2 size() const { return math::Size2(sizeX_, sizeY_); }
@@ -127,10 +127,10 @@ public :
     bool onBoundary( int x, int y ) const;
 
     /** return mask size (number of white pixels) */
-    ulong count() const { return count_; }
+    unsigned long count() const { return count_; }
 
     /** return total number of pixels */
-    ulong capacity() const { return ulong(sizeX_) * ulong(sizeY_); }
+    unsigned long capacity() const { return (unsigned long)(sizeX_) * (unsigned long)(sizeY_); }
 
     /** test mask for emptiness */
     bool empty() const { return count_ == 0; }
@@ -171,7 +171,7 @@ public :
      *  at given tree depth.
      */
     template <typename Op>
-    void forEachQuad(uint depth, const Op &op) const;
+    void forEachQuad(unsigned int depth, const Op &op) const;
 
     /** Merges other's quadtree in this quadtree.
      *
@@ -186,7 +186,7 @@ public :
     /** Makes mask coarsen. White quads smaller than given threshold grow to
      *  match threshold.
      */
-    void coarsen(const uint threshold = 2);
+    void coarsen(const unsigned int threshold = 2);
 
     /** Returns new raster mask that created from subtreee at given quad.
      *
@@ -195,11 +195,11 @@ public :
      * Mask is assigned given size.
      */
     RasterMask subTree(const math::Size2 &size
-                       , uint depth, uint x, uint y) const;
+                       , unsigned int depth, unsigned int x, unsigned int y) const;
 
     /** Returns maximal depth of tree.
      */
-    uint depth() const { return depth_; }
+    unsigned int depth() const { return depth_; }
 
 private :
     void recount();
@@ -215,13 +215,13 @@ private :
         Node(RasterMask &mask, NodeType type)
             : type(type), mask(mask), children() {};
 
-        bool get( uint x, uint y, uint size ) const;
-        void set( uint x, uint y, bool value, uint size );
-        void setQuad(uint depth, uint x, uint y, bool value, uint size);
-        void setSubtree(uint depth, uint x, uint y, const RasterMask &other
-                        , uint size);
+        bool get( unsigned int x, unsigned int y, unsigned int size ) const;
+        void set( unsigned int x, unsigned int y, bool value, unsigned int size );
+        void setQuad(unsigned int depth, unsigned int x, unsigned int y, bool value, unsigned int size);
+        void setSubtree(unsigned int depth, unsigned int x, unsigned int y, const RasterMask &other
+                        , unsigned int size);
 
-        const Node* findSubtree(uint depth, uint x, uint y, uint size) const;
+        const Node* findSubtree(unsigned int depth, unsigned int x, unsigned int y, unsigned int size) const;
 
         Node & operator = ( const Node & s );
         ~Node();
@@ -231,17 +231,17 @@ private :
 
         void dump2( std::ostream & f ) const;
 
-        void dump( imgproc::bitfield::RasterMask &m, uint x, uint y
-                   , uint size ) const;
+        void dump( imgproc::bitfield::RasterMask &m, unsigned int x, unsigned int y
+                   , unsigned int size ) const;
 
         /** Called from RasterMask::forEachQuad */
         template <typename Op>
-        void descend(uint x, uint y, uint size, const Op &op
+        void descend(unsigned int x, unsigned int y, unsigned int size, const Op &op
                      , Filter filter) const;
 
         /** Called from RasterMask::forEachQuad */
         template <typename Op>
-        void descend(uint depth, uint x, uint y, uint size, const Op &op) const;
+        void descend(unsigned int depth, unsigned int x, unsigned int y, unsigned int size, const Op &op) const;
 
         /** Inverts node (black -> white, white->black, gray is recursed down).
          */
@@ -253,7 +253,7 @@ private :
 
         void subtract(const Node &other);
 
-        void coarsen(uint size, const uint threshold);
+        void coarsen(unsigned int size, const unsigned int threshold);
 
         /** Contracts node if all children are either white or black.
          */
@@ -261,7 +261,7 @@ private :
 
         /** Finds quad in given subtree.
          */
-        const Node& find(uint depth, uint x, uint y) const;
+        const Node& find(unsigned int depth, unsigned int x, unsigned int y) const;
 
         NodeType type;
         RasterMask &mask;
@@ -286,10 +286,10 @@ private :
     void free(NodeChildren *&children);
     const Node* findSubtree(int depth, int x, int y) const;
 
-    uint sizeX_, sizeY_;
-    uint depth_;
-    uint quadSize_;
-    ulong count_;
+    unsigned int sizeX_, sizeY_;
+    unsigned int depth_;
+    unsigned int quadSize_;
+    unsigned long count_;
     Node root_;
 
     /** Needed for mappedqtree::RasterMask creation.
