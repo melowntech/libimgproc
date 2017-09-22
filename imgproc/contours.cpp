@@ -246,8 +246,7 @@ void Builder::addSegment(CellType type, Direction direction, int i, int j
         (*segments.insert(Segment(type, direction, start, end
                                   , prev, next, keystone)).first);
 
-    // LOG(info4) << "Segment " << s.start << " -> " << s.end << "> "
-    //            << &s;
+    // LOG(info4) << "Segment " << s.start << " -> " << s.end << "> " << &s;
 
     // stranded segment -> we're done here
     if (!prev && !next) { return; }
@@ -317,12 +316,12 @@ void Builder::addAmbiguous(CellType type, int i, int j, CellType &mtype)
         // same type
         switch (mtype) {
         case b0101: // b0111 + b1101
-            ADD_SEGMENT(lu, 0, 1, 1, 0);
-            return ADD_SEGMENT(rd, 2, 1, 1, 2);
+            ADD_SEGMENT(ru, 0, 1, 1, 0);
+            return ADD_SEGMENT(ld, 2, 1, 1, 2);
 
         case b1010: // b1011 + b1110
-            ADD_SEGMENT(ld, 1, 0, 2, 1);
-            return ADD_SEGMENT(ru, 1, 2, 0, 1);
+            ADD_SEGMENT(rd, 1, 0, 2, 1);
+            return ADD_SEGMENT(lu, 1, 2, 0, 1);
         }
     } else {
         // inverse type -> switch direction
@@ -427,9 +426,29 @@ void Builder::add(int i, int j, CellType type, CellType &mtype)
 
 #undef ADD_SEGMENT
 
+inline void log(const Segment *s, const math::Point2d &offset)
+{
+#if 0
+    LOG(info4) << "    [" << std::bitset<4>(s->type) << "]: "
+               << arrow(s->direction) << " (" << s->direction
+               << "): " << s->start
+               << " -> " << s->end
+               << " [" << (s->start(0) / 2.0 + offset(0))
+               << "," << (s->start(1) / 2.0 + offset(1))
+               << " -> " << (s->end(0) / 2.0 + offset(0))
+               << "," << (s->end(1) / 2.0 + offset(1))
+               << "]";
+#else
+    (void) s;
+    (void) offset;
+#endif
+}
+
 void Builder::extract(const Segment *head)
 {
     // LOG(info4) << "Processing ring from: " << head;
+    const auto *ringLeader(head);
+
     contour.rings.emplace_back();
     auto &ring(contour.rings.back());
 
@@ -437,30 +456,54 @@ void Builder::extract(const Segment *head)
     auto &keystones(multiKeystones.back());
 
     const auto addVertex([&](const Segment &s) {
+#if 0
+            LOG(info4) << "        * added "
+                       << (s.start(0) / 2.0 + offset(0))
+                       << "," << (s.start(1) / 2.0 + offset(1))
+                       << " -> " << (s.end(0) / 2.0 + offset(0))
+                       << "," << (s.end(1) / 2.0 + offset(1));
+#endif
             ring.emplace_back(s.start(0) / 2.0 + offset(0)
                               , s.start(1) / 2.0 + offset(1));
         });
 
-    // add first vertex
-    addVertex(*head);
-
-    if ((params->simplification == ChainSimplification::rdp)
-        && head->keystone)
-    {
-        // remember keystone index of head
-        keystones.push_back(0);
-    }
-
     // end segment
-    const auto end((head->type != head->prev->type) ? head : head->prev);
+    const Segment *end(head);
+
+    switch (params->simplification) {
+    case ChainSimplification::none:
+        // nothing special, just add first vertex
+        log(head, offset);
+        addVertex(*head);
+        break;
+
+    case ChainSimplification::simple:
+    case ChainSimplification::rdp:
+        // find first direction break
+        while (head->direction == head->prev->direction) {
+            head = head->prev;
+        }
+
+        log(head, offset);
+        addVertex(*head);
+        end = head;
+
+        if ((params->simplification == ChainSimplification::rdp)
+            && (head->keystone))
+         {
+             // remember keystone index for head
+             keystones.push_back(0);
+        }
+        break;
+    }
 
     // process full ringLeader
     for (const auto *p(head), *s(head->next); s != end; p = s, s = s->next)
     {
-        if (s->ringLeader != head) {
+        if (s->ringLeader != ringLeader) {
             LOGTHROW(info4, std::runtime_error)
                 << "Segment: " << s << " doesn't belong to ring "
-                << head << " but " << s->ringLeader << ".";
+                << ringLeader << " but " << s->ringLeader << ".";
         }
 
         if (!s->next) {
@@ -472,12 +515,7 @@ void Builder::extract(const Segment *head)
                 << s->ringLeader << " has no next segment.";
             }
 
-#if 0
-        LOG(info4) << "[" << std::bitset<4>(s->type) << "]: "
-                   << arrow(s->direction) << " (" << s->direction
-                   << "): " << (s->start / 2.0)
-                   << " -> " << (s->end / 2.0);
-#endif
+        log(s, offset);
 
         // add vertex only when direction differs
         switch (params->simplification) {
@@ -486,7 +524,9 @@ void Builder::extract(const Segment *head)
             break;
 
         case ChainSimplification::simple:
-            if (s->direction != p->direction) { addVertex(*s); }
+            if (s->direction != p->direction) {
+                addVertex(*s);
+            }
             break;
 
         case ChainSimplification::rdp:
@@ -639,8 +679,11 @@ private:
     /** Simplify segment between points ring[start] and ring[end]
      */
     void process(std::size_t start, std::size_t end) {
-        if ((end - start) < 2) {
+        if ((end - start) < 4) {
             // too short segment, include
+            for (; start < end; ++start) {
+                valid_[normalize(start)] = true;
+            }
             return;
         }
 
