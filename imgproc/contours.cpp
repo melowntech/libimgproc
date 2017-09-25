@@ -38,6 +38,10 @@
 
 #include "dbglog/dbglog.hpp"
 
+#include "math/geometry.hpp"
+
+#include "utility/streams.hpp"
+
 #include "./contours.hpp"
 
 namespace bmi = boost::multi_index;
@@ -618,23 +622,38 @@ private:
 const math::Point2d Infinity(std::numeric_limits<double>::max()
                              , std::numeric_limits<double>::max());
 
-
 struct RDP {
-    RDP(const math::Polygon &ring, const RingKeystones &keystones
-        , double epsilon)
-        : ring_(ring), epsilon_(epsilon)
+    RDP(const math::Polygon &r, RingKeystones keystones, double epsilon)
+        : ring_(r), epsilon_(epsilon)
         , size_(ring_.size())
         , valid_(ring_.size(), false)
+        , flip_(false)
     {
-        // start vertex: either first keystone or start of polygon
-        if (keystones.empty()) {
-            // no keystone, inject two artificial
-            const auto pivot(size_ / 2);
-            valid_[0] = valid_[pivot] = true;
-            process(0, pivot);
-            process(pivot, size_);
+        // too small polygon -> as-is
+        if (ring_.size() < 5) {
+            std::fill(valid_.begin(), valid_.end(), true);
             return;
         }
+
+        // start vertex: either first keystone or start of polygon
+        if (keystones.empty()) {
+            // no keystone, use point that is lexicographically less
+            std::size_t start(0);
+            for (std::size_t i(1); i != size_; ++i) {
+                if (ring_[i] < ring_[start]) { start = i; }
+            }
+
+            start = flip(start, keystones);
+
+            const auto pivot(start + (size_ / 2));
+            valid_[start] = valid_[normalize(pivot)] = true;
+            process(start, pivot);
+            process(pivot, start + size_);
+            return;
+        }
+
+        // flip at fist keystone
+        flip(keystones.front(), keystones);
 
         if (keystones.size() == 1) {
             // just one keystone, inject artificial one
@@ -664,6 +683,9 @@ struct RDP {
             if (*ivalid++) { out.push_back(p); }
         }
 
+        // reverse back
+        if (flip_) { std::reverse(out.begin(), out.end()); }
+
         return out;
     }
 
@@ -674,6 +696,24 @@ private:
 
     inline const math::Point2d& get(std::size_t index) const {
         return ring_[normalize(index)];
+    }
+
+    int flip(int point, RingKeystones &keystones) {
+        // normalize orientation
+        flip_ = (math::ccw(ring_[normalize(point - 1)]
+                           , ring_[normalize(point)]
+                           , ring_[normalize(point + 1)])
+                 < 0.0);
+        if (flip_) {
+            // reverse ring
+            std::reverse(ring_.begin(), ring_.end());
+            point = size_ - point - 1;
+
+            // reverse keystones
+            for (auto &p : keystones) { p = size_ - p - 1; }
+        }
+
+        return point;
     }
 
     /** Simplify segment between points ring[start] and ring[end]
@@ -717,10 +757,11 @@ private:
         valid_[normalize(end)] = true;
     }
 
-    const math::Polygon &ring_;
+    math::Polygon ring_;
     const double epsilon_;
     const std::size_t size_;
     std::vector<char> valid_; // do not use bool, vector<bool> sucks
+    bool flip_;
 };
 
 } // namespace
