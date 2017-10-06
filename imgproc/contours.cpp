@@ -546,54 +546,6 @@ void Builder::extract(const Segment *head)
     }
 }
 
-
-Contour findContour(const Contour::Raster &raster
-                    , const ContourParameters &params)
-{
-    const auto size(raster.dims());
-
-    Builder cb(size, params);
-
-    const auto getFlags([&](int x, int y) -> CellType
-    {
-        return (raster.get(x, y + 1)
-                | (raster.get(x + 1, y + 1) << 1)
-                | (raster.get(x + 1, y) << 2)
-                | (raster.get(x, y) << 3));
-    });
-
-    CellType dummy(0);
-
-#define ADD_MITRE(x, y) cb.addMitre(x, y, getFlags(x, y), dummy)
-#define ADD(x, y) cb.add(x, y, getFlags(x, y), dummy)
-
-    int xend(size.width - 1);
-    int yend(size.height - 1);
-
-    // first row
-    for (int i(-1); i <= xend; ++i) { ADD(i, -1); }
-
-    // all inner rows
-    for (int j(0); j < yend; ++j) {
-        // first column
-        ADD_MITRE(-1, j);
-
-        // all inner columns
-        for (int i(0); i < xend; ++i) { ADD_MITRE(i, j); }
-
-        // last column
-        ADD(xend, j);
-    }
-
-    // last row
-    for (int i(-1); i <= xend; ++i) { ADD(i, yend); }
-
-#undef ADD_MITRE
-#undef ADD
-
-    return cb.contour;
-}
-
 namespace {
 
 /** Perpendicular distance of point `p` from line defined by points `s` and `e`.
@@ -857,6 +809,62 @@ void FindContours::Impl::feed(int x, int y, int ul, int ur, int lr, int ll)
             builder.addMitre(x, y, *icells++, ambiguous);
         }
     }
+}
+
+Contour findContour(const Contour::Raster &raster
+                    , const ContourParameters &params)
+{
+    const auto size(raster.dims());
+
+    Builder cb(size, params);
+
+    const auto getFlags([&](int x, int y) -> CellType
+    {
+        return (raster.get(x, y + 1)
+                | (raster.get(x + 1, y + 1) << 1)
+                | (raster.get(x + 1, y) << 2)
+                | (raster.get(x, y) << 3));
+    });
+
+    CellType dummy(0);
+
+#define ADD_MITRE(x, y) cb.addMitre(x, y, getFlags(x, y), dummy)
+#define ADD(x, y) cb.add(x, y, getFlags(x, y), dummy)
+
+    int xend(size.width - 1);
+    int yend(size.height - 1);
+
+    // first row
+    for (int i(-1); i <= xend; ++i) { ADD(i, -1); }
+
+    // all inner rows
+    for (int j(0); j < yend; ++j) {
+        // first column
+        ADD_MITRE(-1, j);
+
+        // all inner columns
+        for (int i(0); i < xend; ++i) { ADD_MITRE(i, j); }
+
+        // last column
+        ADD(xend, j);
+    }
+
+    // last row
+    for (int i(-1); i <= xend; ++i) { ADD(i, yend); }
+
+#undef ADD_MITRE
+#undef ADD
+
+    if (params.simplification == ChainSimplification::rdp) {
+        // simplify rings
+        auto imultiKeystones(cb.multiKeystones.begin());
+        for (auto &ring : cb.contour.rings) {
+            ring = RDP(ring, *imultiKeystones++, params.rdpMaxError)();
+        }
+    }
+
+    // steal contour
+    return std::move(cb.contour);
 }
 
 } // namespace imgproc

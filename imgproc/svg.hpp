@@ -72,7 +72,9 @@ struct Rgb {
 template <typename ColorT>
 struct Rgba : Rgb<ColorT> {
     float alpha;
-    Rgba(const cv::Vec3b &value, float alpha)
+
+    template <typename AnyT>
+    Rgba(const AnyT &value, float alpha)
         : Rgb<ColorT>(value), alpha(alpha)
     {}
 };

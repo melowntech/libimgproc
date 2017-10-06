@@ -132,6 +132,7 @@ set(imgproc_SOURCES
   colormap.hpp
 
   contours.hpp contours.cpp
+  contours-svg.hpp
 
   svg.hpp
 
