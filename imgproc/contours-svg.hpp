@@ -48,7 +48,7 @@ void draw(std::ostream &os, const Contour &contour, const Color &color)
         }
 
         os << "\" style=\"fill:none;"
-           << imgproc::svg::stroke(color, 0.8)
+           << imgproc::svg::stroke(color)
            << ";stroke-width:1\""
            << " vector-effect=\"non-scaling-stroke\""
            << " />\n";
