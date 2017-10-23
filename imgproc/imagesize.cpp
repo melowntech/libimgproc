@@ -24,8 +24,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <boost/gil/extension/io/jpeg_io.hpp>
-
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include "dbglog/dbglog.hpp"
@@ -46,10 +44,14 @@
 #include "./png.hpp"
 
 #ifdef IMGPROC_HAS_JPEG
+#  include <boost/gil/extension/io/jpeg_io.hpp>
 #  include "./jpeg.hpp"
 #endif
 
-namespace gil = boost::gil;
+#ifdef IMGPROC_HAS_PNG
+#  include <boost/gil/extension/io/jpeg_io.hpp>
+#endif
+
 namespace ba = boost::algorithm;
 namespace fs = boost::filesystem;
 
@@ -62,7 +64,7 @@ math::Size2 imageSize(const fs::path &path)
 
     if ((ext == ".jpg") || (ext == ".jpeg")) {
 #ifdef IMGPROC_HAS_JPEG
-        auto size(gil::jpeg_read_dimensions(path.string()));
+        auto size(boost::gil::jpeg_read_dimensions(path.string()));
         return { int(size.x), int(size.y) };
 #else
     LOGTHROW(err1, Error)
@@ -83,7 +85,7 @@ math::Size2 imageSize(const fs::path &path)
 
     if (ext == ".png") {
 #ifdef IMGPROC_HAS_PNG
-        auto size(gil::png_read_dimensions(path.string()));
+        auto size(boost::gil::png_read_dimensions(path.string()));
         return { int(size.x), int(size.y) };
 #else
     LOGTHROW(err1, Error)
