@@ -231,4 +231,15 @@ math::Size2 gifSize(const boost::filesystem::path &path)
     return { int(gif->SWidth), int(gif->SHeight) };
 }
 
+math::Size2 gifSize(const void *data, std::size_t size)
+{
+    auto gif(openGif(data, size));
+    if (!gif) {
+        LOGTHROW(err1, std::runtime_error)
+            << "Failed to open GIF from memory: <"
+            << GifLastError() << ">.";
+    }
+    return { int(gif->SWidth), int(gif->SHeight) };
+}
+
 } // namespace imgproc

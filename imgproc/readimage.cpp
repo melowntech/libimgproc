@@ -242,13 +242,79 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
     throw;
 }
 
-std::string imageType(std::istream &is, const fs::path &path)
+math::Size2 imageSize(const void *data, std::size_t size
+                      , const fs::path &path)
 {
-    // TODO: do more peeks
+    // call format-based measuring function based on first byte of data; we do
+    // not check full magic because stream can be non-seekable
+
+    if (size < 1) {
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": Too litle data format.";
+    }
 
     // peek at first byte
-    const auto head(is.peek());
+    const auto head(*static_cast<const unsigned char*>(data));
 
+    switch (head) {
+    case 0xff:
+#ifdef IMGPROC_HAS_JPEG
+        // looks like JPEG
+        return jpegSize(data, size, path);
+#else
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": JPEG support not compiled in.";
+        break;
+#endif
+
+    case 0x89:
+        {
+            LOGTHROW(err1, Error)
+                << "FIXME: Cannot determine size of image in file " << path
+                << ": memory-based GIF image measurement not implemented yet.";
+        }
+
+    case 'I': case 'M':
+#ifdef IMGPROC_HAS_TIFF
+        LOGTHROW(err1, Error)
+            << "FIXME: Cannot determine size of image in file " << path
+            << ": memory-based TIFF image measurement not implemented yet.";
+#else
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": TIFF support not compiled in.";
+        break;
+#endif
+
+    case 0x47:
+#ifdef IMGPROC_HAS_GIF
+        return gitSize(data, size);
+#else
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": GIF support not compiled in.";
+        break;
+#endif
+
+    case 0x00:
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": memory-based JPEG2000 image measurement "
+            "not implemented yet.";
+    }
+
+    LOGTHROW(err1, Error)
+        << "Cannot determine size of image in file " << path
+        << ": Unknown file format.";
+    throw;
+}
+
+namespace {
+
+std::string imageType(unsigned char head, const boost::filesystem::path &path)
+{
     switch (head) {
     case 0xff: return ".jpg";
     case 0x89: return ".png";
@@ -262,6 +328,29 @@ std::string imageType(std::istream &is, const fs::path &path)
             << "Cannot determine type of image in file " << path
             << ": Unknown file format.";
     throw;
+}
+
+} // namespace
+
+std::string imageType(std::istream &is, const fs::path &path)
+{
+    // TODO: do more peeks
+
+    // peek at first byte
+    return imageType(is.peek(), path);;
+}
+
+ /** Image size from generic stream.
+ */
+std::string imageType(const void *data, std::size_t size
+                      , const boost::filesystem::path &path)
+{
+    if (size < 1) {
+        LOGTHROW(err1, Error)
+            << "Cannot determine type of image in file " << path
+            << ": Too little data.";
+    }
+    return imageType(*static_cast<const unsigned char*>(data), path);
 }
 
 } // namespace imgproc
