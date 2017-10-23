@@ -49,7 +49,7 @@
 #endif
 
 #ifdef IMGPROC_HAS_PNG
-#  include <boost/gil/extension/io/jpeg_io.hpp>
+#  include <boost/gil/extension/io/png_io.hpp>
 #endif
 
 namespace ba = boost::algorithm;
