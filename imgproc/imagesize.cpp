@@ -28,10 +28,9 @@
 
 #include "dbglog/dbglog.hpp"
 
-#include "./readimage.hpp"
+#include "./imagesize.hpp"
 #include "./error.hpp"
 #include "./jp2.hpp"
-#include "./png_io.hpp"
 
 #ifdef IMGPROC_HAS_GIF
 #  include "./gif.hpp"
@@ -41,14 +40,14 @@
 #  include "./tiff.hpp"
 #endif
 
-#include "./png.hpp"
-
 #ifdef IMGPROC_HAS_JPEG
 #  include <boost/gil/extension/io/jpeg_io.hpp>
 #  include "./jpeg.hpp"
 #endif
 
 #ifdef IMGPROC_HAS_PNG
+#  include "./png_io.hpp"
+#  include "./png.hpp"
 #  include <boost/gil/extension/io/png_io.hpp>
 #endif
 
@@ -135,7 +134,15 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
 #endif
 
     case 0x89:
+#ifdef IMGPROC_HAS_JPEG
+        // looks like PNG
         return png::size(is, path);
+#else
+        LOGTHROW(err1, Error)
+            << "Cannot determine size of image in file " << path
+            << ": PNG support not compiled in.";
+        break;
+#endif
 
     case 'I': case 'M':
 #ifdef IMGPROC_HAS_TIFF
