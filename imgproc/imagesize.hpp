@@ -23,25 +23,42 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef imgproc_readimage_hpp_included_
-#define imgproc_readimage_hpp_included_
+
+#ifndef imgproc_imagesize_hpp_included_
+#define imgproc_imagesize_hpp_included_
 
 #include <boost/filesystem/path.hpp>
 
-#include <opencv2/core/core.hpp>
-
 #include "math/geometry_core.hpp"
-
-#include "./imagesize.hpp"
 
 namespace imgproc {
 
-cv::Mat readImage(const void *data, std::size_t size);
+math::Size2 imageSize(const boost::filesystem::path &path);
 
-cv::Mat readImage(const boost::filesystem::path &path);
+/** Image size from generic stream.
+ */
+math::Size2 imageSize(std::istream &is, const boost::filesystem::path &path
+                      = "unknown");
 
-cv::Mat readImage8bit(const boost::filesystem::path &path);
+/** Image size from generic stream.
+ */
+math::Size2 imageSize(const void *data, std::size_t size
+                      , const boost::filesystem::path &path
+                      = "unknown");
+
+/** Detects image type without advancing provided stream.
+ *
+ *  Returns common file extension (.jpg, .png, ...).
+ */
+std::string imageType(std::istream &is, const boost::filesystem::path &path
+                      = "unknown");
+
+/** Image size from generic stream.
+ */
+std::string imageType(const void *data, std::size_t size
+                      , const boost::filesystem::path &path
+                      = "unknown");
 
 } // namespace imgproc
 
-#endif // imgproc_readimage_hpp_included_
+#endif // imgproc_imagesize_hpp_included_

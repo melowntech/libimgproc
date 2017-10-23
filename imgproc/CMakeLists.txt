@@ -137,6 +137,8 @@ set(imgproc_SOURCES
   svg.hpp
 
   png-size.cpp
+
+  imagesize.hpp imagesize.cpp
   )
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
