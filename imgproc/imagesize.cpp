@@ -259,6 +259,19 @@ std::string imageType(unsigned char head, const boost::filesystem::path &path)
     throw;
 }
 
+std::string imageMime(unsigned char head)
+{
+    switch (head) {
+    case 0xff: return "image/jpeg";
+    case 0x89: return "image/jpg";
+
+    case 'I': case 'M': return "image/tiff";
+    case 0x47: return "image/gif";
+    }
+
+    return {};
+}
+
 } // namespace
 
 std::string imageType(std::istream &is, const fs::path &path)
@@ -281,5 +294,11 @@ std::string imageType(const void *data, std::size_t size
     }
     return imageType(*static_cast<const unsigned char*>(data), path);
 }
+
+std::string imageMimeType(std::istream &is)
+{
+    return imageMime(is.peek());;
+}
+
 
 } // namespace imgproc

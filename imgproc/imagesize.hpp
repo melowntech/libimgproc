@@ -53,11 +53,18 @@ math::Size2 imageSize(const void *data, std::size_t size
 std::string imageType(std::istream &is, const boost::filesystem::path &path
                       = "unknown");
 
-/** Image size from generic stream.
+/** Detects image type from bytes.
+ *
+ *  Returns common file extension (.jpg, .png, ...).
  */
 std::string imageType(const void *data, std::size_t size
                       , const boost::filesystem::path &path
                       = "unknown");
+
+/** Returns image MIME type without advancing stream.
+ *  Returns empty string if unknown;
+ */
+std::string imageMimeType(std::istream &is);
 
 } // namespace imgproc
 
