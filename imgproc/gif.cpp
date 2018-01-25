@@ -40,17 +40,65 @@ namespace {
 
 typedef std::shared_ptr< ::GifFileType> Gif;
 
+#if defined(GIFLIB_MAJOR) && (GIFLIB_MAJOR >= 5)
+
+inline ::GifFileType* DGifOpenFileName_(const char *GifFileName, int *Error)
+{
+    return ::DGifOpenFileName(GifFileName, Error);
+}
+
+inline int DGifCloseFile_(GifFileType *GifFile, int *ErrorCode)
+{
+    return ::DGifCloseFile(GifFile, ErrorCode);
+}
+
+inline GifFileType *DGifOpen_(void *userPtr, InputFunc readFunc, int *Error)
+{
+    return ::DGifOpen(userPtr, readFunc, Error);
+}
+
+#else
+
+inline ::GifFileType* DGifOpenFileName_(const char *GifFileName, int *Error)
+{
+    auto res(::DGifOpenFileName(GifFileName));
+    if (!res) { *error = GifLastError(); }
+    return res;
+}
+
+inline int DGifCloseFile_(GifFileType *GifFile, int *error)
+{
+    auto res(::DGifCloseFile(GifFile));
+    if (!res) { *error = GifLastError(); }
+    return res;
+}
+
+inline GifFileType *DGifOpen_(void *userPtr, InputFunc readFunc, int *error)
+{
+    auto res(::DGifOpen(userPtr, readFunc));
+    if (!res) { *error = GifLastError(); }
+    return res;
+}
+
+#endif
+
 Gif openGif(const boost::filesystem::path &path)
 {
-    auto gif(::DGifOpenFileName(path.c_str()));
+    int error;
+    auto gif(DGifOpenFileName_(path.c_str(), &error));
     if (!gif) {
         LOGTHROW(err1, std::runtime_error)
             << "Failed to open GIF file "
-            << path << ": <" << GifLastError() << ".";
+            << path << ": <" << error << ".";
     }
 
-    return Gif(gif, [](GifFileType *gif) {
-            if (gif) { ::DGifCloseFile(gif); }
+    return Gif(gif, [path](GifFileType *gif) {
+            if (!gif) { return; }
+            int error;
+            if (DGifCloseFile_(gif, &error)) {
+                LOG(warn2) << "Error closing GIF file "
+                           << path << ": " << error << ".";
+            }
         });
 }
 
@@ -88,14 +136,19 @@ int imgproc_gif_inputfunc(GifFileType *gif, GifByteType *buffer, int length)
 Gif openGif(const void *data, std::size_t size)
 {
     UserData userData(data, size);
-    auto gif(::DGifOpen(&userData, &imgproc_gif_inputfunc));
+    int error;
+    auto gif(DGifOpen_(&userData, &imgproc_gif_inputfunc, &error));
     if (!gif) {
         LOGTHROW(err1, std::runtime_error)
-            << "Failed to open GIF from memory: <" << GifLastError() << ".";
+            << "Failed to open GIF from memory: <" << error << ".";
     }
 
     return Gif(gif, [](GifFileType *gif) {
-            if (gif) { ::DGifCloseFile(gif); }
+            if (!gif) { return; }
+            int error;
+            if (DGifCloseFile_(gif, &error)) {
+                LOG(warn2) << "Error closing GIF data block: " << error << ".";
+            }
         });
 }
 
@@ -157,17 +210,17 @@ const int *Deinterlacer::passes[] = { pass1, pass2, pass3, pass4 };
 
 cv::Mat readGif(GifFileType *gif, const std::string &source)
 {
-#define CHECK_GIF_STATUS(what)                                          \
-    do {                                                                \
-        if (what == GIF_ERROR) {                                        \
-            PrintGifError();                                            \
-            LOGTHROW(err1, std::runtime_error)                          \
-                << "Failed to process gif " << source                   \
-                << ": <" << GifLastError() << ">.";                     \
-        }                                                               \
-    } while (0)
-
-    CHECK_GIF_STATUS(::DGifSlurp(gif));
+    {
+        auto error(::DGifSlurp(gif));
+        if (error == GIF_ERROR) {
+#if defined(GIFLIB_MAJOR) && (GIFLIB_MAJOR > 5)
+            PrintGifError();
+#endif
+            LOGTHROW(err1, std::runtime_error)
+                << "Failed to process gif " << source
+                << ": <" << error << ">.";
+        }
+    }
 
     cv::Mat out(gif->SHeight, gif->SWidth, CV_8UC3);
 
@@ -201,44 +254,24 @@ cv::Mat readGif(GifFileType *gif, const std::string &source)
 cv::Mat readGif(const void *data, std::size_t size)
 {
     auto gif(openGif(data, size));
-    if (!gif) {
-        LOGTHROW(err1, std::runtime_error)
-            << "Failed to open GIF from memory: <"
-            << GifLastError() << ">.";
-    }
     return readGif(gif.get(), "from memory");
 }
 
 cv::Mat readGif(const boost::filesystem::path &path)
 {
     auto gif(openGif(path));
-    if (!gif) {
-        LOGTHROW(err1, std::runtime_error)
-            << "Failed to open GIF file "
-            << path << ": <" << GifLastError() << ".";
-    }
     return readGif(gif.get(), str(boost::format("file %s") % path));
 }
 
 math::Size2 gifSize(const boost::filesystem::path &path)
 {
     auto gif(openGif(path));
-    if (!gif) {
-        LOGTHROW(err1, std::runtime_error)
-            << "Failed to open GIF file "
-            << path << ": <" << GifLastError() << ".";
-    }
     return { int(gif->SWidth), int(gif->SHeight) };
 }
 
 math::Size2 gifSize(const void *data, std::size_t size)
 {
     auto gif(openGif(data, size));
-    if (!gif) {
-        LOGTHROW(err1, std::runtime_error)
-            << "Failed to open GIF from memory: <"
-            << GifLastError() << ">.";
-    }
     return { int(gif->SWidth), int(gif->SHeight) };
 }
 
