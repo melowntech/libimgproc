@@ -59,24 +59,24 @@ inline GifFileType *DGifOpen_(void *userPtr, InputFunc readFunc, int *Error)
 
 #else
 
-inline ::GifFileType* DGifOpenFileName_(const char *GifFileName, int *Error)
+inline ::GifFileType* DGifOpenFileName_(const char *GifFileName, int *error)
 {
     auto res(::DGifOpenFileName(GifFileName));
-    if (!res) { *error = GifLastError(); }
+    if (!res) { *error = GifLastError(); } else { *error = 0; }
     return res;
 }
 
 inline int DGifCloseFile_(GifFileType *GifFile, int *error)
 {
     auto res(::DGifCloseFile(GifFile));
-    if (!res) { *error = GifLastError(); }
+    if (!res) { *error = GifLastError(); } else { *error = 0; }
     return res;
 }
 
 inline GifFileType *DGifOpen_(void *userPtr, InputFunc readFunc, int *error)
 {
     auto res(::DGifOpen(userPtr, readFunc));
-    if (!res) { *error = GifLastError(); }
+    if (!res) { *error = GifLastError(); } else { *error = 0; }
     return res;
 }
 
