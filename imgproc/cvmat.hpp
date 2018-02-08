@@ -23,8 +23,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 #ifndef imgproc_cvmat_hpp_included_
 #define imgproc_cvmat_hpp_included_
+
+#include <boost/gil/pixel.hpp>
+#include <boost/gil/image.hpp>
+#include <boost/gil/image_view.hpp>
 
 #include <opencv2/core/core.hpp>
 
