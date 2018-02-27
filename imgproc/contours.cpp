@@ -74,6 +74,7 @@ UTILITY_GENERATE_ENUM(Direction,
                       ((rd))
                       )
 
+const char* arrow(Direction d) UTILITY_POSSIBLY_UNUSED;
 inline const char* arrow(Direction d)
 {
     switch (d) {

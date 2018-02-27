@@ -226,7 +226,7 @@ math::Size2 imageSize(const void *data, std::size_t size
 
     case 0x47:
 #ifdef IMGPROC_HAS_GIF
-        return gitSize(data, size);
+        return gifSize(data, size);
 #else
         LOGTHROW(err1, Error)
             << "Cannot determine size of image in file " << path
