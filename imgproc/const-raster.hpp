@@ -227,10 +227,25 @@ cvConstRaster(const cv::Mat &mat)
 
 template <typename ValueType>
 CvConstRaster<ValueType>
+cvConstRaster(const cv::Mat_<ValueType> &mat)
+{
+    return CvConstRaster<ValueType>(mat);
+}
+
+template <typename ValueType>
+CvConstRaster<ValueType>
 cvConstRaster(const cv::Mat &mat, const quadtree::RasterMask &mask)
 {
     return { mat, mask };
 }
+
+template <typename ValueType>
+CvConstRaster<ValueType>
+cvConstRaster(const cv::Mat_<ValueType> &mat, const quadtree::RasterMask &mask)
+{
+    return { mat, mask };
+}
+
 #endif // IMGPROC_HAS_OPENCV
 
 namespace detail {
