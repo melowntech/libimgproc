@@ -44,7 +44,7 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask, double t
     int n = w * h; // # of unknowns
 
     // assemble the linear system
-    LOG(info1) << "Assembling " << n << "x" << n << " sparse system.";
+    LOG(debug) << "Assembling " << n << "x" << n << " sparse system.";
 
     std::vector<Triplet> coefs;
     coefs.reserve(5*w*h);
@@ -103,13 +103,13 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask, double t
     typedef Eigen::BiCGSTAB<SparseMatrix, Precond> Solver;
 
     // solve the system
-    LOG(info1) << "Solving system.";
+    LOG(debug) << "Solving system.";
     Solver solver(mat);
     solver.setTolerance(tol);
     Eigen::VectorXd sln(solver.solve(rhs));
 
-    LOG(info1) << "#iterations: " << solver.iterations();
-    LOG(info1) << "estimated error: " << solver.error();
+    LOG(debug) << "#iterations: " << solver.iterations();
+    LOG(debug) << "estimated error: " << solver.error();
 
     // return solution
     for (int i = 0; i < h; i++)
