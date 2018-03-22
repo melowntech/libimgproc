@@ -81,7 +81,7 @@ namespace gil = boost::gil;
  *
  *      // Handles undefined value; can throw an UndefinedValueError exception
  *      // Works with whole value (i.e. pixel) at once.
- *      // NB: Return value be can anything value_type is convertible to.
+ *      // NB: Return value can be anything value_type is convertible to.
  *      value_type undefined() const
  * };
  *
@@ -179,7 +179,7 @@ public:
     typedef typename Traits::value_type value_type;
     typedef typename Traits::channel_type channel_type;
 
-    explicit CvConstRaster(const cv::Mat &mat) : mat_(mat) {}
+    explicit CvConstRaster(const cv::Mat &mat) : mat_(mat), undef_{} {}
 
     int channels() const { return mat_.channels(); };
 
@@ -191,14 +191,17 @@ public:
         return cv::saturate_cast<channel_type>(value);
     }
 
-    value_type undefined() const { return {}; }
+    value_type undefined() const { return undef_; }
 
     int width() const { return mat_.cols; }
     int height() const { return mat_.rows; }
     math::Size2i size() const { return { mat_.cols, mat_.rows }; }
 
+    void setUndefined(const value_type &undef) { undef_ = undef; }
+
 private:
     const cv::Mat &mat_;
+    value_type undef_;
 };
 
 template <typename ValueType>
@@ -218,6 +221,41 @@ public:
     }
 };
 
+/** ConstRaster plugin to add cv mask support.
+ */
+template <typename ValueType>
+class CvMaskedPlugin {
+public:
+    CvMaskedPlugin(const cv::Mat &mask) : mask_(mask) {}
+    bool valid(int x, int y) const {
+        return insideMask(x, y) && mask_.at<ValueType>(y, x);
+    }
+
+private:
+    bool insideMask(int x, int y) const {
+        return ((x >= 0) && (x < mask_.cols)
+                && (y >= 0) && (y < mask_.rows));
+    }
+    const cv::Mat &mask_;
+};
+
+template <typename ValueType, typename MaskValueType>
+class CvMaskedCvConstRaster
+    : public CvMaskedPlugin<MaskValueType>
+    , public CvConstRaster<ValueType>
+{
+public:
+    CvMaskedCvConstRaster(const cv::Mat &mat, const cv::Mat &mask)
+        : CvMaskedPlugin<MaskValueType>(mask)
+        , CvConstRaster<ValueType>(mat)
+    {}
+
+    bool valid(int x, int y) const {
+        return (CvConstRaster<ValueType>::valid(x, y)
+                && CvMaskedPlugin<MaskValueType>::valid(x, y));
+    }
+};
+
 template <typename ValueType>
 CvConstRaster<ValueType>
 cvConstRaster(const cv::Mat &mat)
@@ -233,15 +271,22 @@ cvConstRaster(const cv::Mat_<ValueType> &mat)
 }
 
 template <typename ValueType>
-CvConstRaster<ValueType>
+MaskedCvConstRaster<ValueType>
 cvConstRaster(const cv::Mat &mat, const quadtree::RasterMask &mask)
 {
     return { mat, mask };
 }
 
 template <typename ValueType>
-CvConstRaster<ValueType>
+MaskedCvConstRaster<ValueType>
 cvConstRaster(const cv::Mat_<ValueType> &mat, const quadtree::RasterMask &mask)
+{
+    return { mat, mask };
+}
+
+template <typename ValueType, typename MaskValueType>
+CvMaskedCvConstRaster<ValueType, MaskValueType>
+cvConstRaster(const cv::Mat &mat, const cv::Mat &mask)
 {
     return { mat, mask };
 }
