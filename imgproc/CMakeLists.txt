@@ -67,6 +67,7 @@ if(OpenCV_FOUND)
     clahe.cpp
     spectral_analysis.hpp spectral_analysis.cpp
     scanconversion.hpp scanconversion.cpp
+    cvcolors.hpp cvcolors.cpp
     )
 else()
   message(STATUS "imgproc: compiling without OpenCV support")
