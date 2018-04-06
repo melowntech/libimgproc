@@ -61,14 +61,14 @@ inline void RasterMask::forEach(const Op &op, Filter filter) const
 }
 
 template <typename Op>
-inline void RasterMask::Node::descend(uint x, uint y, uint size
+inline void RasterMask::Node::descend(unsigned int x, unsigned int y, unsigned int size
                                       , const Op &op, Filter filter)
     const
 {
     switch (type) {
     case GRAY: {
         // descend down
-        uint split = size / 2;
+        unsigned int split = size / 2;
         children->ul.descend(x, y, split, op, filter);
         children->ll.descend(x, y + split, split, op, filter);
         children->ur.descend(x + split, y, split, op, filter);
@@ -94,13 +94,14 @@ inline void RasterMask::Node::descend(uint x, uint y, uint size
 }
 
 template <typename Op>
-inline void RasterMask::forEachQuad(uint depth, const Op &op) const
+inline void RasterMask::forEachQuad(unsigned int depth, const Op &op) const
 {
     root_.descend(depth, 0, 0, quadSize_, op);
 }
 
 template <typename Op>
-inline void RasterMask::Node::descend(uint depth, uint x, uint y, uint size
+inline void RasterMask::Node::descend(unsigned int depth, unsigned int x
+                                      , unsigned int y, unsigned int size
                                       , const Op &op)
     const
 {
@@ -109,7 +110,7 @@ inline void RasterMask::Node::descend(uint depth, uint x, uint y, uint size
     case NodeType::GRAY:
         if (depth) {
             // descend down
-            uint split = size / 2;
+            unsigned int split = size / 2;
             children->ul.descend(depth - 1, x, y, split, op);
             children->ll.descend(depth - 1, x, y + split, split, op);
             children->ur.descend(depth - 1, x + split, y, split, op);

@@ -307,7 +307,7 @@ void RasterMask::recount()
 {
     unsigned long count(0);
     forEachQuad([&count](unsigned int, unsigned int, unsigned long xsize, unsigned long ysize, bool) {
-            count += xsize * ysize;
+            count += long(xsize) * long(ysize);
         }, Filter::white);
     count_ = count;
 }
@@ -752,9 +752,9 @@ void RasterMask::Node::setQuad(unsigned int depth, unsigned int x, unsigned int 
 
     // process
     if (type == BLACK) {
-        if (value) { type = WHITE; mask.count_ += (size * size); }
+        if (value) { type = WHITE; mask.count_ += (long(size) * long(size)); }
     } else if (type == WHITE) {
-        if (!value) { type = BLACK; mask.count_ -= (size * size); }
+        if (!value) { type = BLACK; mask.count_ -= (long(size) * long(size)); }
     } else if (type == GRAY) {
         if (x < split) {
             if (y < split) {
@@ -815,7 +815,7 @@ void RasterMask::Node::setSubtree(unsigned int depth, unsigned int x, unsigned i
 
     if (!depth) {
         // wea are at proper bottom
-        auto update((type == WHITE) ? -(size * size) : 0);
+        auto update((type == WHITE) ? -(long(size) * long(size)) : 0);
 
         // copy node
         *this = other.root_;

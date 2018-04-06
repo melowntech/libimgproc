@@ -87,7 +87,7 @@ struct MemoryBase {
 struct RasterMask::Memory : MemoryBase {
     Memory(const boost::filesystem::path &path, std::size_t offset)
         : MemoryBase(path, offset)
-        , file(path.c_str(), bi::read_only)
+        , file(path.string().c_str(), bi::read_only)
         , region(file, bi::read_only, 0, treeStart + size)
         , data()
     {
@@ -165,7 +165,7 @@ void RasterMask::write(std::ostream &f, const quadtree::RasterMask &mask
             f.seekp(jump);
 
             // calculate jump value (take size of jump value into account)
-            std::uint32_t jumpValue(end - jump - sizeof(jumpValue));
+            auto jumpValue(std::uint32_t(end - jump - sizeof(std::uint32_t)));
             bin::write(f, jumpValue);
 
             // jump to the end again
@@ -225,7 +225,7 @@ void RasterMask::write(std::ostream &f, const quadtree::RasterMask &mask
     // compute data size and write to pre-allocated place
     auto end(f.tellp());
     f.seekp(sizePlace);
-    std::uint32_t size(end - sizePlace - sizeof(std::uint32_t));
+    auto size(std::uint32_t(end - sizePlace - sizeof(std::uint32_t)));
     bin::write(f, size);
 
     // move back to the end

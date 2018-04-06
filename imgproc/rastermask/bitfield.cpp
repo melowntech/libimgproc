@@ -164,7 +164,7 @@ int radius(const RasterMask &m
     }
 
     // return radius (as integer)
-    return std::sqrt(r2);
+    return int(std::sqrt(r2));
 }
 
 void RasterMask::writeData(std::ostream &f) const

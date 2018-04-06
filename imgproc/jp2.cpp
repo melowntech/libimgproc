@@ -23,7 +23,12 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <arpa/inet.h>
+
+#ifdef _WIN32
+#  include <Winsock2.h>
+#else
+#  include <arpa/inet.h>
+#endif
 
 #include <fstream>
 

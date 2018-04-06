@@ -56,8 +56,7 @@ public:
 
     RasterMask(const math::Size2 &size, InitMode mode);
 
-    RasterMask(std::size_t width = 1, std::size_t height = 1
-               , InitMode mode = EMPTY);
+    RasterMask(int width = 1, int height = 1, InitMode mode = EMPTY);
 
     /** initialize a mask of the same order, optionally copying mask. */
     RasterMask(const RasterMask &o, InitMode mode = SOURCE);
@@ -67,7 +66,7 @@ public:
 
     RasterMask& create(const math::Size2 &size, InitMode mode);
 
-    RasterMask& create(std::size_t width, std::size_t height, InitMode mode) {
+    RasterMask& create(int width, int height, InitMode mode) {
         return create(math::Size2(width, height), mode);
     }
 
@@ -171,17 +170,17 @@ RasterMask fromRaster(const ConstRaster &raster, const Threshold &threshold);
 inline RasterMask::RasterMask(const math::Size2 &size, InitMode mode)
     : size_(size), bytes_(byteCount(size_))
     , mask_(new std::uint8_t[bytes_])
-    , count_((mode == EMPTY) ? 0 : size.height * size.width)
+    , count_((mode == EMPTY) ? 0 : math::area(size_))
 {
     std::memset(mask_.get(), (mode == EMPTY) ? 0x00 : 0xff, bytes_);
     resetTrail();
 }
 
-inline RasterMask::RasterMask(std::size_t width, std::size_t height
+inline RasterMask::RasterMask(int width, int height
                               , InitMode mode)
     : size_(width, height), bytes_(byteCount(size_))
     , mask_(new std::uint8_t[bytes_])
-    , count_((mode == EMPTY) ? 0 : height * width)
+    , count_((mode == EMPTY) ? 0 : math::area(size_))
 {
     std::memset(mask_.get(), (mode == EMPTY) ? 0x00 : 0xff, bytes_);
     resetTrail();
@@ -191,7 +190,7 @@ inline RasterMask::RasterMask(std::size_t width, std::size_t height
 inline RasterMask::RasterMask(const RasterMask &o, InitMode mode)
     : size_(o.size_), bytes_(o.bytes_)
     , mask_(new std::uint8_t[bytes_])
-    , count_((mode == EMPTY) ? 0 : o.size_.height * o.size_.width)
+    , count_((mode == EMPTY) ? 0 : math::area(size_))
 {
     if (mode == SOURCE) {
         // deep copy

@@ -51,50 +51,50 @@ RGBColor::RGBColor( const YCCColor & c )
     //assert( c(0) <= 1.0 && c(0) >= 0.0 );
 
     ublas::matrix<float> a( 3, 3 );
-    a( 0, 0 ) = 1.0; a( 0, 1 ) = 9.2674E-4; a( 0, 2 ) = 1.4017;
-    a( 1, 0 ) = 1.0; a( 1, 1 ) =  -0.34370; a( 1, 2 ) = -0.7142;
-    a( 2, 0 ) = 1.0; a( 2, 1 ) = 1.7722; a( 2, 2 ) = 9.9022E-4;
+    a( 0, 0 ) = 1.f; a( 0, 1 ) = 9.2674E-4f; a( 0, 2 ) = 1.4017f;
+    a( 1, 0 ) = 1.f; a( 1, 1 ) =  -0.34370f; a( 1, 2 ) = -0.7142f;
+    a( 2, 0 ) = 1.f; a( 2, 1 ) = 1.7722f; a( 2, 2 ) = 9.9022E-4f;
 
     *this = RGBColor( ublas::prod( a, c ) );
 
     // clip to fit into rgb gamut
     ublas::vector<float> yccnochroma( 3 );
-    yccnochroma(0) = c(0); yccnochroma(1) = yccnochroma(2) = 0.0;
+    yccnochroma(0) = c(0); yccnochroma(1) = yccnochroma(2) = 0.f;
     ublas::vector<float> nochroma = ublas::prod( a, yccnochroma );
 
-    if ( (*this)(0) < 0.0 ) {
+    if ( (*this)(0) < 0.f ) {
         ublas::vector<float> diff = *this - nochroma;
-        float u = ( 0.0 - nochroma(0) ) / ( (*this)(0) - nochroma(0) );
+        float u = ( 0.f - nochroma(0) ) / ( (*this)(0) - nochroma(0) );
         *this = RGBColor( nochroma + u * diff );
     }
 
-    if ( (*this)(0) > 1.0 ) {
+    if ( (*this)(0) > 1.f ) {
         ublas::vector<float> diff = *this - nochroma;
-        float u = ( 1.0 - nochroma(0) ) / ( (*this)(0) - nochroma(0) );
+        float u = ( 1.f - nochroma(0) ) / ( (*this)(0) - nochroma(0) );
         *this = RGBColor( nochroma + u * diff );
     }
 
-    if ( (*this)(1) < 0.0 ) {
+    if ( (*this)(1) < 0.f ) {
         ublas::vector<float> diff = *this - nochroma;
-        float u = ( 0.0 - nochroma(1) ) / ( (*this)(1) - nochroma(1) );
+        float u = ( 0.f - nochroma(1) ) / ( (*this)(1) - nochroma(1) );
         *this = RGBColor( nochroma + u * diff );
     }
 
-    if ( (*this)(1) > 1.0 ) {
+    if ( (*this)(1) > 1.f ) {
         ublas::vector<float> diff = *this - nochroma;
-        float u = ( 1.0 - nochroma(1) ) / ( (*this)(1) - nochroma(1) );
+        float u = ( 1.f - nochroma(1) ) / ( (*this)(1) - nochroma(1) );
         *this = RGBColor( nochroma + u * diff );
     }
 
-    if ( (*this)(2) < 0.0 ) {
+    if ( (*this)(2) < 0.f ) {
         ublas::vector<float> diff = *this - nochroma;
-        float u = ( 0.0 - nochroma(2) ) / ( (*this)(2) - nochroma(2) );
+        float u = ( 0.f - nochroma(2) ) / ( (*this)(2) - nochroma(2) );
         *this = RGBColor( nochroma + u * diff );
     }
 
-    if ( (*this)(2) > 1.0 ) {
+    if ( (*this)(2) > 1.f ) {
         ublas::vector<float> diff = *this - nochroma;
-        float u = ( 1.0 - nochroma(2) ) / ( (*this)(2) - nochroma(2) );
+        float u = ( 1.f - nochroma(2) ) / ( (*this)(2) - nochroma(2) );
         *this = RGBColor( nochroma + u * diff );
     }
 }
@@ -103,9 +103,9 @@ RGBColor::RGBColor( const YCCColor & c )
 gil::rgb8_pixel_t RGBColor::rgbpixel() const {
 
     return gil::rgb8_pixel_t(
-        round( 0xff * (*this)(0) ),
-        round( 0xff * (*this)(1) ),
-        round( 0xff * (*this)(2) ) );
+        (unsigned char)(round( 0xff * (*this)(0) )),
+        (unsigned char)(round( 0xff * (*this)(1) )),
+        (unsigned char)(round( 0xff * (*this)(2) )));
 }
 
 RGBColor::RGBColor( const gil::rgb8_pixel_t & p )
@@ -134,9 +134,9 @@ YCCColor::YCCColor( const RGBColor & c )
     assert( c(2) <= 1.0 && c(2) >= 0.0 );*/
 
     ublas::matrix<float> a( 3, 3 );
-    a( 0, 0 ) = 0.299; a( 0, 1 ) = 0.587; a( 0, 2 ) = 0.114;
-    a( 1, 0 ) = -0.169; a( 1, 1 ) = -0.331; a( 1, 2 ) = 0.500;
-    a( 2, 0 ) = 0.500; a( 2, 1 ) = -0.419; a( 2, 2 ) = -0.081;
+    a( 0, 0 ) = 0.299f; a( 0, 1 ) = 0.587f; a( 0, 2 ) = 0.114f;
+    a( 1, 0 ) = -0.169f; a( 1, 1 ) = -0.331f; a( 1, 2 ) = 0.500f;
+    a( 2, 0 ) = 0.500f; a( 2, 1 ) = -0.419f; a( 2, 2 ) = -0.081f;
 
     //std::cout << ublas::prod( a, c );
 
@@ -148,17 +148,17 @@ YCCColor::YCCColor( const RGBColor & c )
 YCCColor::YCCColor( const gil::rgb8_pixel_t & yccpixel )
     : ublas::vector<float>(3) {
 
-    (*this)(0) = ( (float) yccpixel[0] / 0xff ) - 0.5;
-    (*this)(1) = ( (float) yccpixel[1] / 0xff ) - 0.5;
-    (*this)(2) = ( (float) yccpixel[2] / 0xff ) - 0.5;
+    (*this)(0) = ( (float) yccpixel[0] / 0xff ) - 0.5f;
+    (*this)(1) = ( (float) yccpixel[1] / 0xff ) - 0.5f;
+    (*this)(2) = ( (float) yccpixel[2] / 0xff ) - 0.5f;
 }
 
 YCCColor::YCCColor( const gil::rgb32f_pixel_t & yccpixel )
     : ublas::vector<float>(3) {
 
-    (*this)(0) = ( yccpixel[0] / 0xff ) - 0.5;
-    (*this)(1) = ( yccpixel[1] / 0xff ) - 0.5;
-    (*this)(2) = ( yccpixel[2] / 0xff ) - 0.5;
+    (*this)(0) = ( yccpixel[0] / 0xff ) - 0.5f;
+    (*this)(1) = ( yccpixel[1] / 0xff ) - 0.5f;
+    (*this)(2) = ( yccpixel[2] / 0xff ) - 0.5f;
 }
 
 
@@ -166,8 +166,8 @@ gil::rgb8_pixel_t YCCColor::yccpixel() const {
 
     return gil::rgb8_pixel_t(
         (int) round( 0xff * (*this)(0) ),
-        (int) round( 0xff * ( (*this)(1) + 0.5 ) ),
-        (int) round( 0xff * ( (*this)(2) + 0.5 ) ) );
+        (int) round( 0xff * ( (*this)(1) + 0.5f ) ),
+        (int) round( 0xff * ( (*this)(2) + 0.5f ) ) );
 }
 
 float ccDiff( const YCCColor & color1, const YCCColor & color2 ) {
