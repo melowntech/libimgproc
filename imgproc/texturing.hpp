@@ -198,10 +198,10 @@ Patch* asPatch(Patch &patch);
  * +1 is to get count of pixels between ll' (inclusive) and ur' (inclusive).
  */
 inline Patch::Rect::Rect(const UvPatch &uvPatch)
-    : point(std::floor(uvPatch.ll(0) - 0.5)
-            , std::floor(uvPatch.ll(1) - 0.5))
-    , size(std::ceil(uvPatch.ur(0) + 0.5) - point(0) + 1
-           , std::ceil(uvPatch.ur(1) + 0.5) - point(1) + 1)
+    : point(int(std::floor(uvPatch.ll(0) - 0.5))
+            , int(std::floor(uvPatch.ll(1) - 0.5)))
+    , size(int(std::ceil(uvPatch.ur(0) + 0.5) - point(0) + 1)
+           , int(std::ceil(uvPatch.ur(1) + 0.5) - point(1) + 1))
 {}
 
 inline Patch::Rect::Rect(int x, int y, int width, int height)

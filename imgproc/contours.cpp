@@ -537,7 +537,7 @@ void Builder::extract(const Segment *head)
         case ChainSimplification::rdp:
             if (s->keystone) {
                 // remember keystone index
-                keystones.push_back(ring.size());
+                keystones.push_back(int(ring.size()));
                 addVertex(*s);
             } else if (s->direction != p->direction) {
                 addVertex(*s);
@@ -651,19 +651,27 @@ private:
         return ring_[normalize(index)];
     }
 
-    int flip(int point, RingKeystones &keystones) {
-        // normalize orientation
-        flip_ = (math::ccw(ring_[normalize(point - 1)]
-                           , ring_[normalize(point)]
+    std::size_t flip(std::size_t point, RingKeystones &keystones) {
+        // always normalize point itself
+        point = normalize(point);
+
+        // previous point in the ring, normalized (covers case (point == 0))
+        const auto prev(normalize(point + size_ - 1));
+
+        // orientation
+        flip_ = (math::ccw(ring_[prev] // already normalized
+                           , ring_[point] // already normalized
                            , ring_[normalize(point + 1)])
                  < 0.0);
         if (flip_) {
             // reverse ring
             std::reverse(ring_.begin(), ring_.end());
+
+            // flip point index, normalized
             point = size_ - point - 1;
 
             // reverse keystones
-            for (auto &p : keystones) { p = size_ - p - 1; }
+            for (auto &p : keystones) { p = int(size_) - p - 1; }
         }
 
         return point;
@@ -821,10 +829,10 @@ Contour findContour(const Contour::Raster &raster
 
     const auto getFlags([&](int x, int y) -> CellType
     {
-        return (raster.get(x, y + 1)
-                | (raster.get(x + 1, y + 1) << 1)
-                | (raster.get(x + 1, y) << 2)
-                | (raster.get(x, y) << 3));
+        return (CellType(raster.get(x, y + 1))
+                | CellType((raster.get(x + 1, y + 1)) << 1)
+                | CellType((raster.get(x + 1, y)) << 2)
+                | CellType((raster.get(x, y)) << 3));
     });
 
     CellType dummy(0);
