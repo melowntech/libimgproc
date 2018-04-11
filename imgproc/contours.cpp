@@ -387,7 +387,7 @@ void Builder::add(int i, int j, CellType type, CellType &mtype)
 
     case b0010:
         ADD_SEGMENT(u, 1, 2, 1, 1);
-        ADD_KEY_SEGMENT(r, 1, 1, 2, 1);
+        return ADD_KEY_SEGMENT(r, 1, 1, 2, 1);
 
     case b0011: return ADD_SEGMENT(r, 0, 1, 2, 1);
 

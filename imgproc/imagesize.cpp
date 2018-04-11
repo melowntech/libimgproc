@@ -211,6 +211,7 @@ math::Size2 imageSize(const void *data, std::size_t size
                 << "FIXME: Cannot determine size of image in file " << path
                 << ": memory-based GIF image measurement not implemented yet.";
         }
+	break;
 
     case 'I': case 'M':
 #ifdef IMGPROC_HAS_TIFF
@@ -221,8 +222,8 @@ math::Size2 imageSize(const void *data, std::size_t size
         LOGTHROW(err1, Error)
             << "Cannot determine size of image in file " << path
             << ": TIFF support not compiled in.";
-        break;
 #endif
+        break;
 
     case 0x47:
 #ifdef IMGPROC_HAS_GIF
