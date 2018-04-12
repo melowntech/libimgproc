@@ -134,7 +134,7 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
 #endif
 
     case 0x89:
-#ifdef IMGPROC_HAS_JPEG
+#ifdef IMGPROC_HAS_PNG
         // looks like PNG
         return png::size(is, path);
 #else
