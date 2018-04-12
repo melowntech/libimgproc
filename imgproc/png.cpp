@@ -106,7 +106,8 @@ template <typename PixelType, typename ConstView>
 void writeView(PngWriter &writer, const ConstView &view
                , int compressionLevel, int type)
 {
-    ::png_set_IHDR(writer.png(), writer.info(), view.width(), view.height()
+    ::png_set_IHDR(writer.png(), writer.info()
+                   , png_uint_32(view.width()), png_uint_32(view.height())
                    , 8, type, PNG_INTERLACE_NONE
                    , PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
@@ -119,7 +120,7 @@ void writeView(PngWriter &writer, const ConstView &view
     std::vector<PixelType> row(view.width());
 
     // copy row by row
-    for(int y(0), ey(view.height()); y != ey; ++y) {
+    for(int y(0), ey(int(view.height())); y != ey; ++y) {
         std::copy(view.row_begin(y), view.row_end(y), row.begin());
         ::png_write_row(writer.png()
                         , reinterpret_cast< ::png_bytep>(&row.front()));
@@ -144,7 +145,7 @@ void writeViewToFile(const fs::path &path, const ConstView &view
 {
     struct FileHolder {
         FileHolder(const fs::path &path)
-            : path(path), f(std::fopen(path.c_str(), "w"))
+            : path(path), f(std::fopen(path.string().c_str(), "w"))
         {}
 
         ~FileHolder() {
