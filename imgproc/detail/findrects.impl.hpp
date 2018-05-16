@@ -32,6 +32,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "math/geometry_core.hpp"
+#include "imgproc/fillrect.hpp"
 
 namespace imgproc {
 
@@ -68,7 +69,7 @@ collectRectangles(const cv::Mat &img, cv::Mat &acc, Filter filter)
             cv::Point2i start(i - SizeTraits<SizeType>::width(size) + 1
                               , j - SizeTraits<SizeType>::height(size) + 1);
             cv::Point2i end(i, j);
-            cv::rectangle(acc, start, end, zero, CV_FILLED, 4);
+            imgproc::fillRectangle(acc, start, end, zero);
 
             if (filter(img.at<PixelType>(j, i))) {
                 rects.emplace_back(start.x, start.y, end.x, end.y);

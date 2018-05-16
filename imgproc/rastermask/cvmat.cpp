@@ -28,6 +28,8 @@
 
 #include "dbglog/dbglog.hpp"
 
+#include "imgproc/fillrect.hpp"
+
 #include "./cvmat.hpp"
 
 namespace imgproc {
@@ -115,7 +117,7 @@ cv::Mat& asCvMat(cv::Mat &m, const RasterMask &mask, double pixelSize)
         cv::Point2i end(int(std::ceil(pixelSize * (xstart + xsize - fracAdj )))
                         , int(std::ceil(pixelSize * (ystart + ysize - fracAdj))));
 
-        cv::rectangle(m, start, end, white, CV_FILLED, 4);
+        imgproc::fillRectangle(m, start, end, white);
     }, RasterMask::Filter::white);
 
     return m;
