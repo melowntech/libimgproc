@@ -69,7 +69,11 @@ struct Contour {
     bool operator!() const { return rings.empty(); }
 };
 
-enum class ChainSimplification { none, simple, rdp };
+UTILITY_GENERATE_ENUM(ChainSimplification,
+                      ((none))
+                      ((simple))
+                      ((rdp))
+                      )
 
 /** Contour finding algorithm parameters.
  */
