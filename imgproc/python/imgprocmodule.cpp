@@ -97,31 +97,5 @@ BOOST_PYTHON_MODULE(melown_imgproc)
 }
 
 namespace imgproc { namespace py {
-
-namespace {
-std::once_flag onceFlag;
-} // namespace
-
-boost::python::object import()
-{
-    std::call_once(onceFlag, [&]()
-    {
-        typedef bp::handle< ::PyObject> Handle;
-        Handle module(PyInit_melown_imgproc());
-
-        auto package(pysupport::package());
-
-        if (::PyModule_AddObject(package.ptr(), "imgproc"
-                                 , bp::incref(module.get())) == -1)
-        {
-            LOG(err2) << "PyModule_AddObject failed";
-        }
-
-        auto sys(bp::import("sys"));
-        sys.attr("modules")["melown.imgproc"] = module;
-    });
-
-    return bp::import("melown.imgproc");
-}
-
+PYSUPPORT_MODULE_IMPORT(imgproc)
 } } // namespace imgproc::py
