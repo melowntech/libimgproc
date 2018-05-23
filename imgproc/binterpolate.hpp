@@ -26,6 +26,7 @@
 /**
  * @file binterpolate.hpp
  * @author Vaclav Blazek <vaclav.blazek@citationtech.net>
+ * @author Jakub Cerveny <jakub.cerveny@melown.com>
  *
  * Bilinear interpolation
  */
@@ -153,6 +154,35 @@ inline RgbType rgbInterpolate(const cv::Mat &mat, float x, float y)
     RgbType v10(p10[0], p10[1], p10[2]);
     RgbType v11(p11[0], p11[1], p11[2]);
     RgbType w1 = v10 + (v11 - v10)*fx;
+
+    return w0 + (w1 - w0)*fy;
+}
+
+/** Bilinear interpolation of a grayscale image stored in a cv::Mat.
+ */
+template<typename MatType = uchar>
+float interpolate(const cv::Mat &img, float x, float y)
+{
+    const float eps = 1e-3f;
+    float xmax = (float) img.cols - (1.f + eps);
+    float ymax = (float) img.rows - (1.f + eps);
+
+    x = std::min(std::max(x, 0.f), xmax);
+    y = std::min(std::max(y, 0.f), ymax);
+
+    int x0 = (int) x; // "floor"
+    int y0 = (int) y; // "floor"
+
+    float fx = x - x0;
+    float fy = y - y0;
+
+    float v00 = img.at<MatType>(y0, x0);
+    float v01 = img.at<MatType>(y0, x0+1);
+    float v10 = img.at<MatType>(y0+1, x0);
+    float v11 = img.at<MatType>(y0+1, x0+1);
+
+    float w0 = v00 + (v01 - v00)*fx;
+    float w1 = v10 + (v11 - v10)*fx;
 
     return w0 + (w1 - w0)*fy;
 }
