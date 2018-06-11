@@ -130,8 +130,8 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
         LOGTHROW(err1, Error)
             << "Cannot determine size of image in file " << path
             << ": JPEG support not compiled in.";
-        break;
 #endif
+       break;
 
     case 0x89:
 #ifdef IMGPROC_HAS_PNG
@@ -141,8 +141,8 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
         LOGTHROW(err1, Error)
             << "Cannot determine size of image in file " << path
             << ": PNG support not compiled in.";
-        break;
 #endif
+        break;
 
     case 'I': case 'M':
 #ifdef IMGPROC_HAS_TIFF
@@ -153,10 +153,10 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
         LOGTHROW(err1, Error)
             << "Cannot determine size of image in file " << path
             << ": TIFF support not compiled in.";
-        break;
 #endif
+        break;
 
-        case 0x47:
+    case 0x47:
 #ifdef IMGPROC_HAS_GIF
         LOGTHROW(err1, Error)
             << "FIXME: Cannot determine size of image in file " << path
@@ -165,8 +165,8 @@ math::Size2 imageSize(std::istream &is, const fs::path &path)
         LOGTHROW(err1, Error)
             << "Cannot determine size of image in file " << path
             << ": GIF support not compiled in.";
-        break;
 #endif
+        break;
 
     case 0x00:
         return jp2Size(is, path);
