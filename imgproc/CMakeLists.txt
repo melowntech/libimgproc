@@ -67,6 +67,7 @@ if(OpenCV_FOUND)
     clahe.cpp
     spectral_analysis.hpp spectral_analysis.cpp
     scanconversion.hpp scanconversion.cpp
+    rasterizer.hpp
     cvcolors.hpp cvcolors.cpp
     fillrect.hpp fillrect.cpp
     )

@@ -45,6 +45,7 @@
 #include "pysupport/class.hpp"
 
 #include "../georeferencing.hpp"
+#include "../rasterizer.hpp"
 
 namespace bp = boost::python;
 
@@ -82,6 +83,40 @@ bp::class_<imgproc::Georeferencing3_<T>> georeferencing3(const char *name)
     return cls;
 }
 
+template <typename PointType>
+void Rasterizer_rasterize(imgproc::Rasterizer &rasterizer
+                          , const PointType &a, const PointType &b
+                          , const PointType &c, const bp::object &callable)
+{
+    rasterizer(a, b, c, [&callable](int x, int y, float z) {
+            callable(x, y, z);
+        });
+}
+
+void Rasterizer_rasterize_raw2(imgproc::Rasterizer &rasterizer
+                               , float a1, float a2
+                               , float b1, float b2
+                               , float c1, float c2
+                               , const bp::object &callable)
+{
+    rasterizer(a1, a2, 0.f, b1, b2, 0.f, c1, c2, 0.f
+               , [&callable](int x, int y, float z) {
+                   callable(x, y, z);
+               });
+}
+
+void Rasterizer_rasterize_raw3(imgproc::Rasterizer &rasterizer
+                               , float a1, float a2, float a3
+                               , float b1, float b2, float b3
+                               , float c1, float c2, float c3
+                               , const bp::object &callable)
+{
+    rasterizer(a1, a2, a3, b1, b2, b3, c1, c2, c3
+               , [&callable](int x, int y, float z) {
+                   callable(x, y, z);
+               });
+}
+
 } } // namespace imgproc::py
 
 BOOST_PYTHON_MODULE(melown_imgproc)
@@ -94,6 +129,18 @@ BOOST_PYTHON_MODULE(melown_imgproc)
 
     py::georeferencing3<int>("Georeferencing3i");
     py::georeferencing3<double>("Georeferencing3");
+
+    auto Rasterizer = class_<imgproc::Rasterizer>
+        ("Rasterizer", init<const math::Extents2i&>())
+        .def(init<const math::Size2&>())
+        .def(init<int, int>())
+        .def("__call__", &py::Rasterizer_rasterize<math::Point2>)
+        .def("__call__", &py::Rasterizer_rasterize<math::Point2i>)
+        .def("__call__", &py::Rasterizer_rasterize<math::Point3>)
+        .def("__call__", &py::Rasterizer_rasterize<math::Point3i>)
+        .def("__call__", &py::Rasterizer_rasterize_raw2)
+        .def("__call__", &py::Rasterizer_rasterize_raw3)
+        ;
 }
 
 namespace imgproc { namespace py {
