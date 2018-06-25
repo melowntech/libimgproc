@@ -64,6 +64,21 @@ SerializedPng serialize(const boost::gil::rgb8_image_t &image
 SerializedPng serialize(const boost::gil::rgba8_image_t &image
                         , int compressionLevel = -1);
 
+enum class RawFormat { gray, rgb, rgba };
+
+/** Serialize RAW image as in-memory PNG file.
+ *
+ * \param data image data (byte per channel)
+ * \param length image data length
+ * \param size image size
+ * \param format image format
+ * \param compressionLevel 0-9, other values map to default (whatever it is)
+ * \return serialized image
+ */
+SerializedPng serialize(const void *data, std::size_t length
+                        , const math::Size2 &size, RawFormat format
+                        , int compressionLevel = -1);
+
 /** Write grayscale GIL image into PNG file.
  *
  * \param image image to serialize

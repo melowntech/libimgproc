@@ -214,6 +214,53 @@ SerializedPng serialize(const boost::gil::rgba8_image_t &image
         (boost::gil::const_view(image), compressionLevel, PNG_COLOR_TYPE_RGBA);
 }
 
+SerializedPng serialize(const void *data, std::size_t length
+                        , const math::Size2 &size, RawFormat format
+                        , int compressionLevel)
+{
+    auto checkLength([&](int components)
+    {
+        if ((math::area(size) * components) != int(length)) {
+            LOGTHROW(err1, Error)
+                << "Cannot serialize raw data to PNG: wrong lenght "
+                << length << "; should be " << (math::area(size) * components)
+                << ".";
+        }
+    });
+    switch (format) {
+    case RawFormat::gray:
+        checkLength(1);
+        return serializeView<boost::gil::gray8_pixel_t>
+            (boost::gil::interleaved_view
+             (size.width, size.height
+              , static_cast<const boost::gil::gray8_pixel_t*>(data)
+              , size.width)
+             , compressionLevel, PNG_COLOR_TYPE_GRAY);
+
+    case RawFormat::rgb:
+        checkLength(3);
+        return serializeView<boost::gil::rgb8_pixel_t>
+            (boost::gil::interleaved_view
+             (size.width, size.height
+              , static_cast<const boost::gil::rgb8_pixel_t*>(data)
+              , 3 * size.width)
+             , compressionLevel, PNG_COLOR_TYPE_RGB);
+
+    case RawFormat::rgba:
+        checkLength(4);
+        return serializeView<boost::gil::rgba8_pixel_t>
+            (boost::gil::interleaved_view
+             (size.width, size.height
+              , static_cast<const boost::gil::rgba8_pixel_t*>(data)
+              , 4 * size.width)
+             , compressionLevel, PNG_COLOR_TYPE_RGBA);
+    }
+
+    LOGTHROW(err1, Error)
+        << "Unsupported raw format <" << static_cast<int>(format)
+        << "> for PNG serialization.";
+    throw;
+}
 
 void write(const fs::path &file
            , const boost::gil::rgba8_image_t &image
