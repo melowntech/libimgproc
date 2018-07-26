@@ -670,7 +670,7 @@ void RasterMask::Node::coarsen(unsigned int size, const unsigned int threshold)
     children->lr.coarsen(size, threshold);
 }
 
-RasterMask::RasterMask(const RasterMask other, const math::Size2 &size
+RasterMask::RasterMask(const RasterMask &other, const math::Size2 &size
                        , unsigned int depth, unsigned int x, unsigned int y)
     : sizeX_(size.width), sizeY_(size.height)
     , depth_(computeDepth(sizeX_, sizeY_))

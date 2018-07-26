@@ -74,7 +74,7 @@ public :
 
     /** Initialize mask from other mask's subtree at given coordinates.
      */
-    RasterMask(const RasterMask other, const math::Size2 &size
+    RasterMask(const RasterMask &other, const math::Size2 &size
                , unsigned int depth, unsigned int x, unsigned int y);
 
     /** return size of mask */
