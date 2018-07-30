@@ -43,7 +43,7 @@ inline void fillRectangle(cv::Mat &mat, const cv::Point2i &start
                           , const cv::Point2i &end
                           , const cv::Scalar &color)
 {
-    return fillRectangle(mat, cv::Rect(start, end), color);
+    return fillRectangle(mat, cv::Rect(start, end + cv::Point(1, 1)), color);
 }
 
 } // namespace imgproc
