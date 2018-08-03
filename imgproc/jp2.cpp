@@ -56,21 +56,30 @@ namespace jp2 {
         std::uint32_t size;
         std::uint32_t type;
         std::vector<std::uint8_t> data;
+
+        void readData(std::istream &is) {
+            // skip reading data of super header
+            if (type != Header) {
+                data.resize(size - 8);
+                bio::read(is, data.data(), data.size());
+            }
+        }
     };
 
-    Box readBox(std::istream &is) {
+    Box readBoxHeader(std::istream &is)
+    {
         Box box;
         bio::read(is, box.size);
         bio::read(is, box.type);
         box.size = ntohl(box.size);
         box.type = ntohl(box.type);
+        return box;
+    }
 
-        // skip reading data of super header
-        if (box.type == Header) {
-            return box;
-        }
-        box.data.resize(box.size - 8);
-        bio::read(is, box.data.data(), box.data.size());
+    Box readBox(std::istream &is)
+    {
+        auto box(readBoxHeader(is));
+        box.readData(is);
         return box;
     }
 
@@ -86,11 +95,12 @@ namespace jp2 {
 math::Size2 jp2Size(std::istream &is, const boost::filesystem::path &path)
 {
     {
-        auto signature(jp2::readBox(is));
+        auto signature(jp2::readBoxHeader(is));
         if (signature.type != jp2::Signature) {
             LOGTHROW(err1, Error)
                 << "Not a JP2 file: " << path << ": expected signature box.";
         }
+        signature.readData(is);
 
         if (!std::equal(signature.data.begin(), signature.data.end()
                         , jp2::Magic))

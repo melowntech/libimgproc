@@ -158,7 +158,6 @@ target_link_libraries(imgproc ${MODULE_LIBRARIES})
 buildsys_target_compile_definitions(imgproc ${MODULE_DEFINITIONS})
 
 # test stuff
-if (COMPILE_TESTS)
-  add_subdirectory(test-tiff)
-  add_subdirectory(test-embeddedmask)
-endif()
+add_subdirectory(test-tiff EXCLUDE_FROM_ALL)
+add_subdirectory(test-embeddedmask EXCLUDE_FROM_ALL)
+add_subdirectory(test-imagesize EXCLUDE_FROM_ALL)
