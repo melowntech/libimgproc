@@ -23,49 +23,59 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef imgproc_embeddedmask_hpp_included_
-#define imgproc_embeddedmask_hpp_included_
+#include <cstdlib>
+#include <iostream>
 
-#include <new>
+#include <boost/lexical_cast.hpp>
 
-#include <boost/optional.hpp>
-#include <boost/filesystem/path.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
-#include "./rastermask.hpp"
+#include "dbglog/dbglog.hpp"
+#include "utility/streams.hpp"
+#include "service/cmdline.hpp"
 
-namespace imgproc {
+#include "imgproc/embeddedmask.hpp"
+#include "imgproc/rastermask/cvmat.hpp"
 
-/** Writes embedded raster mask into existing image file.
- *
- * Directy supported image format: TIFF
- * Other formats via trailing ZIP: JPEG, PNG, GIF
- */
-void writeEmbeddedMask(const boost::filesystem::path &imagePath
-                       , const quadtree::RasterMask &mask);
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
-/** Reads embedded raster mask from image file.
- *
- * Directy supported image format: TIFF
- * Other formats via trailing ZIP: JPEG, PNG, GIF
- *
- * Throws std::runtime_error if there is no mask present in the file or support
- * for given file type is not available.
- */
-quadtree::RasterMask
-readEmbeddedMask(const boost::filesystem::path &imagePath);
+class Copier : public service::Cmdline {
+public:
+    Copier()
+        : service::Cmdline("copy-embeddedmask", IMGPROC_VERSION)
+    {}
 
-/** Reads embedded raster mask from image file.
- *
- * Directy supported image format: TIFF
- * Other formats via trailing ZIP: JPEG, PNG, GIF
- *
- * Returns boost::none if there is no mask present in the file or support for
- * given file type is not available.
- */
-boost::optional<quadtree::RasterMask>
-readEmbeddedMask(const boost::filesystem::path &imagePath
-                 , const std::nothrow_t&);
+    virtual void configuration(po::options_description &cmdline
+                               , po::options_description&
+                               , po::positional_options_description &pd)
+    {
+        cmdline.add_options()
+            ("input", po::value(&input_)->required()
+             , "Input image file.")
+            ("output", po::value(&output_)->required()
+             , "Output image file.")
+            ;
 
-} // namespace imgproc
+        pd.add("input", 1)
+            .add("output", 1);
+    }
 
-#endif // imgproc_embeddedmask_hpp_included_
+    virtual void configure(const po::variables_map&) {}
+
+    virtual int run() {
+        imgproc::writeEmbeddedMask(output_, imgproc::readEmbeddedMask(input_));
+        return EXIT_SUCCESS;
+    }
+
+private:
+    fs::path input_;
+    fs::path output_;
+};
+
+
+int main(int argc, char *argv[])
+{
+    dbglog::set_mask("ALL");
+    return Copier()(argc, argv);
+}

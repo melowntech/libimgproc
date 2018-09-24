@@ -66,6 +66,11 @@ std::string imageType(const void *data, std::size_t size
  */
 std::string imageMimeType(std::istream &is);
 
+/** Returns image MIME for given file.
+ *  Returns empty string if unknown;
+ */
+std::string imageMimeType(const boost::filesystem::path &path);
+
 } // namespace imgproc
 
 #endif // imgproc_imagesize_hpp_included_

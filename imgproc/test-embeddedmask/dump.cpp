@@ -31,21 +31,63 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "dbglog/dbglog.hpp"
+#include "utility/streams.hpp"
+#include "service/cmdline.hpp"
+
 #include "imgproc/embeddedmask.hpp"
 #include "imgproc/rastermask/cvmat.hpp"
+
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+
+class Dumper : public service::Cmdline {
+public:
+    Dumper()
+        : service::Cmdline("dump-embeddedmask", IMGPROC_VERSION)
+        , raw_(false)
+    {}
+
+    virtual void configuration(po::options_description &cmdline
+                               , po::options_description&
+                               , po::positional_options_description &pd)
+    {
+        cmdline.add_options()
+            ("input", po::value(&input_)->required()
+             , "Input image file.")
+            ("output", po::value(&output_)->required()
+             , "Output mask file.")
+            ("raw", "Dump raw mask.")
+            ;
+
+        pd.add("input", 1)
+            .add("output", 1);
+    }
+
+    virtual void configure(const po::variables_map &vars) {
+        raw_ = vars.count("raw");
+    }
+
+    virtual int run() {
+        auto mask(imgproc::readEmbeddedMask(input_));
+        if (raw_) {
+            utility::ofstreambuf os(output_.string());
+            mask.dump(os);
+            os.close();
+        } else {
+            cv::imwrite(output_.string(), asCvMat(mask));
+        }
+        return EXIT_SUCCESS;
+    }
+
+private:
+    fs::path input_;
+    fs::path output_;
+    bool raw_;
+};
+
 
 int main(int argc, char *argv[])
 {
     dbglog::set_mask("ALL");
-    if (argc != 3) {
-        std::cerr << "usage: " << argv[0] << "image-file mask-file"
-                  << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    auto mask(asCvMat(imgproc::readEmbeddedMask(argv[1])));
-
-    imwrite(argv[2], mask);
-
-    return EXIT_SUCCESS;
+    return Dumper()(argc, argv);
 }

@@ -1,7 +1,7 @@
 # bump version here
-set(imgproc_VERSION 1.27)
+set(imgproc_VERSION 1.28)
 
-set(imgproc_DEPENDS math>=1.3 utility>=1.23 dbglog>=1.4 Boost)
+set(imgproc_DEPENDS math>=1.3 utility>=1.26 dbglog>=1.4 Boost)
 set(imgproc_DEFINITIONS)
 
 if(EXIF_FOUND)
@@ -106,6 +106,16 @@ else()
   message(STATUS "imgproc: compiling without GIF support")
 endif()
 
+if(Boost_IOSTREAMS_FOUND AND NOT WIN32)
+  message(STATUS "imgproc: compiling in iostreams support")
+  list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_IOSTREAMS=1)
+
+  set(imgproc_IOSTREAMS_SOURCES
+    embeddedmask.hpp embeddedmask.cpp)
+else()
+  message(STATUS "imgproc: compiling without iostreams support")
+endif()
+
 define_module(LIBRARY imgproc=${imgproc_VERSION}
   DEPENDS ${imgproc_DEPENDS}
   DEFINITIONS ${imgproc_DEFINITIONS})
@@ -122,8 +132,6 @@ set(imgproc_SOURCES
   crop.hpp
 
   morphology.hpp
-
-  embeddedmask.hpp embeddedmask.cpp
 
   const-raster.hpp
   filtering.hpp reconstruct.hpp
@@ -152,12 +160,15 @@ add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_GIF_SOURCES}
   ${imgproc_PNG_SOURCES}
   ${imgproc_JPEG_SOURCES}
+  ${imgproc_IOSTREAMS_SOURCES}
   )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
 buildsys_target_compile_definitions(imgproc ${MODULE_DEFINITIONS})
 
-# test stuff
-add_subdirectory(test-tiff EXCLUDE_FROM_ALL)
-add_subdirectory(test-embeddedmask EXCLUDE_FROM_ALL)
-add_subdirectory(test-imagesize EXCLUDE_FROM_ALL)
+# test programs
+if(MODULE_service_FOUND)
+  add_subdirectory(test-tiff EXCLUDE_FROM_ALL)
+  add_subdirectory(test-embeddedmask EXCLUDE_FROM_ALL)
+  add_subdirectory(test-imagesize EXCLUDE_FROM_ALL)
+endif()

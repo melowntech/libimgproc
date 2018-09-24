@@ -331,9 +331,8 @@ int findFile(TIFF *h, const std::string &filename)
         return -1;
     }
 
-    LOG(info1) << "Scanning: " << ::TIFFCurrentDirectory(h);
     do {
-        LOG(info1) << "Inside: " << ::TIFFCurrentDirectory(h);
+        LOG(info1) << "Scanning: " << ::TIFFCurrentDirectory(h);
         const char *fname;
         if (::TIFFGetField(h, TIFFTAG_DOCUMENTNAME, &fname)) {
             LOG(info1) << "Found filename: " << fname;

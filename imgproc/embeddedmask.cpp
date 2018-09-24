@@ -23,61 +23,140 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include "dbglog/dbglog.hpp"
+
+#include "utility/zip.hpp"
 
 #include "./embeddedmask.hpp"
 #include "./bintiff.hpp"
+#include "./imagesize.hpp"
 
+namespace bio = boost::iostreams;
 namespace fs = boost::filesystem;
 
 namespace imgproc {
 
 namespace {
-    const std::string BintiffMaskName("validity-mask.bin");
+const std::string BintiffMaskName("validity-mask.bin");
+const fs::path ZipMaskName("validity-mask.bin");
+const fs::path ZipMaskNameFull("/validity-mask.bin");
+
+#if IMGPROC_HAS_TIFF
+quadtree::RasterMask maskFromTiff(const fs::path &imagePath)
+{
+    LOG(info1) << "Loading mask from " << imagePath.string()
+               << "/" << BintiffMaskName << ".";
+
+    quadtree::RasterMask mask;
+    auto tiff(imgproc::tiff::openRead(imagePath));
+    mask.load(tiff.istream(BintiffMaskName));
+    return mask;
 }
 
-void writeEmbeddedMask(const fs::path &imagePath
-                       , const quadtree::RasterMask &mask)
+void maskToTiff(const fs::path &imagePath
+                , const quadtree::RasterMask &mask)
 {
-    // TODO: try/catch if support for other types is added
-
     LOG(info1) << "Saving mask to " << imagePath.string()
                << "/" << BintiffMaskName << ".";
 
-#if IMGPROC_HAS_TIFF
     // try tiff
     auto tiff(imgproc::tiff::openAppend(imagePath));
     mask.dump(tiff.ostream(BintiffMaskName));
     return;
+}
+
+#else
+quadtree::RasterMask maskFromTiff(const fs::path &imagePath)
+{
+    LOGTHROW(err1, std::runtime_error)
+        << "Cannot load raster mask from " << imagePath
+        << ": TIFF support not compiled in.";
+}
+
+void maskToTiff(const fs::path &imagePath, const quadtree::RasterMask&)
+{
+    LOGTHROW(err1, std::runtime_error)
+        << "Cannot save raster mask to " << imagePath
+        << ": TIFF support not compiled in.";
+}
+
 #endif
 
-    LOGTHROW(err1, std::runtime_error)
-        << "Cannot save raster mask into " << imagePath
-        << ": Unsupported image type.";
-    (void) mask;
+quadtree::RasterMask maskFromZip(const fs::path &imagePath)
+{
+    if (!utility::zip::Reader::check(imagePath)) {
+        LOGTHROW(err1, std::runtime_error)
+            << "Cannot load raster mask from " << imagePath
+            << ": does not contain a ZIP archive.";
+    }
+
+    // open zip archive and try to find file with mask
+    utility::zip::Reader zip(imagePath);
+    auto zipIndex(zip.find(ZipMaskNameFull));
+
+    quadtree::RasterMask mask;
+    {
+        // load mask from embedded file
+        bio::filtering_istream fis;
+        zip.plug(zipIndex, fis);
+        mask.load(fis);
+    }
+    return mask;
+}
+
+void maskToZip(const fs::path &imagePath, const quadtree::RasterMask &mask)
+{
+    // TODO: truncate to original size if anything crashes
+
+    utility::zip::Writer zip(imagePath, utility::zip::Embed);
+
+    {
+        auto os(zip.ostream(ZipMaskName, utility::zip::Compression::deflate));
+        mask.dump(os->get());
+        os->close();
+    }
+
+    zip.close();
+}
+
+} // namespace
+
+void writeEmbeddedMask(const fs::path &imagePath
+                       , const quadtree::RasterMask &mask)
+{
+    const auto type(imageMimeType(imagePath));
+    if (type.empty()) {
+        LOGTHROW(err1, std::runtime_error)
+            << "Cannot save raster mask to " << imagePath
+            << ": Unsupported image type.";
+    }
+
+    if (type == "image/tiff") {
+        return maskToTiff(imagePath, mask);
+    }
+
+    return maskToZip(imagePath, mask);
 }
 
 quadtree::RasterMask readEmbeddedMask(const fs::path &imagePath)
 {
-    LOG(info1) << "Loading mask from " << imagePath.string()
-               << "/" << BintiffMaskName << ".";
-#if IMGPROC_HAS_TIFF
-    {
-        quadtree::RasterMask mask;
-        auto tiff(imgproc::tiff::openRead(imagePath));
-        mask.load(tiff.istream(BintiffMaskName));
-        return mask;
+    const auto type(imageMimeType(imagePath));
+    if (type.empty()) {
+        LOGTHROW(err1, std::runtime_error)
+            << "Cannot load raster mask from " << imagePath
+            << ": Unsupported image type.";
     }
-#endif
 
-    LOGTHROW(err1, std::runtime_error)
-        << "Cannot load raster mask from " << imagePath
-        << ": Unsupported image type.";
-    throw;
+    if (type == "image/tiff") {
+        return maskFromTiff(imagePath);
+    }
+
+    return maskFromZip(imagePath);
 }
 
 boost::optional<quadtree::RasterMask>
-readEmbeddedMask(const fs::path &imagePath, std::nothrow_t)
+readEmbeddedMask(const fs::path &imagePath, const std::nothrow_t&)
 {
     try {
         return readEmbeddedMask(imagePath);

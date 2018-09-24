@@ -28,6 +28,8 @@
 
 #include "dbglog/dbglog.hpp"
 
+#include "utility/streams.hpp"
+
 #include "./imagesize.hpp"
 #include "./error.hpp"
 #include "./jp2.hpp"
@@ -275,6 +277,7 @@ std::string imageMime(unsigned char head)
 
     case 'I': case 'M': return "image/tiff";
     case 0x47: return "image/gif";
+    case 0x00: return ".jp2"; // a bit stretch...
     }
 
     return {};
@@ -308,5 +311,10 @@ std::string imageMimeType(std::istream &is)
     return imageMime(is.peek());;
 }
 
+std::string imageMimeType(const boost::filesystem::path &path)
+{
+    utility::ifstreambuf is(path.string());
+    return imageMime(is.peek());;
+}
 
 } // namespace imgproc
