@@ -173,7 +173,7 @@ public:
 
             // something unwritten in the buffer
 
-            LOG(info1) << "writing row " << row_;
+            LOG(debug) << "writing row " << row_;
             if (::TIFFWriteScanline(h_, buf_.get(), row_) != 1) {
                 LOGTHROW(err1, Error)
                     << "Unable to write row " << row_ << " to tiff ("
@@ -259,7 +259,7 @@ private:
     void fetch() {
         if (left_) { return; }
 
-        LOG(info1) << "Reading row " << row_;
+        LOG(debug) << "Reading row " << row_;
 
         begin_ = buf_.get();
         if (::TIFFReadScanline(h_, begin_, row_) != 1) {
@@ -307,7 +307,7 @@ void BinTiff::write(const std::string &data)
 
 std::string BinTiff::read()
 {
-    LOG(info1) << "reading block";
+    LOG(debug) << "reading block";
 
     std::uint32_t dataSize;
     std::string out;
@@ -323,7 +323,7 @@ namespace {
 
 int findFile(TIFF *h, const std::string &filename)
 {
-    LOG(info1) << "Rewind";
+    LOG(debug) << "Rewind";
     int dir(0);
     if (!::TIFFSetDirectory(h, 0)) {
         // no directory at all
@@ -332,10 +332,10 @@ int findFile(TIFF *h, const std::string &filename)
     }
 
     do {
-        LOG(info1) << "Scanning: " << ::TIFFCurrentDirectory(h);
+        LOG(debug) << "Scanning: " << ::TIFFCurrentDirectory(h);
         const char *fname;
         if (::TIFFGetField(h, TIFFTAG_DOCUMENTNAME, &fname)) {
-            LOG(info1) << "Found filename: " << fname;
+            LOG(debug) << "Found filename: " << fname;
             if (filename == fname) { return dir; }
         }
         ++dir;
@@ -355,7 +355,7 @@ void BinTiff::create(const std::string &filename)
         ::TIFFCreateDirectory(TH(handle_));
     }
 
-    LOG(info1) << "Current dir: " << ::TIFFCurrentDirectory(TH(handle_));
+    LOG(debug) << "Current dir: " << ::TIFFCurrentDirectory(TH(handle_));
     setField(handle_, TIFFTAG_DOCUMENTNAME, filename.c_str());
 }
 
