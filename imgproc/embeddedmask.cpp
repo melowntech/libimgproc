@@ -72,6 +72,7 @@ quadtree::RasterMask maskFromTiff(const fs::path &imagePath)
     LOGTHROW(err1, std::runtime_error)
         << "Cannot load raster mask from " << imagePath
         << ": TIFF support not compiled in.";
+    throw; // suppress: no return statement in function returning non-void
 }
 
 void maskToTiff(const fs::path &imagePath, const quadtree::RasterMask&)
