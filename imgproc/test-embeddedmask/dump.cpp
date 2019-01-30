@@ -43,7 +43,8 @@ namespace fs = boost::filesystem;
 class Dumper : public service::Cmdline {
 public:
     Dumper()
-        : service::Cmdline("dump-embeddedmask", IMGPROC_VERSION)
+        : service::Cmdline("dump-embeddedmask", IMGPROC_VERSION
+                           , service::DISABLE_EXCESSIVE_LOGGING)
         , raw_(false)
     {}
 
@@ -74,6 +75,12 @@ public:
             mask.dump(os);
             os.close();
         } else {
+            if (!mask.size().width || !mask.size().height) {
+                std::cerr << "Zero size mask. Cannot save as an image."
+                          << std::endl;
+                return EXIT_FAILURE;
+            }
+
             cv::imwrite(output_.string(), asCvMat(mask));
         }
         return EXIT_SUCCESS;
@@ -88,6 +95,5 @@ private:
 
 int main(int argc, char *argv[])
 {
-    dbglog::set_mask("ALL");
     return Dumper()(argc, argv);
 }
