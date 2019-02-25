@@ -24,17 +24,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sstream>
-#include <string>
-#include <vector>
-#include <mutex>
-
 #include <boost/python.hpp>
 #include <boost/python/stl_iterator.hpp>
 #include <boost/python/raw_function.hpp>
 #include <boost/python/slice.hpp>
 #include <boost/python/call.hpp>
-#include <boost/python/enum.hpp>
 #include <boost/python/scope.hpp>
 
 #include <stdint.h>
@@ -46,6 +40,8 @@
 
 #include "../georeferencing.hpp"
 #include "../rasterizer.hpp"
+
+#include "zbuffer.hpp"
 
 namespace bp = boost::python;
 
@@ -117,6 +113,7 @@ void Rasterizer_rasterize_raw3(imgproc::Rasterizer &rasterizer
                });
 }
 
+
 } } // namespace imgproc::py
 
 BOOST_PYTHON_MODULE(melown_imgproc)
@@ -141,6 +138,9 @@ BOOST_PYTHON_MODULE(melown_imgproc)
         .def("__call__", &py::Rasterizer_rasterize_raw2)
         .def("__call__", &py::Rasterizer_rasterize_raw3)
         ;
+
+    // pull in zbuffer stuff, needs OpenCV and NumPy
+    py::registerZBuffer();
 }
 
 namespace imgproc { namespace py {
