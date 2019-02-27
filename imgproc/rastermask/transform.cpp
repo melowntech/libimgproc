@@ -25,8 +25,8 @@
  */
 #include "dbglog/dbglog.hpp"
 
-#include "./transform.hpp"
-#include "./cvmat.hpp"
+#include "transform.hpp"
+#include "cvmat.hpp"
 
 namespace imgproc { namespace quadtree {
 

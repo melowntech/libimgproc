@@ -25,8 +25,8 @@
  */
 //#include <opencv2/highgui.hpp>
 
-#include "./inpaint.hpp"
-#include "./scattered-interpolation.hpp"
+#include "inpaint.hpp"
+#include "scattered-interpolation.hpp"
 
 namespace imgproc {
 

@@ -28,7 +28,7 @@
 
 #include <opencv2/core/core.hpp>
 
-#include "./quadtree.hpp"
+#include "quadtree.hpp"
 
 namespace imgproc { namespace quadtree {
 

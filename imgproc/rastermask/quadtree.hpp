@@ -43,7 +43,7 @@
 
 #include "math/geometry_core.hpp"
 
-#include "./bitfieldfwd.hpp"
+#include "bitfieldfwd.hpp"
 
 /**** quad-tree version of rastermask ****/
 
@@ -299,6 +299,6 @@ private :
 
 } } // namespace imgproc::quadtree
 
-#include "./inline/quadtree.hpp"
+#include "inline/quadtree.hpp"
 
 #endif // imgproc_rastermask_quadtree_hpp_included_

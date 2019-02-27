@@ -36,8 +36,8 @@
 #include "math/geometry_core.hpp"
 #include "math/geometry.hpp"
 
-#include "./pixelorigin.hpp"
-#include "./rastermask/bitfield.hpp"
+#include "pixelorigin.hpp"
+#include "rastermask/bitfield.hpp"
 
 namespace imgproc {
 

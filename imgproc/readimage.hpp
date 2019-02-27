@@ -32,7 +32,7 @@
 
 #include "math/geometry_core.hpp"
 
-#include "./imagesize.hpp"
+#include "imagesize.hpp"
 
 namespace imgproc {
 

@@ -30,9 +30,9 @@
 
 #include "utility/streams.hpp"
 
-#include "./imagesize.hpp"
-#include "./error.hpp"
-#include "./jp2.hpp"
+#include "imagesize.hpp"
+#include "error.hpp"
+#include "jp2.hpp"
 
 #ifdef IMGPROC_HAS_GIF
 #  include "./gif.hpp"

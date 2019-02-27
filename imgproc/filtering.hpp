@@ -43,7 +43,7 @@
 #include "math/geometry_core.hpp"
 #include "math/filters.hpp"
 
-#include "./reconstruct.hpp"
+#include "reconstruct.hpp"
 
 namespace imgproc {
 

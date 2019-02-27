@@ -36,8 +36,8 @@
 
 #include "utility/binaryio.hpp"
 
-#include "./error.hpp"
-#include "./jp2.hpp"
+#include "error.hpp"
+#include "jp2.hpp"
 
 namespace imgproc {
 

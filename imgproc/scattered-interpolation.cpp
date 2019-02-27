@@ -29,7 +29,7 @@
 
 #include "dbglog/dbglog.hpp"
 
-#include "./scattered-interpolation.hpp"
+#include "scattered-interpolation.hpp"
 
 namespace imgproc {
 

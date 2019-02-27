@@ -31,7 +31,7 @@
 #include <boost/optional.hpp>
 #include <boost/filesystem/path.hpp>
 
-#include "./rastermask.hpp"
+#include "rastermask.hpp"
 
 namespace imgproc {
 

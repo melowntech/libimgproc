@@ -32,10 +32,10 @@
 
 #include "dbglog/dbglog.hpp"
 
-#include "./readimage.hpp"
-#include "./error.hpp"
-#include "./jp2.hpp"
-#include "./png_io.hpp"
+#include "readimage.hpp"
+#include "error.hpp"
+#include "jp2.hpp"
+#include "png_io.hpp"
 
 #ifdef IMGPROC_HAS_GIF
 #  include "./gif.hpp"
@@ -45,7 +45,7 @@
 #  include "./tiff.hpp"
 #endif
 
-#include "./png.hpp"
+#include "png.hpp"
 
 #ifdef IMGPROC_HAS_JPEG
 #  include "./jpeg.hpp"

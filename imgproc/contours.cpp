@@ -42,7 +42,7 @@
 
 #include "utility/streams.hpp"
 
-#include "./contours.hpp"
+#include "contours.hpp"
 
 namespace bmi = boost::multi_index;
 

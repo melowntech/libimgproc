@@ -44,7 +44,7 @@
 #include "math/math.hpp"
 #include "math/geometry_core.hpp"
 
-#include "./rastermask/quadtree.hpp"
+#include "rastermask/quadtree.hpp"
 
 namespace imgproc {
 namespace gil = boost::gil;

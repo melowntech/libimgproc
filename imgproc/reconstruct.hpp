@@ -33,7 +33,7 @@
 #ifndef imgproc_reconstruct_hpp_included_
 #define imgproc_reconstruct_hpp_included_
 
-#include "./const-raster.hpp"
+#include "const-raster.hpp"
 
 namespace imgproc {
 

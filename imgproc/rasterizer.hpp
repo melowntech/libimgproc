@@ -33,7 +33,7 @@
 
 #include "math/geometry_core.hpp"
 
-#include "./scanconversion.hpp"
+#include "scanconversion.hpp"
 
 namespace imgproc {
 

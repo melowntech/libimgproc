@@ -35,8 +35,8 @@
 
 #include "utility/binaryio.hpp"
 
-#include "./png.hpp"
-#include "./error.hpp"
+#include "png.hpp"
+#include "error.hpp"
 
 namespace fs = boost::filesystem;
 namespace bin = utility::binaryio;

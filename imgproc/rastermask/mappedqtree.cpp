@@ -33,8 +33,8 @@
 #include "utility/binaryio.hpp"
 #include "utility/align.hpp"
 
-#include "./mappedqtree.hpp"
-#include "./quadtree.hpp"
+#include "mappedqtree.hpp"
+#include "quadtree.hpp"
 
 namespace bi = boost::interprocess;
 namespace bin = utility::binaryio;

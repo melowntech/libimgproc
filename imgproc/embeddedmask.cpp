@@ -28,9 +28,9 @@
 
 #include "utility/zip.hpp"
 
-#include "./embeddedmask.hpp"
-#include "./bintiff.hpp"
-#include "./imagesize.hpp"
+#include "embeddedmask.hpp"
+#include "bintiff.hpp"
+#include "imagesize.hpp"
 
 namespace bio = boost::iostreams;
 namespace fs = boost::filesystem;

@@ -24,16 +24,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "./cvcolors.hpp"
+#include "cvcolors.hpp"
 
 namespace imgproc { namespace opencv {
 
 const cv::Scalar palette256[256] = {
-    #include "./colors.incl.cpp"
+    #include "colors.incl.cpp"
 };
 
 const cv::Vec3b palette256vec[256] = {
-    #include "./colors.incl.cpp"
+    #include "colors.incl.cpp"
 };
 
 } } // namespace imgproc::opencv

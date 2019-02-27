@@ -29,8 +29,8 @@
 
 #include "dbglog/dbglog.hpp"
 
-#include "./error.hpp"
-#include "./jpeg.hpp"
+#include "error.hpp"
+#include "jpeg.hpp"
 
 namespace fs = boost::filesystem;
 

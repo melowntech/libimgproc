@@ -30,7 +30,7 @@
 
 #include "imgproc/fillrect.hpp"
 
-#include "./cvmat.hpp"
+#include "cvmat.hpp"
 
 namespace imgproc {
 

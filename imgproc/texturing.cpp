@@ -27,8 +27,8 @@
 
 #include "dbglog/dbglog.hpp"
 
-#include "./error.hpp"
-#include "./texturing.hpp"
+#include "error.hpp"
+#include "texturing.hpp"
 
 namespace imgproc { namespace tx {
 

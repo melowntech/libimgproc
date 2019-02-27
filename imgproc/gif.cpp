@@ -32,7 +32,7 @@
 
 #include "dbglog/dbglog.hpp"
 
-#include "./gif.hpp"
+#include "gif.hpp"
 
 namespace imgproc {
 

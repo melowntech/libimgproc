@@ -28,8 +28,8 @@
 
 #include <opencv2/core/core.hpp>
 
-#include "./bitfield.hpp"
-#include "./quadtree.hpp"
+#include "bitfield.hpp"
+#include "quadtree.hpp"
 
 namespace imgproc {
 

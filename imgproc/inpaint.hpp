@@ -37,7 +37,7 @@
 
 #include "utility/gccversion.hpp"
 
-#include "./rastermask.hpp"
+#include "rastermask.hpp"
 
 namespace imgproc {
 

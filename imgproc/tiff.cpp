@@ -27,9 +27,9 @@
 
 #include "dbglog/dbglog.hpp"
 
-#include "./tiff.hpp"
-#include "./error.hpp"
-#include "./cvmat.hpp"
+#include "tiff.hpp"
+#include "error.hpp"
+#include "cvmat.hpp"
 
 namespace imgproc {
 

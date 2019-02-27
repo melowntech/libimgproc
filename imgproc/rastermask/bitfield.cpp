@@ -37,7 +37,7 @@
 #include "utility/binaryio.hpp"
 #include "math/math.hpp"
 
-#include "./bitfield.hpp"
+#include "bitfield.hpp"
 
 namespace imgproc { namespace bitfield {
 

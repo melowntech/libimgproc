@@ -31,8 +31,8 @@
 #include <vector>
 #include <array>
 
-#include "./contours.hpp"
-#include "./svg.hpp"
+#include "contours.hpp"
+#include "svg.hpp"
 
 namespace imgproc { namespace svg {
 
