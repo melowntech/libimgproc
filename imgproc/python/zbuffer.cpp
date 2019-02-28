@@ -132,6 +132,7 @@ public:
     }
 
 private:
+    bp::object data_;
     std::shared_ptr<ZBufferArrayBase> array_;
 };
 
@@ -182,6 +183,7 @@ makeArray(void *data, const math::Size2 &dataSize, std::size_t dataStep
 }
 
 ZBuffer::ZBuffer(const bp::object &data, ZBufferCompare compare)
+    : data_(data)
 {
     importNumpy();
 
