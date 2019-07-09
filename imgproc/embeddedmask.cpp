@@ -161,7 +161,7 @@ readEmbeddedMask(const fs::path &imagePath, const std::nothrow_t&)
 {
     try {
         return readEmbeddedMask(imagePath);
-    } catch (std::exception) {}
+    } catch (const std::exception&) {}
 
     return boost::none;
 }

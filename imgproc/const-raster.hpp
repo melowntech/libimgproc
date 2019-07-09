@@ -162,7 +162,6 @@ namespace detail {
         typedef ValueType channel_type;
     };
 
-    template <>
     template <typename T, int N>
     struct CvPixelTraits<cv::Vec<T, N> > {
         typedef cv::Vec<T, N> value_type;
