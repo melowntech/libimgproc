@@ -90,8 +90,8 @@ cv::Mat readImage(const fs::path &path)
             LOG(warn1) << "TIFF-specific reader failed with an unknown error; "
                 "trying generic OpenCV-provided loader.";
         } catch (const std::exception &e) {
-            LOG(warn1) << "TIFF-specific reader failed with <"
-                       << e.what() << ">; trying generic OpenCV-provided "
+            LOG(info1) << "TIFF-specific reader failed with <"
+                      << e.what() << ">; trying generic OpenCV-provided "
                 "loader.";
         }
     }
