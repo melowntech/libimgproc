@@ -50,6 +50,10 @@
 #include "../georeferencing.hpp"
 #include "../rasterizer.hpp"
 
+#ifdef PYIMGPROC_HAS_GEOMETRY
+#  include "geometry/mesh.hpp"
+#endif
+
 namespace bp = boost::python;
 
 namespace imgproc { namespace py {
@@ -130,6 +134,22 @@ public:
     {
         array_->rasterize(a1, a2, a3, b1, b2, b3, c1, c2, c3);
     }
+
+#ifdef PYIMGPROC_HAS_GEOMETRY
+    template <typename T>
+    void rasterizeFaces(const std::vector<math::Point3_<T>> &vertices
+                        , const geometry::Face::list &faces)
+    {
+        for (const auto &face : faces) {
+            rasterize(vertices[face.a], vertices[face.b], vertices[face.c]);
+        }
+    }
+
+    void rasterizeMesh(const geometry::Mesh &mesh)
+    {
+        rasterizeFaces(mesh.vertices, mesh.faces);
+    }
+#endif
 
 private:
     bp::object data_;
@@ -236,6 +256,13 @@ void registerZBuffer()
         .def("__call__", &ZBuffer::rasterize<double>)
         .def("__call__", &ZBuffer::rasterizeRaw<float>)
         .def("__call__", &ZBuffer::rasterizeRaw<double>)
+
+        // geometry support
+#ifdef PYIMGPROC_HAS_GEOMETRY
+        .def("__call__", &ZBuffer::rasterizeFaces<float>)
+        .def("__call__", &ZBuffer::rasterizeFaces<double>)
+        .def("__call__", &ZBuffer::rasterizeMesh)
+#endif
         ;
 
     // inject ZBuffer::Compare enum
