@@ -23,13 +23,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-//#include <opencv2/highgui.hpp>
 
 #include "inpaint.hpp"
 #include "scattered-interpolation.hpp"
 
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 namespace imgproc {
 
 void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
