@@ -28,10 +28,12 @@
 #include "inpaint.hpp"
 #include "scattered-interpolation.hpp"
 
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 namespace imgproc {
 
 void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
-                      int blkWidth, int blkHeight)
+                      int blkWidth, int blkHeight, float eps)
 {
     //cv::imwrite("mask.png", mask);
     //cv::imwrite("before.png", img);
@@ -71,14 +73,14 @@ void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
                         img.ptr<uchar>(by+y)[(bx+x)*nch + ch];
                 }
 
-                laplaceInterpolate(block, blkMask, 1e-3);
+                laplaceInterpolate(block, blkMask, eps);
 
                 for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
                     if (!blkMask.get(x, y)) {
-                        img.ptr<uchar>(by+y)[(bx+x)*nch + ch] =
-                            block.at<float>(y, x);
+                        img.ptr<uchar>(by+y)[(bx+x)*nch + ch]
+                            = std::lround(block.at<float>(y, x));
                     }
                 }
             }

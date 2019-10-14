@@ -51,6 +51,8 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask, double t
 
     Eigen::VectorXd rhs(n);
 
+    const double minusOneThird = -1.0 / 3.0;
+
     for (int i = 0; i < h; i++)
     for (int j = 0; j < w; j++)
     {
@@ -70,23 +72,32 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask, double t
                 coefs.emplace_back(k, k-w, -0.25);
                 coefs.emplace_back(k, k+w, -0.25);
             }
-            else  // 2 neighbors
+            else  // 2 or 3 neighbors
             {
-                int n1, n2;
+                int n1, n2, n3 = 0;
                 if (i > 0 && i < h-1) { // left or right edge
                     n1 = -w;
                     n2 = w;
+                    n3 = (j > 0) ? -1 : 1;
                 }
-                else if (j > 0 && j < w-1) { // top or bottom edge, 2 neighbors
+                else if (j > 0 && j < w-1) { // top or bottom edge
                     n1 = -1;
                     n2 = 1;
+                    n3 = (i > 0) ? -w : w;
                 }
                 else { // corners
                     n1 = i ? -w : w;
                     n2 = j ? -1 : 1;
                 }
-                coefs.emplace_back(k, k+n1, -0.5);
-                coefs.emplace_back(k, k+n2, -0.5);
+                if (n3) { // 3 neighbours
+                    coefs.emplace_back(k, k+n1, minusOneThird);
+                    coefs.emplace_back(k, k+n2, minusOneThird);
+                    coefs.emplace_back(k, k+n3, minusOneThird);
+                }
+                else {
+                    coefs.emplace_back(k, k+n1, -0.5);
+                    coefs.emplace_back(k, k+n2, -0.5);
+                }
             }
 
             rhs(k) = 0.0;

@@ -46,7 +46,7 @@ namespace imgproc {
  *  empty blocks are filled with zeros. Completely full blocks are left intact.
  */
 void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
-                      int blkWidth = 8, int blkHeight = 8)
+                      int blkWidth = 8, int blkHeight = 8, float eps = 1e-3)
 #if !defined(IMGPROC_HAS_OPENCV) || !defined(IMGPROC_HAS_EIGEN3)
     UTILITY_FUNCTION_ERROR("JPEG inpaint is available only when compiled with both OpenCV and Eigen3 libraries.")
 #endif
