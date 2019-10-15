@@ -51,7 +51,7 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask, double t
 
     Eigen::VectorXd rhs(n);
 
-    const double minusOneThird = -1.0 / 3.0;
+    static const double minusOneThird = -1.0 / 3.0;
 
     for (int i = 0; i < h; i++)
     for (int j = 0; j < w; j++)
