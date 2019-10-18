@@ -26,6 +26,7 @@
 
 #include "inpaint.hpp"
 #include "scattered-interpolation.hpp"
+#include "utility/openmp.hpp"
 
 namespace imgproc {
 
@@ -35,60 +36,67 @@ void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
     //cv::imwrite("mask.png", mask);
     //cv::imwrite("before.png", img);
 
-    imgproc::RasterMask blkMask(blkWidth, blkHeight);
-    cv::Mat block(blkHeight, blkWidth, CV_32F);
-
     int nch = img.channels();
 
+    UTILITY_OMP(parallel for)
     for (int by = 0; by < img.rows; by += blkHeight)
-    for (int bx = 0; bx < img.cols; bx += blkWidth)
     {
-        int w = std::min(blkWidth,  img.cols - bx);
-        int h = std::min(blkHeight, img.rows - by);
-
-        bool full = true, empty = true;
-
-        for (int y = 0; y < h; y++)
-        for (int x = 0; x < w; x++)
+        imgproc::RasterMask blkMask(blkWidth, blkHeight);
+        cv::Mat block(blkHeight, blkWidth, CV_32F);
+        for (int bx = 0; bx < img.cols; bx += blkWidth)
         {
-            bool m = mask.at<uchar>(by+y, bx+x);
-            if (m) { empty = false; }
-            else { full = false; }
-            blkMask.set(x, y, m);
-        }
+            int w = std::min(blkWidth,  img.cols - bx);
+            int h = std::min(blkHeight, img.rows - by);
 
-        if (full) { continue; }
+            // resize block matrix for smaller blocks containing last row/column
+            if (w != block.cols || h != block.rows) {
+                block = cv::Mat(h, w, CV_32F);
+            }
 
-        if (!empty)
-        {
-            for (int ch = 0; ch < nch; ch++)
+            bool full = true, empty = true;
+
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
             {
-                for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    block.at<float>(y, x) =
-                        img.ptr<uchar>(by+y)[(bx+x)*nch + ch];
-                }
+                bool m = mask.at<uchar>(by+y, bx+x);
+                if (m) { empty = false; }
+                else { full = false; }
+                blkMask.set(x, y, m);
+            }
 
-                laplaceInterpolate(block, blkMask, eps);
+            if (full) { continue; }
 
-                for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
+            if (!empty)
+            {
+                for (int ch = 0; ch < nch; ch++)
                 {
-                    if (!blkMask.get(x, y)) {
-                        img.ptr<uchar>(by+y)[(bx+x)*nch + ch]
-                            = std::lround(block.at<float>(y, x));
+                    for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        block.at<float>(y, x) =
+                            img.ptr<uchar>(by+y)[(bx+x)*nch + ch];
+                    }
+
+                    laplaceInterpolate(block, blkMask, eps);
+
+                    for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                    {
+                        if (!blkMask.get(x, y)) {
+                            img.ptr<uchar>(by+y)[(bx+x)*nch + ch]
+                                = std::lround(block.at<float>(y, x));
+                        }
                     }
                 }
             }
-        }
-        else // make sure empty block is black
-        {
-            for (int ch = 0; ch < nch; ch++)
-            for (int y = 0; y < h; y++)
-            for (int x = 0; x < w;  x++)
+            else // make sure empty block is black
             {
-                img.ptr<uchar>(by+y)[(bx+x)*nch + ch] = 0;
+                for (int ch = 0; ch < nch; ch++)
+                for (int y = 0; y < h; y++)
+                for (int x = 0; x < w;  x++)
+                {
+                    img.ptr<uchar>(by+y)[(bx+x)*nch + ch] = 0;
+                }
             }
         }
     }
