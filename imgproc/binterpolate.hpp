@@ -158,10 +158,11 @@ inline RgbType rgbInterpolate(const cv::Mat &mat, float x, float y)
     return w0 + (w1 - w0)*fy;
 }
 
-/** Bilinear interpolation of a grayscale image stored in a cv::Mat.
+/** Bilinear interpolation of an image stored in cv::Mat_<InType>.
+ *  By default, an uchar grayscale image is interpolated into a float result.
  */
-template<typename MatType = uchar>
-float interpolate(const cv::Mat &img, float x, float y)
+template<typename InType = uchar, typename OutType = float>
+OutType interpolate(const cv::Mat &img, float x, float y)
 {
     const float eps = 1e-3f;
     float xmax = (float) img.cols - (1.f + eps);
@@ -173,18 +174,16 @@ float interpolate(const cv::Mat &img, float x, float y)
     int x0 = (int) x; // "floor"
     int y0 = (int) y; // "floor"
 
-    float fx = x - x0;
-    float fy = y - y0;
+    float fx1 = x - x0,  fx0 = 1.f - fx1;
+    float fy1 = y - y0,  fy0 = 1.f - fy1;
 
-    float v00 = img.at<MatType>(y0, x0);
-    float v01 = img.at<MatType>(y0, x0+1);
-    float v10 = img.at<MatType>(y0+1, x0);
-    float v11 = img.at<MatType>(y0+1, x0+1);
+    OutType v00 = img.at<InType>(y0, x0);
+    OutType v01 = img.at<InType>(y0, x0+1);
+    OutType v10 = img.at<InType>(y0+1, x0);
+    OutType v11 = img.at<InType>(y0+1, x0+1);
 
-    float w0 = v00 + (v01 - v00)*fx;
-    float w1 = v10 + (v11 - v10)*fx;
-
-    return w0 + (w1 - w0)*fy;
+    return fx0*fy0*v00 + fx1*fy0*v01 +
+           fx0*fy1*v10 + fx1*fy1*v11;
 }
 
 

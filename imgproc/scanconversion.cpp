@@ -31,12 +31,14 @@ Scanline::Scanline(int y, float x1, float x2, float z1, float z2)
 {
     this->y = y;
 
-    if (x1 < x2)
+    if (x1 < x2) {
         this->x1 = x1, this->x2 = x2,
         this->z1 = z1, this->z2 = z2;
-    else
+    }
+    else {
         this->x1 = x2, this->x2 = x1,
         this->z1 = z2, this->z2 = z1;
+    }
 }
 
 
