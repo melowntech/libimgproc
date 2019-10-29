@@ -70,6 +70,7 @@ if(OpenCV_FOUND)
     rasterizer.hpp
     cvcolors.hpp cvcolors.cpp
     fillrect.hpp fillrect.cpp
+    imgwarp.hpp imgwarp.cpp
     )
 else()
   message(STATUS "imgproc: compiling without OpenCV support")
