@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Melown Technologies SE
+ * Copyright (c) 2019 Melown Technologies SE
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,17 +24,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * @file math_all.hpp
- * @author Ondrej Prochazka <ondrej.prochazka@citationtech.net>
+ * @file imgwarp.hpp
+ * @author Pavel Sevecek <pavel.sevecek@melown.com>
  *
- * All of imgproc library.
+ * Image perspective transforms
  */
- 
-#include "color.hpp"
-#include "histogram.hpp"
-#include "filtering.hpp"
-#include "transformation.hpp"
-#include "rastermask.hpp"
-#include "morphology.hpp"
-#include "imgwarp.hpp"
 
+#ifndef IMGPROC_IMGWARP_HPP
+#define IMGPROC_IMGWARP_HPP
+
+#include <opencv2/core/core.hpp>
+
+namespace imgproc {
+
+/**
+ * @brief Performs perspective transformation on given image
+ * @details This function is a custom reimplementation of cv::warpPerspective,
+ * necessary due to bad performance of the OpenCV function with OpenMP parallelization.
+ * The results should be identical, except for minor numerical differences.
+ *
+ * @param src         Input image of type CV_8U
+ * @param dst         Output image, resized and filled by the function
+ * @param H           3x3 matrix of the transformation
+ * @param dsize       Required size of the output image
+ * @param border      Specifies handling of pixels outside of the image area.
+ *                    Uses values from enum \ref cv::BorderTypes.
+ * @param borderValue Value assigned to outside pixels for border mode cv::BORDER_CONSTANT.
+ */
+void warpPerspective(const cv::Mat& src, cv::Mat& dst, const cv::Mat& H, const cv::Size dsize,
+    const int border, const uchar borderValue = 0);
+
+} // namespace imgproc
+
+#endif // IMGPROC_IMGWARP_HPP
