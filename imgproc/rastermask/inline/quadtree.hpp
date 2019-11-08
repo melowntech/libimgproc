@@ -46,14 +46,15 @@ inline void RasterMask::forEachQuad(const Op &op, Filter filter) const
 template <typename Op>
 inline void RasterMask::forEach(const Op &op, Filter filter) const
 {
-    this->forEachQuad([&](uint x, uint y, uint xsize, uint ysize, bool white)
+    this->forEachQuad([&](std::size_t x, std::size_t y,
+                      std::size_t xsize, std::size_t ysize, bool white)
     {
         // rasterize quad
-        uint ex(x + xsize);
-        uint ey(y + ysize);
+        std::size_t ex(x + xsize);
+        std::size_t ey(y + ysize);
 
-        for (uint j(y); j < ey; ++j) {
-            for (uint i(x); i < ex; ++i) {
+        for (std::size_t j(y); j < ey; ++j) {
+            for (std::size_t i(x); i < ex; ++i) {
                 op(i, j, white);
             }
         }
