@@ -14,10 +14,11 @@ if(NumPy_FOUND)
   message(STATUS "imgproc::python: compiling in numpy support")
 
   list(APPEND pyimgproc_DEPENDS NumPy OpenCV)
-  list(APPEND pyimgproc_SOURCES zbuffer.cpp)
+  list(APPEND pyimgproc_SOURCES
+    zbuffer.cpp numpy.hpp numpy.cpp)
 else()
   message(STATUS "imgproc::python: compiling without numpy support")
-  list(APPEND pyimgproc_SOURCES zbuffer.dummy.cpp)
+  list(APPEND pyimgproc_SOURCES zbuffer.dummy.cpp numpy.dummy.cpp)
 endif()
 
 if(MODULE_geometry_FOUND)

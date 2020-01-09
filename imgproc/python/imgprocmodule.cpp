@@ -42,6 +42,7 @@
 #include "../rasterizer.hpp"
 
 #include "zbuffer.hpp"
+#include "numpy.hpp"
 
 namespace bp = boost::python;
 
@@ -141,6 +142,9 @@ BOOST_PYTHON_MODULE(melown_imgproc)
 
     // pull in zbuffer stuff, needs OpenCV and NumPy
     py::registerZBuffer();
+
+    // pull in zbuffer stuff, needs OpenCV and NumPy
+    py::registerNumpy();
 }
 
 namespace imgproc { namespace py {

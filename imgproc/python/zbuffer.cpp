@@ -36,12 +36,11 @@
 
 #include <stdint.h>
 
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/ndarrayobject.h>
-
 #include "dbglog/dbglog.hpp"
 
 #include "utility/enum-io.hpp"
+
+#include "numpy.hpp"
 
 #include "pysupport/package.hpp"
 #include "pysupport/class.hpp"
@@ -155,17 +154,6 @@ private:
     bp::object data_;
     std::shared_ptr<ZBufferArrayBase> array_;
 };
-
-void* importNumpy()
-{
-    if (!PyArray_API) {
-        import_array();
-        if (!PyArray_API) {
-            throw bp::error_already_set();
-        }
-    }
-    return nullptr;
-}
 
 template <typename T, ZBufferCompare compare>
 std::shared_ptr<ZBufferArrayBase>
