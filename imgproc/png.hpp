@@ -29,8 +29,8 @@
 #include <iostream>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/gil/gil_all.hpp>
 
+#include "math/boost_gil_all.hpp"
 #include "math/geometry_core.hpp"
 
 namespace imgproc { namespace png {

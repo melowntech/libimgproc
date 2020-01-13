@@ -1,7 +1,7 @@
 # bump version here
-set(imgproc_VERSION 1.29)
+set(imgproc_VERSION 1.30)
 
-set(imgproc_DEPENDS math>=1.3 utility>=1.26 dbglog>=1.4 Boost)
+set(imgproc_DEPENDS math>=1.7 utility>=1.26 dbglog>=1.4 Boost)
 set(imgproc_DEFINITIONS)
 
 if(EXIF_FOUND)

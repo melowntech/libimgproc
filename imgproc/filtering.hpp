@@ -33,8 +33,6 @@
 #ifndef IMGPROC_FILTERING_HPP
 #define IMGPROC_FILTERING_HPP
 
-#include <boost/gil/gil_all.hpp>
-
 #if IMGPROC_HAS_OPENCV
 #include <opencv2/core/core.hpp>
 #endif
@@ -42,6 +40,7 @@
 #include "math/math.hpp"
 #include "math/geometry_core.hpp"
 #include "math/filters.hpp"
+#include "math/boost_gil_all.hpp"
 
 #include "reconstruct.hpp"
 

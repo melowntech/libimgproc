@@ -37,7 +37,7 @@
 #include <limits>
 #include <algorithm>
 
-#include <boost/gil/gil_all.hpp>
+#include "math/boost_gil_all.hpp"
 
 namespace imgproc {
 
