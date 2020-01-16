@@ -34,7 +34,7 @@
 #define IMGPROC_COLOR_HPP
 
 #include <boost/numeric/ublas/vector.hpp>
-#include <boost/gil/gil_all.hpp>
+#include "math/boost_gil_all.hpp"
 #include <boost/numeric/ublas/io.hpp>
 
 namespace imgproc {

@@ -35,10 +35,10 @@
 
 #include <type_traits>
 
-#include <dbglog/dbglog.hpp>
+#include "dbglog/dbglog.hpp"
 
-#include <math/math_all.hpp>
-#include <boost/gil/gil_all.hpp>
+#include "math/math_all.hpp"
+#include "math/boost_gil_all.hpp"
 
 #include "filtering.hpp"
 #include "crop.hpp"
