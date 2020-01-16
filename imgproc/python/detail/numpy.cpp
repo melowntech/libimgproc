@@ -24,22 +24,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef imgproc_python_numpy_hpp_included_
-#define imgproc_python_numpy_hpp_included_
+#include <boost/python.hpp>
+#include <boost/python/stl_iterator.hpp>
+#include <boost/python/raw_function.hpp>
+#include <boost/python/slice.hpp>
+#include <boost/python/call.hpp>
+#include <boost/python/scope.hpp>
 
+/** See https://github.com/numpy/numpy/issues/9309#issuecomment-311320497
+ *  for details.
+ */
 #define PY_ARRAY_UNIQUE_SYMBOL melown_imgrpoc_ARRAY_API
-#define NO_IMPORT_ARRAY
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/ndarrayobject.h>
 
-#include <boost/python.hpp>
+#include "numpy.hpp"
 
-namespace imgproc { namespace py {
+namespace imgproc { namespace py { namespace detail {
 
-boost::python::object asNumpyArray(const cv::Mat &mat);
+void importNumpy()
+{
+    // import numpy
+    const auto &import([]() -> void* {
+        import_array();
+        return &PyArray_API;
+    });
 
-void registerNumpy();
+    if (!import()) {
+        throw boost::python::error_already_set();
+    }
+}
 
-} } // namespace imgproc::py
-
-#endif // imgproc_python_numpy_hpp_included_
+} } } // namespace imgproc::py::detail

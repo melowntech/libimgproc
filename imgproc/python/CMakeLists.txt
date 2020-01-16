@@ -15,7 +15,9 @@ if(NumPy_FOUND)
 
   list(APPEND pyimgproc_DEPENDS NumPy OpenCV)
   list(APPEND pyimgproc_SOURCES
-    zbuffer.cpp numpy.hpp numpy.cpp)
+    zbuffer.cpp numpy.hpp numpy.cpp
+    detail/numpy.hpp detail/numpy.cpp)
+  list(APPEND pyimgproc_DEFINITIONS PYIMGPROC_HAS_NUMPY=1)
 else()
   message(STATUS "imgproc::python: compiling without numpy support")
   list(APPEND pyimgproc_SOURCES zbuffer.dummy.cpp numpy.dummy.cpp)

@@ -29,41 +29,19 @@
 #include <boost/python/raw_function.hpp>
 #include <boost/python/slice.hpp>
 #include <boost/python/call.hpp>
-#include <boost/python/enum.hpp>
 #include <boost/python/scope.hpp>
 
 #include <opencv2/core/core.hpp>
 
 #include <stdint.h>
-
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/ndarrayobject.h>
-
 #include "dbglog/dbglog.hpp"
 
-#include "utility/enum-io.hpp"
-
-#include "pysupport/package.hpp"
-#include "pysupport/class.hpp"
-#include "pysupport/enum.hpp"
-
-#include "../georeferencing.hpp"
-#include "../rasterizer.hpp"
+#include "detail/numpy.hpp"
+#include "numpy.hpp"
 
 namespace bp = boost::python;
 
 namespace imgproc { namespace py {
-
-void* importNumpy()
-{
-    if (!PyArray_API) {
-        import_array();
-        if (!PyArray_API) {
-            throw bp::error_already_set();
-        }
-    }
-    return nullptr;
-}
 
 namespace {
 
@@ -142,6 +120,8 @@ bp::object asNumpyArray(const cv::Mat &mat)
 void registerNumpy()
 {
     using namespace bp;
+
+    detail::importNumpy();
 
     auto MatHolder_class = class_<MatHolder>
         ("MatHolder", no_init)

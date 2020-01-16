@@ -24,22 +24,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef imgproc_python_numpy_hpp_included_
-#define imgproc_python_numpy_hpp_included_
+#ifndef imgproc_python_detail_numpy_hpp_included_
+#define imgproc_python_detail_numpy_hpp_included_
 
-#define PY_ARRAY_UNIQUE_SYMBOL melown_imgrpoc_ARRAY_API
-#define NO_IMPORT_ARRAY
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <numpy/ndarrayobject.h>
+namespace imgproc { namespace py { namespace detail {
 
-#include <boost/python.hpp>
+void importNumpy();
 
-namespace imgproc { namespace py {
+} } } // namespace imgproc::py::detail
 
-boost::python::object asNumpyArray(const cv::Mat &mat);
-
-void registerNumpy();
-
-} } // namespace imgproc::py
-
-#endif // imgproc_python_numpy_hpp_included_
+#endif // imgproc_python_detail_numpy_hpp_included_
