@@ -84,7 +84,7 @@ struct MatHolder {
 
 } // namespace
 
-bp::object asNumpyArray(const cv::Mat &mat)
+bp::object asNumpyArray(const cv::Mat &mat, bool writeable)
 {
     std::vector<npy_intp> dims;
     std::vector<npy_intp> strides;
@@ -101,10 +101,14 @@ bp::object asNumpyArray(const cv::Mat &mat)
         if (mat.channels() > 1) { strides.push_back(mat.elemSize1()); }
     }
 
+    int flags(NPY_ARRAY_ALIGNED);
+    if (writeable) { flags |= NPY_ARRAY_WRITEABLE; }
+    if (mat.isContinuous()) { flags |= NPY_ARRAY_C_CONTIGUOUS; }
+
     auto array(PyArray_NewFromDescr
                (&PyArray_Type, PyArray_DescrFromType(cv2numpy(mat.depth()))
                 , dims.size(), dims.data(), strides.data()
-                , mat.data, 0, nullptr));
+                , mat.data, flags, nullptr));
     if (!array) { bp::throw_error_already_set(); }
 
     if (PyArray_SetBaseObject

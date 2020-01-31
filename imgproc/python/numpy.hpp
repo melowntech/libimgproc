@@ -36,7 +36,7 @@
 
 namespace imgproc { namespace py {
 
-boost::python::object asNumpyArray(const cv::Mat &mat);
+boost::python::object asNumpyArray(const cv::Mat &mat, bool writeable = true);
 
 void registerNumpy();
 
