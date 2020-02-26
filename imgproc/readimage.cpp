@@ -24,8 +24,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <boost/gil/extension/io/jpeg_io.hpp>
-
 #include <boost/algorithm/string/case_conv.hpp>
 
 #include <opencv2/highgui/highgui.hpp>
@@ -35,20 +33,22 @@
 #include "readimage.hpp"
 #include "error.hpp"
 #include "jp2.hpp"
-#include "png_io.hpp"
 
 #ifdef IMGPROC_HAS_GIF
-#  include "./gif.hpp"
+#  include "gif.hpp"
 #endif
 
 #ifdef IMGPROC_HAS_TIFF
-#  include "./tiff.hpp"
+#  include "tiff_io.hpp"
+#  include "tiff.hpp"
 #endif
 
+#include "png_io.hpp"
 #include "png.hpp"
 
 #ifdef IMGPROC_HAS_JPEG
-#  include "./jpeg.hpp"
+#  include "jpeg_io.hpp"
+#  include "jpeg.hpp"
 #endif
 
 namespace gil = boost::gil;
@@ -59,7 +59,7 @@ namespace imgproc {
 
 cv::Mat readImage(const void *data, std::size_t size)
 {
-    auto image(cv::imdecode({data, int(size)}
+    auto image(cv::imdecode({(char*)data, int(size)}
                , CV_LOAD_IMAGE_COLOR | CV_LOAD_IMAGE_ANYDEPTH));
 
 #ifdef IMGPROC_HAS_GIF
@@ -67,7 +67,7 @@ cv::Mat readImage(const void *data, std::size_t size)
         // try gif
         try {
             image = imgproc::readGif(data, size);
-        } catch (const std::runtime_error &e) {
+        } catch (const std::runtime_error &) {
         }
     }
 #endif

@@ -85,7 +85,7 @@ inline GifFileType *DGifOpen_(void *userPtr, InputFunc readFunc, int *error)
 Gif openGif(const boost::filesystem::path &path)
 {
     int error;
-    auto gif(DGifOpenFileName_(path.c_str(), &error));
+    auto gif(DGifOpenFileName_(path.string().c_str(), &error));
     if (!gif) {
         LOGTHROW(err1, std::runtime_error)
             << "Failed to open GIF file "

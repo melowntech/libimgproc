@@ -35,22 +35,22 @@
 #include "jp2.hpp"
 
 #ifdef IMGPROC_HAS_GIF
-#  include "./gif.hpp"
+#  include "gif.hpp"
 #endif
 
 #ifdef IMGPROC_HAS_TIFF
-#  include "./tiff.hpp"
+#  include "tiff_io.hpp"
+#  include "tiff.hpp"
 #endif
 
 #ifdef IMGPROC_HAS_JPEG
-#  include <boost/gil/extension/io/jpeg_io.hpp>
-#  include "./jpeg.hpp"
+#  include "jpeg_io.hpp"
+#  include "jpeg.hpp"
 #endif
 
 #ifdef IMGPROC_HAS_PNG
-#  include "./png_io.hpp"
-#  include "./png.hpp"
-#  include <boost/gil/extension/io/png_io.hpp>
+#  include "png_io.hpp"
+#  include "png.hpp"
 #endif
 
 namespace ba = boost::algorithm;

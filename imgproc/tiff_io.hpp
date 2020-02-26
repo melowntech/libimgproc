@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Melown Technologies SE
+ * Copyright (c) 2020 Melown Technologies SE
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -23,34 +23,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-/**
- * @file png.hpp
- * @author Vaclav Blazek <vaclav.blazek@citationtech.net>
- *
- * Fix for gil png support (uses macros that were removed from libpng > 1.2
- */
 
-#ifndef imgproc_png_io_hpp_included_
-#define imgproc_png_io_hpp_included_
-
-#include <png.h>
-
-// define missing macros
-#ifndef png_infopp_NULL
-#define png_infopp_NULL (png_infopp)NULL
-#endif // png_infopp_NULL
-
-#ifndef int_p_NULL
-#define int_p_NULL (int*)NULL
-#endif // int_p_NULL
-
-// safe to include gil
+#ifndef imgproc_tiff_io_hpp_included_
+#define imgproc_tiff_io_hpp_included_
 
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 106800
-#  include <boost/gil/extension/io/png/old.hpp>
+#  include <boost/gil/extension/io/tiff/old.hpp>
 #else
-#  include <boost/gil/extension/io/png_io.hpp>
+#  include <boost/gil/extension/io/tiff_io.hpp>
 #endif
 
-#endif // imgproc_png_io_hpp_included_
+#endif // imgproc_tiff_io_hpp_included_

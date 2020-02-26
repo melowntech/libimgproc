@@ -23,10 +23,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <boost/gil/extension/io/tiff_io.hpp>
 
 #include "dbglog/dbglog.hpp"
 
+#include "tiff_io.hpp"
 #include "tiff.hpp"
 #include "error.hpp"
 #include "cvmat.hpp"

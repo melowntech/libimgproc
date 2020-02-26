@@ -1,5 +1,5 @@
 # bump version here
-set(imgproc_VERSION 1.30)
+set(imgproc_VERSION 1.31)
 
 set(imgproc_DEPENDS math>=1.7 utility>=1.26 dbglog>=1.4 Boost)
 set(imgproc_DEFINITIONS)
@@ -22,7 +22,7 @@ if(PNG_FOUND)
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_PNG=1)
 
   set(imgproc_PNG_SOURCES
-    png.hpp png.cpp)
+    png.hpp png_io.hpp png.cpp)
 else()
   message(STATUS "imgproc: compiling without PNG support")
 endif()
@@ -33,7 +33,7 @@ if(JPEG_FOUND)
   list(APPEND imgproc_DEPENDS JPEG)
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_JPEG=1)
   set(imgproc_JPEG_SOURCES
-    jpeg.hpp jpeg.cpp)
+    jpeg.hpp jpeg_io.hpp jpeg.cpp)
 else()
   message(STATUS "imgproc: compiling without JPEG support")
 endif()
@@ -45,7 +45,7 @@ if(TIFF_FOUND)
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_TIFF=1)
 
   set(imgproc_TIFF_SOURCES
-    tiff.hpp tiff.cpp
+    tiff.hpp tiff_io.hpp tiff.cpp
     bintiff.hpp bintiff.cpp)
 else()
   message(STATUS "imgproc: compiling without TIFF support")
@@ -126,7 +126,6 @@ set(imgproc_SOURCES
   bitdepth.hpp
   rastermask.hpp rastermask/bitfield.hpp rastermask/quadtree.hpp
   rastermask/bitfield.cpp rastermask/quadtree.cpp
-  rastermask/mappedqtree.cpp rastermask/mappedqtree.cpp
 
   georeferencing.hpp
   gil-float-image.hpp
@@ -152,6 +151,12 @@ set(imgproc_SOURCES
 
   imagesize.hpp imagesize.cpp
   )
+
+if (NOT WIN32)
+  list(APPEND imgproc_SOURCES
+    rastermask/mappedqtree.hpp rastermask/mappedqtree.cpp
+  )
+endif()
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_EXIF_SOURCES}
