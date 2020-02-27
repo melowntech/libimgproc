@@ -127,10 +127,12 @@ public :
     bool onBoundary( int x, int y ) const;
 
     /** return mask size (number of white pixels) */
-    unsigned long count() const { return count_; }
+    unsigned long long count() const { return count_; }
 
     /** return total number of pixels */
-    unsigned long capacity() const { return (unsigned long)(sizeX_) * (unsigned long)(sizeY_); }
+    unsigned long long capacity() const {
+        return (unsigned long long)(sizeX_) * (unsigned long long)(sizeY_);
+    }
 
     /** test mask for emptiness */
     bool empty() const { return count_ == 0; }
@@ -289,7 +291,7 @@ private :
     unsigned int sizeX_, sizeY_;
     unsigned int depth_;
     unsigned int quadSize_;
-    unsigned long count_;
+    unsigned long long count_;
     Node root_;
 
     /** Needed for mappedqtree::RasterMask creation.

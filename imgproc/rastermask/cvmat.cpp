@@ -77,8 +77,8 @@ namespace quadtree {
 math::Size2 maskMatSize(const RasterMask &mask, double pixelSize)
 {
     const auto size(mask.dims());
-    return math::Size2(long(std::ceil(pixelSize * size.width))
-                       , long(std::ceil(pixelSize * size.height)));
+    return math::Size2((long long)(std::ceil(pixelSize * size.width))
+                       , (long long)(std::ceil(pixelSize * size.height)));
 }
 
 cv::Mat asCvMat(const RasterMask &mask, double pixelSize)

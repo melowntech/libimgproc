@@ -78,7 +78,7 @@ RasterMask::RasterMask( unsigned int sizeX, unsigned int sizeY, const InitMode m
     case FULL :
     default :
         root_.type = WHITE;
-        count_ = (unsigned long)(sizeX_) * (unsigned long)(sizeY_);
+        count_ = (unsigned long long)(sizeX_) * (unsigned long long)(sizeY_);
         break;
     }
 }
@@ -98,7 +98,7 @@ RasterMask::RasterMask( const math::Size2 & size, const InitMode mode )
     case FULL :
     default :
         root_.type = WHITE;
-        count_ = (unsigned long)(sizeX_) * (unsigned long)(sizeY_);
+        count_ = (unsigned long long)(sizeX_) * (unsigned long long)(sizeY_);
         break;
     }
 }
@@ -305,9 +305,11 @@ void RasterMask::coarsen(const unsigned int threshold)
 
 void RasterMask::recount()
 {
-    unsigned long count(0);
-    forEachQuad([&count](unsigned int, unsigned int, unsigned long xsize, unsigned long ysize, bool) {
-            count += long(xsize) * long(ysize);
+    unsigned long long count(0);
+    forEachQuad([&count](unsigned int, unsigned int, unsigned long long xsize
+                         , unsigned long long ysize, bool)
+        {
+            count += (long long)(xsize) * (long long)(ysize);
         }, Filter::white);
     count_ = count;
 }
@@ -752,9 +754,11 @@ void RasterMask::Node::setQuad(unsigned int depth, unsigned int x, unsigned int 
 
     // process
     if (type == BLACK) {
-        if (value) { type = WHITE; mask.count_ += (long(size) * long(size)); }
+        if (value) { type = WHITE;
+            mask.count_ += ((long long)(size) * (long long)(size)); }
     } else if (type == WHITE) {
-        if (!value) { type = BLACK; mask.count_ -= (long(size) * long(size)); }
+        if (!value) { type = BLACK;
+            mask.count_ -= ((long long)(size) * (long long)(size)); }
     } else if (type == GRAY) {
         if (x < split) {
             if (y < split) {
@@ -815,7 +819,8 @@ void RasterMask::Node::setSubtree(unsigned int depth, unsigned int x, unsigned i
 
     if (!depth) {
         // wea are at proper bottom
-        auto update((type == WHITE) ? -(long(size) * long(size)) : 0);
+        auto update((type == WHITE)
+                    ? -((long long)(size) * (long long)(size)) : 0);
 
         // copy node
         *this = other.root_;

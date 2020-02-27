@@ -103,14 +103,14 @@ void RectPacker::pack()
                 { return a->width() > b->width(); } );
 
     // calculate total area of the rectangles
-    long total = 0;
+    long long total = 0;
     for (UVRect* rect : list)
         total += rect->width() * rect->height();
     LOG(debug) << "Total area: " << total << " pixels";
 
     // initialize packing area
     packWidth = packHeight = 64;
-    while (long(packWidth) * packHeight < total)
+    while ((long long)(packWidth) * packHeight < total)
     {
         if (packWidth <= packHeight)
             packWidth *= 2;
