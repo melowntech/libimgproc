@@ -43,7 +43,7 @@
 
 namespace imgproc { namespace exif {
 
-typedef boost::rational<long> Rational;
+typedef boost::rational<long long> Rational;
 
 const Rational inch(254, 10000);
 const Rational centimeter(1, 100);
