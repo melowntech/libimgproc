@@ -90,8 +90,8 @@ endif()
 if(OpenCV_FOUND AND EIGEN3_FOUND)
   # inpaint and scatteed interpolation depend on both OpenCV and Eigen3
   list(APPEND imgproc_EIGEN3_SOURCES
-    scattered-interpolation.hpp scattered-interpolation.cpp
-    inpaint.hpp inpaint.cpp)
+    scattered-interpolation.hpp
+    inpaint.hpp)
 endif()
 
 

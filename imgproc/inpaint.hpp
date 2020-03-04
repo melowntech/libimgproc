@@ -26,6 +26,7 @@
 /**
  * @file inpaint.hpp
  * @author Jakub Cerveny <jakub.cerveny@melown.com>
+ * @author Matyas Hollmann <matyas.hollmann@melowntech.com>
  *
  * JPEG block inpainting for texture atlas compression
  */
@@ -39,18 +40,71 @@
 
 #include "rastermask.hpp"
 
+#include "scattered-interpolation.hpp"
+#include "utility/openmp.hpp"
+
 namespace imgproc {
+
+#if !defined(IMGPROC_HAS_OPENCV) || !defined(IMGPROC_HAS_EIGEN3)
+    UTILITY_FUNCTION_ERROR("JPEG inpaint is available only when compiled with both OpenCV and Eigen3 libraries.")
+#endif
 
 /** Fill in pixels in JPEG blocks that have zeros in 'mask', with values
  *  interpolated from neighboring pixels with nonzero 'mask'. Completely
  *  empty blocks are filled with zeros. Completely full blocks are left intact.
+ *
+ *  typename T_DATA: numeric type of (per-channel) elements of 'img' matrix
+ *  int nChan:       number of channels of 'img' matrix
+ *
+ *  Template default is for 'img' matrix being of type CV_8UC3
  */
+template<typename T_DATA = unsigned char, int nChan = 3>
 void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
                       int blkWidth = 8, int blkHeight = 8, float eps = 1e-3)
-#if !defined(IMGPROC_HAS_OPENCV) || !defined(IMGPROC_HAS_EIGEN3)
-    UTILITY_FUNCTION_ERROR("JPEG inpaint is available only when compiled with both OpenCV and Eigen3 libraries.")
-#endif
-    ;
+{
+    //cv::imwrite("mask.png", mask);
+    //cv::imwrite("before.png", img);
+
+    assert(sizeof(T_DATA) == img.elemSize1() && img.channels() == nChan);
+
+    const auto zeroVec = cv::Vec<T_DATA, nChan>();
+
+    UTILITY_OMP(parallel for)
+    for (int by = 0; by < img.rows; by += blkHeight)
+    {
+        imgproc::RasterMask blkMask(blkWidth, blkHeight);
+        for (int bx = 0; bx < img.cols; bx += blkWidth)
+        {
+            int w = std::min(blkWidth,  img.cols - bx);
+            int h = std::min(blkHeight, img.rows - by);
+
+            bool full = true, empty = true;
+
+            for (int y = 0; y < h; ++y)
+            for (int x = 0; x < w; ++x)
+            {
+                bool m = mask.at<uchar>(by + y, bx + x);
+                if (m) { empty = false; }
+                else { full = false; }
+                blkMask.set(x, y, m);
+            }
+
+            if (full) { continue; }
+
+            cv::Mat block(img, cv::Rect(bx, by, w, h));
+            if (!empty) {
+                laplaceInterpolate<T_DATA, nChan>(block, blkMask, eps);
+            }
+            else // make sure empty block is zeroed
+            {
+                block.setTo(zeroVec);
+            }
+        }
+    }
+
+    //cv::imwrite("inpaint.png", img);
+}
+
 } // imgproc
 
 #endif // imgproc_inpaint_hpp_included_
