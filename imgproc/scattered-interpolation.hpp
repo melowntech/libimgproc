@@ -71,7 +71,7 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask, double t
     static_assert(std::is_floating_point<T_OPT>::value,
                   "Floating-point numeric type expected.");
 
-    assert(sizeof(T_DATA) == data.elemSize1() && img.channels() == nChan);
+    assert(sizeof(T_DATA) == data.elemSize1() && data.channels() == nChan);
 
     // round results if 'data' matrix elements are of integral type
     constexpr bool doRound = std::is_integral<T_DATA>::value;
