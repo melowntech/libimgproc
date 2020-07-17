@@ -39,8 +39,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 //#include <opencv2/highgui/highgui.hpp>
 
-#include "detail/clahe.hpp"
+#include "cvcompat.hpp"
 
+#include "detail/clahe.hpp"
 
 namespace imgproc {
 
@@ -70,7 +71,7 @@ void CLAHE( const cv::Mat & src, cv::Mat & dst, const int regionSize,
 
         cv::Mat srcluv;
         
-        cvtColor( src, srcluv, CV_RGB2YCrCb );
+        cvtColor( src, srcluv, IMGPROC_CVT_COLOR(RGB2YCrCb) );
 
         split( srcluv, srcsplit );
 
@@ -130,7 +131,7 @@ void CLAHE( const cv::Mat & src, cv::Mat & dst, const int regionSize,
 
         merge( srcsplit, dstluv );
     
-        cvtColor( dstluv, dst, CV_YCrCb2RGB );
+        cvtColor( dstluv, dst, IMGPROC_CVT_COLOR(YCrCb2RGB) );
     }
     
     // done

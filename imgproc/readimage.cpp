@@ -45,6 +45,7 @@
 
 #include "png_io.hpp"
 #include "png.hpp"
+#include "cvcompat.hpp"
 
 #ifdef IMGPROC_HAS_JPEG
 #  include "jpeg_io.hpp"
@@ -60,7 +61,7 @@ namespace imgproc {
 cv::Mat readImage(const void *data, std::size_t size)
 {
     auto image(cv::imdecode({(char*)data, int(size)}
-               , CV_LOAD_IMAGE_COLOR | CV_LOAD_IMAGE_ANYDEPTH));
+               , IMGPROC_IMREAD(COLOR) | IMGPROC_IMREAD(ANYDEPTH)));
 
 #ifdef IMGPROC_HAS_GIF
     if (!image.data) {
@@ -114,7 +115,7 @@ cv::Mat readImage(const fs::path &path)
 
     // generic read
     return cv::imread(path.string()
-                      , CV_LOAD_IMAGE_COLOR | CV_LOAD_IMAGE_ANYDEPTH);
+                      , IMGPROC_IMREAD(COLOR) | IMGPROC_IMREAD(ANYDEPTH));
 }
 
 cv::Mat readImage8bit(const fs::path &path)

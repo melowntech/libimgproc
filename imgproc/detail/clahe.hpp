@@ -125,7 +125,7 @@ static int CLAHE (kz_pixel_t* pImage, unsigned int uiXRes, unsigned int uiYRes,
     unsigned int uiXL, uiXR, uiYU, uiYB;  /* auxiliary variables interpolation routine */
     unsigned long ulClipLimit, ulNrPixels;/* clip limit and region pixel count */
     kz_pixel_t* pImPointer;                /* pointer to image */
-    kz_pixel_t aLUT[ std::numeric_limits<kz_pixel_t>::max() ];
+    kz_pixel_t aLUT[ std::numeric_limits<kz_pixel_t>::max() + 1];
                                           /* lookup table used for scaling of input image */
     unsigned long* pulHist, *pulMapArray; /* pointer to histogram and mappings*/
     unsigned long* pulLU, *pulLB, *pulRU, *pulRB; /* auxiliary pointers interpolation */

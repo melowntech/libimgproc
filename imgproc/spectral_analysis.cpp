@@ -37,6 +37,8 @@
 
 #include "dbglog/dbglog.hpp"
 
+#include "cvcompat.hpp"
+
 namespace imgproc {
 
 namespace {
@@ -76,7 +78,7 @@ void effectiveScale(const cv::Mat & img, float &hscale, float &vscale
     }
 
     if ( img.type() == CV_8UC3 || img.type() == CV_16UC3 ) {   
-        cvtColor( img, src, CV_RGB2GRAY);      
+        cvtColor( img, src, IMGPROC_CVT_COLOR(RGB2GRAY));
     }
     
     src.convertTo(src,CV_32F);
