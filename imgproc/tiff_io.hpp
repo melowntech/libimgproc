@@ -29,6 +29,7 @@
 
 #include <boost/version.hpp>
 #if BOOST_VERSION >= 106800
+#  include <tiffio.h>
 #  include <boost/gil/extension/io/tiff/old.hpp>
 #else
 #  include <boost/gil/extension/io/tiff_io.hpp>
