@@ -53,6 +53,10 @@
 #  include "png.hpp"
 #endif
 
+#ifdef IMGPROC_HAS_EXR
+#  include "exr.hpp"
+#endif
+
 namespace ba = boost::algorithm;
 namespace fs = boost::filesystem;
 
@@ -92,6 +96,16 @@ math::Size2 imageSize(const fs::path &path)
     LOGTHROW(err1, Error)
         << "Cannot determine size of image in file " << path
         << ": PNG support not compiled in.";
+#endif
+    }
+
+    if (ext == ".exr") {
+#ifdef IMGPROC_HAS_EXR
+        return exrSize(path);
+#else
+    LOGTHROW(err1, Error)
+        << "Cannot determine size of image in file " << path
+        << ": OpenEXR support not compiled in.";
 #endif
     }
 
