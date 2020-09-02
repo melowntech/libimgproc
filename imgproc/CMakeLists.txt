@@ -51,6 +51,18 @@ else()
   message(STATUS "imgproc: compiling without TIFF support")
 endif()
 
+if (OPENEXR_FOUND)
+  message(STATUS "imgproc: compiling in OpenEXR support")
+
+  list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_EXR=1)
+  list(APPEND imgproc_DEPENDS OpenEXR)
+
+  set(imgproc_EXR_SOURCES
+      exr.hpp exr.cpp)
+else()
+  message(STATUS "imgproc: compiling without OpenEXR upport")
+endif()
+
 if(OpenCV_FOUND)
   message(STATUS "imgproc: compiling in OpenCV support")
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_OPENCV=1)
@@ -166,6 +178,7 @@ add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_GIF_SOURCES}
   ${imgproc_PNG_SOURCES}
   ${imgproc_JPEG_SOURCES}
+  ${imgproc_EXR_SOURCES}
   ${imgproc_IOSTREAMS_SOURCES}
   )
 buildsys_library(imgproc)
