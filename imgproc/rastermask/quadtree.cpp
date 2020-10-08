@@ -903,4 +903,21 @@ RasterMask::Node::findSubtree(unsigned int depth, unsigned int x, unsigned int y
     }
 }
 
+void resizeMask(const RasterMask &src, RasterMask &dst)
+{
+    int dstHeight { dst.dims().height };
+    int dstWidth { dst.dims().width };
+
+    double xscale(double(src.dims().width) / dstWidth);
+    double yscale(double(src.dims().height) / dstHeight);
+
+    for (int y { 0 }; y < dstHeight; ++y)
+    {
+        for (int x { 0 }; x < dstWidth; ++x) {
+            bool nearest { src.get(round(x * xscale), round(y * yscale)) };
+            dst.set(x, y, nearest);
+        }
+    }
+}
+
 } } // namespace imgproc::quadtree

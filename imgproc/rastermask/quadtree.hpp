@@ -299,6 +299,8 @@ private :
     friend class mappedqtree::RasterMask;
 };
 
+void resizeMask(const RasterMask &src, RasterMask &dst);
+
 } } // namespace imgproc::quadtree
 
 #include "inline/quadtree.hpp"
