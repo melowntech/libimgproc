@@ -125,6 +125,8 @@ void bilinearInterpolate(const T *data, size_t pitch, const math::Size2 &size
 template <typename RgbType, typename MatType = uchar>
 inline RgbType rgbInterpolate(const cv::Mat &mat, float x, float y)
 {
+    assert(mat.cols > 1 && mat.rows > 1);
+
     const float eps = 1e-3f;
     float xmax = (float) mat.cols - (1.f + eps);
     float ymax = (float) mat.rows - (1.f + eps);
@@ -164,6 +166,8 @@ inline RgbType rgbInterpolate(const cv::Mat &mat, float x, float y)
 template<typename InType = uchar, typename OutType = float>
 OutType interpolate(const cv::Mat &img, float x, float y)
 {
+    assert(img.cols > 1 && img.rows > 1);
+
     const float eps = 1e-3f;
     float xmax = (float) img.cols - (1.f + eps);
     float ymax = (float) img.rows - (1.f + eps);
