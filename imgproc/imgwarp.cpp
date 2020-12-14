@@ -98,7 +98,7 @@ void imgproc::warpPerspective(const cv::Mat& src, cv::Mat& dst, const cv::Mat& H
     cv::Mat_<double> Hinv;
     cv::invert(H, Hinv);
 
-    UTILITY_OMP(parallel for)
+    UTILITY_OMP(parallel for shared(dst))
     for (int y = 0; y < dst.rows; y++) {
         for (int x = 0; x < dst.cols; x++) {
             const double iw = 1.0 / (Hinv(2, 0) * x + Hinv(2, 1) * y + Hinv(2, 2));

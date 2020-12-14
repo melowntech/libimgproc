@@ -69,7 +69,7 @@ void jpegBlockInpaint(cv::Mat &img, const cv::Mat &mask,
 
     const auto zeroVec = cv::Vec<T_DATA, nChan>();
 
-    UTILITY_OMP(parallel for)
+    UTILITY_OMP(parallel for shared(img))
     for (int by = 0; by < img.rows; by += blkHeight)
     {
         imgproc::RasterMask blkMask(blkWidth, blkHeight);
