@@ -357,7 +357,7 @@ public:
     math::Size2i size() const { return { view_.width(), view_.height() }; }
 
 private:
-    const ViewType &view_;
+    ViewType view_;
 };
 
 template <typename ViewType>
