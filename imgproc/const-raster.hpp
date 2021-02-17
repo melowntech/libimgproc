@@ -145,6 +145,8 @@ struct BoundsValidator {
 class MaskedPlugin {
 public:
     MaskedPlugin(const quadtree::RasterMask &mask) : mask_(mask) {}
+    MaskedPlugin(quadtree::RasterMask &&mask) = delete;
+    MaskedPlugin(const quadtree::RasterMask &&mask) = delete;
     bool valid(int x, int y) const { return mask_.get(x, y); }
 private:
     const quadtree::RasterMask &mask_;
@@ -338,6 +340,8 @@ public:
         channel_type;
 
     explicit GilConstRaster(const ViewType &view) : view_(view) {}
+    GilConstRaster(ViewType&&) = delete;
+    GilConstRaster(const ViewType&&) = delete;
 
     int channels() const { return gil::num_channels<ViewType>::value; };
 
@@ -357,7 +361,7 @@ public:
     math::Size2i size() const { return { view_.width(), view_.height() }; }
 
 private:
-    ViewType view_;
+    const ViewType& view_;
 };
 
 template <typename ViewType>
@@ -370,6 +374,9 @@ public:
                          , const quadtree::RasterMask &mask)
         : MaskedPlugin(mask), GilConstRaster<ViewType>(view)
     {}
+
+    MaskedGilConstRaster(ViewType&&, const quadtree::RasterMask&) = delete;
+    MaskedGilConstRaster(const ViewType&&, const quadtree::RasterMask&) = delete;
 
     bool valid(int x, int y) const {
         return (MaskedGilConstRaster<ViewType>::valid(x, y)
@@ -385,12 +392,30 @@ gilConstRaster(const gil::image_view<Loc> &view)
 }
 
 template <typename Loc>
+GilConstRaster<gil::image_view<Loc> >
+gilConstRaster(gil::image_view<Loc>&&) = delete;
+
+template <typename Loc>
+GilConstRaster<gil::image_view<Loc> >
+gilConstRaster(const gil::image_view<Loc>&&) = delete;
+
+template <typename Loc>
 MaskedGilConstRaster<gil::image_view<Loc> >
 gilConstRaster(const gil::image_view<Loc> &view
           , const quadtree::RasterMask &mask)
 {
     return { view, mask };
 }
+
+template <typename Loc>
+MaskedGilConstRaster<gil::image_view<Loc> >
+gilConstRaster(gil::image_view<Loc>&&
+               , const quadtree::RasterMask&) = delete;
+
+template <typename Loc>
+MaskedGilConstRaster<gil::image_view<Loc> >
+gilConstRaster(const gil::image_view<Loc>&&
+               , const quadtree::RasterMask&) = delete;
 
 } // namespace imgproc
 
