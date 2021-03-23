@@ -82,7 +82,10 @@ public:
         : min_(gil::channel_traits<channel_type>::min_value())
         , max_(gil::channel_traits<channel_type>::max_value())
     {
-        for (auto i(0); i < gil::num_channels<PixelType>::value; ++i) {
+        auto numChannels = gil::num_channels<PixelType>::value;
+        using ChannelT = decltype(numChannels);
+
+        for (ChannelT i(0); i < numChannels; ++i) {
             zero_[i] = 0;
         }
     }
@@ -148,10 +151,11 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
     typename SrcView::xy_locator cpos = view.xy_at( ll.x, ll.y );
 
     auto numChannels = gil::num_channels<SrcView>::value;
+    using ChannelT = decltype(numChannels);
 
     double weightSum( 0.0 ), valueSum[10];
 
-    for ( int i = 0; i < numChannels; i++ )
+    for ( ChannelT i = 0; i < numChannels; i++ )
         valueSum[i] = 0.0;
     
     for ( int i = ll.y; i <= ur.y; i++ ) {
@@ -162,7 +166,7 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
             if ( math::ccinterval( 0, (int) view.width() - 1, j ) &&
                  math::ccinterval( 0, (int) view.height() - 1, i ) ) {
 
-                for ( int k = 0; k < numChannels; k++ )
+                for ( ChannelT k = 0; k < numChannels; k++ )
                     valueSum[k] += weight * cpos(0,0)[k];
 
                 /*LOG( debug ) << "[" << j << "," << i << "]: weight= "
@@ -171,7 +175,7 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
             }
             else {
 
-                for ( int k = 0; k < numChannels; k++ )
+                for ( ChannelT k = 0; k < numChannels; k++ )
                     valueSum[k] += weight * (*defaultColor)[k];
             }
 
@@ -184,7 +188,7 @@ inline typename SrcView::value_type reconstruct( const SrcView & view,
 
     typename SrcView::value_type retval;
 
-    for ( int i = 0; i < numChannels; i++ ) {
+    for ( ChannelT i = 0; i < numChannels; i++ ) {
         if ( weightSum > 1E-15 ) {
             retval[i] = pl.clamp(valueSum[i] / weightSum);
         } else {

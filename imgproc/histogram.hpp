@@ -140,6 +140,9 @@ void stretchValues(const SrcView &src
     const float max(std::numeric_limits<channel_type>::max());
     const float fmax(max);
 
+    auto numChannels(gil::num_channels<SrcView>::value);
+    using ChannelT = decltype(numChannels);
+
     // TODO: work with YUV
     for ( int i = 0; i < src.height(); i++ ) {
 
@@ -147,7 +150,7 @@ void stretchValues(const SrcView &src
 
         for ( int j = 0; j < src.width(); j++ ) {
 
-            for ( int k = 0; k < gil::num_channels<SrcView>::value; k++ ) {
+            for ( ChannelT k = 0; k < numChannels; k++ ) {
 
                 if ( (*sit)[k] < lb ) {
                     (*sit)[k] = 0;
