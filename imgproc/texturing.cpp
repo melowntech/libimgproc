@@ -165,13 +165,17 @@ math::Size2 pack(Patch::list &patches, float scale,
         }
 
         // inflate area
-        if (packSize.width <= packSize.height) {
+        if (packSize.width <= packSize.height
+            && (!maxAllowed || packSize.width < maxAllowed->width))
+        {
             packSize.width *= scale;
 
             if (maxAllowed) {
                 packSize.width = std::min(packSize.width, maxAllowed->width);
             }
-        } else {
+        }
+        else
+        {
             packSize.height *= scale;
 
             if (maxAllowed) {
