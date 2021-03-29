@@ -141,7 +141,8 @@ bool Node::allocateSpace(Patch &patch, const math::Size2 &patchSize
 
 } // namespace
 
-math::Size2 pack(Patch::list &patches)
+math::Size2 pack(Patch::list &patches, float inflateFactor,
+                 boost::optional<math::Size2i> maxAllowed)
 {
     LOG(debug) << "Packing " << patches.size() << " rectangles.";
 
@@ -157,11 +158,29 @@ math::Size2 pack(Patch::list &patches)
 
     auto inflate([&]()
     {
+        if (maxAllowed && packSize == *maxAllowed) {
+            LOGTHROW(err2, AreaTooLarge)
+                << "Won't fit: maximum (allowed) size reached: " << maxAllowed
+                << ".";
+        }
+
         // inflate area
-        if (packSize.width <= packSize.height) {
-            packSize.width *= 2;
-        } else {
-            packSize.height *= 2;
+        if (packSize.width <= packSize.height
+            && (!maxAllowed || packSize.width < maxAllowed->width))
+        {
+            packSize.width *= inflateFactor;
+
+            if (maxAllowed) {
+                packSize.width = std::min(packSize.width, maxAllowed->width);
+            }
+        }
+        else
+        {
+            packSize.height *= inflateFactor;
+
+            if (maxAllowed) {
+                packSize.height = std::min(packSize.height, maxAllowed->height);
+            }
         }
 
         // and check

@@ -28,6 +28,8 @@
 
 #include <vector>
 
+#include <boost/optional/optional_io.hpp>
+
 #include "math/geometry_core.hpp"
 
 namespace imgproc { namespace tx {
@@ -165,21 +167,36 @@ private:
 
 /** Packs texture patches.
  *  Returns size of resulting texture.
+ *
+ *  @param inflateFactor Specifies how much the atlas grows (in 1 dimension)
+ *                       after every unsuccessful packing attempt.
+ *  @param maxAllowed The maximum atlas size acceptable by the caller.
  */
-math::Size2 pack(Patch::list &patches);
+math::Size2 pack(Patch::list &patches, float inflateFactor = 2.f,
+                 boost::optional<math::Size2i> maxAllowed = boost::none);
 
 /** Packs texture patches.
  *  Returns size of resulting texture.
  *
  * Const vector interface.
+ *
+ *  @param inflateFactor Specifies how much the atlas grows (in 1 dimension)
+ *                       after every unsuccessful packing attempt.
+ *  @param maxAllowed The maximum atlas size acceptable by the caller.
  */
-math::Size2 pack(const Patch::list &patches);
+math::Size2 pack(const Patch::list &patches, float inflateFactor = 2.f,
+                 boost::optional<math::Size2i> maxAllowed = boost::none);
 
 /** Generate container.
  *  Function Patch* asPatch(*iterator) must exist.
+ *
+ *  @param inflateFactor Specifies how much the atlas grows (in 1 dimension)
+ *                       after every unsuccessful packing attempt.
+ *  @param maxAllowed The maximum atlas size acceptable by the caller.
  */
 template <typename Iterator>
-math::Size2 pack(Iterator begin, Iterator end);
+math::Size2 pack(Iterator begin, Iterator end, float inflateFactor = 2.f,
+                 boost::optional<math::Size2i> maxAllowed = boost::none);
 
 /** Default implementaion of asPatch for, well, patch itself.
  */
@@ -286,19 +303,22 @@ template <typename T> void UvPatch::update(const math::Point2_<T> &point)
     update(point(0), point(1));
 }
 
-inline math::Size2 pack(const Patch::list &patches) {
+inline math::Size2 pack(const Patch::list &patches, float inflateFactor,
+                        boost::optional<math::Size2i> maxAllowed)
+{
     auto copy(patches);
-    return pack(copy);
+    return pack(copy, inflateFactor, maxAllowed);
 }
 
 template <typename Iterator>
-math::Size2 pack(Iterator begin, Iterator end)
+math::Size2 pack(Iterator begin, Iterator end, float inflateFactor,
+                 boost::optional<math::Size2i> maxAllowed)
 {
     Patch::list patches;
     for (; begin != end; ++begin) {
         patches.push_back(asPatch(*begin));
     }
-    return pack(patches);
+    return pack(patches, inflateFactor, maxAllowed);
 }
 
 inline Patch* asPatch(Patch &patch) { return &patch; }
