@@ -141,7 +141,7 @@ bool Node::allocateSpace(Patch &patch, const math::Size2 &patchSize
 
 } // namespace
 
-math::Size2 pack(Patch::list &patches, float scale,
+math::Size2 pack(Patch::list &patches, float inflateFactor,
                  boost::optional<math::Size2i> maxAllowed)
 {
     LOG(debug) << "Packing " << patches.size() << " rectangles.";
@@ -168,7 +168,7 @@ math::Size2 pack(Patch::list &patches, float scale,
         if (packSize.width <= packSize.height
             && (!maxAllowed || packSize.width < maxAllowed->width))
         {
-            packSize.width *= scale;
+            packSize.width *= inflateFactor;
 
             if (maxAllowed) {
                 packSize.width = std::min(packSize.width, maxAllowed->width);
@@ -176,7 +176,7 @@ math::Size2 pack(Patch::list &patches, float scale,
         }
         else
         {
-            packSize.height *= scale;
+            packSize.height *= inflateFactor;
 
             if (maxAllowed) {
                 packSize.height = std::min(packSize.height, maxAllowed->height);
