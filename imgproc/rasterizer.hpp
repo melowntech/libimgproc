@@ -91,6 +91,13 @@ public:
         run(pt, op);
     }
 
+    template <typename Operation>
+    void operator()(const std::array<cv::Point3f, 3>& pt
+                    , const Operation &op)
+    {
+        run(pt.data(), op);
+    }
+
 private:
     template <typename Operation>
     void run(const cv::Point3f pt[3], const Operation &op)

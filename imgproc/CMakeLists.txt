@@ -83,6 +83,7 @@ if(OpenCV_FOUND)
     cvcolors.hpp cvcolors.cpp
     fillrect.hpp fillrect.cpp
     imgwarp.hpp imgwarp.cpp
+    sharpen.hpp sharpen.cpp
     )
 else()
   message(STATUS "imgproc: compiling without OpenCV support")
