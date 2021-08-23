@@ -126,6 +126,19 @@ template <typename RgbType, typename MatType = uchar>
 inline RgbType rgbInterpolate(const cv::Mat &mat, float x, float y)
 {
     assert(mat.cols > 1 && mat.rows > 1);
+    int nChannels = RgbType::channels;
+    assert(nChannels == mat.channels());
+
+    auto getValue([nChannels](const MatType* ptr)
+    {
+        RgbType res;
+        for (int i = 0; i < nChannels; ++i) {
+            // copy and convert
+            res(i) = ptr[i];
+        }
+
+        return res;
+    });
 
     const float eps = 1e-3f;
     float xmax = (float) mat.cols - (1.f + eps);
@@ -143,18 +156,12 @@ inline RgbType rgbInterpolate(const cv::Mat &mat, float x, float y)
     float fx = x - x0;
     float fy = y - y0;
 
-    const MatType* p00 = mat.ptr<MatType>(y0, x0);
-    const MatType* p01 = mat.ptr<MatType>(y0, x0+1);
-
-    RgbType v00(p00[0], p00[1], p00[2]);
-    RgbType v01(p01[0], p01[1], p01[2]);
+    RgbType v00(getValue(mat.ptr<MatType>(y0, x0)));
+    RgbType v01(getValue(mat.ptr<MatType>(y0, x0+1)));
     RgbType w0 = v00 + (v01 - v00)*fx;
 
-    const MatType* p10 = mat.ptr<MatType>(y0+1, x0);
-    const MatType* p11 = mat.ptr<MatType>(y0+1, x0+1);
-
-    RgbType v10(p10[0], p10[1], p10[2]);
-    RgbType v11(p11[0], p11[1], p11[2]);
+    RgbType v10(getValue(mat.ptr<MatType>(y0+1, x0)));
+    RgbType v11(getValue(mat.ptr<MatType>(y0+1, x0+1)));
     RgbType w1 = v10 + (v11 - v10)*fx;
 
     return w0 + (w1 - w0)*fy;
