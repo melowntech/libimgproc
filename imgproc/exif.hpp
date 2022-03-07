@@ -224,13 +224,10 @@ operator>>(std::basic_istream<E, T> &is, Orientation &o)
 
 namespace detail {
 
-template <typename T, class Enable> T convert(const Exif::Entry &e, int idx);
-
-template <typename T
-          , class = typename std::enable_if<std::is_arithmetic<T>
-                                            ::value>::type>
+template <typename T>
 T convert(const Exif::Entry &e, int idx)
 {
+    static_assert(std::is_arithmetic<T>::value, "");
     switch (e.format()) {
     case EXIF_FORMAT_BYTE: return e.data< ::ExifByte>(idx);
     case EXIF_FORMAT_SHORT: return e.data< ::ExifShort>(idx);
@@ -261,13 +258,13 @@ T convert(const Exif::Entry &e, int idx)
  * FIXME, idx not working currently, acts as idx = 0 all the time
  */
 template <>
-inline std::string convert<std::string, void>(const Exif::Entry &e, int)
+inline std::string convert<std::string>(const Exif::Entry &e, int)
 {
     return boost::lexical_cast<std::string>(e);
 }
 
 template <>
-inline Rational convert<Rational, void>(const Exif::Entry &e, int idx)
+inline Rational convert<Rational>(const Exif::Entry &e, int idx)
 {
     switch (e.format()) {
     case EXIF_FORMAT_BYTE: return { e.data< ::ExifByte>(idx) };
