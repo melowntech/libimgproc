@@ -224,7 +224,7 @@ operator>>(std::basic_istream<E, T> &is, Orientation &o)
 
 namespace detail {
 
-template <typename T, class Enable = void> T convert(const Exif::Entry &e, int idx);
+template <typename T, class Enable> T convert(const Exif::Entry &e, int idx);
 
 template <typename T
           , class = typename std::enable_if<std::is_arithmetic<T>
