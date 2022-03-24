@@ -41,6 +41,7 @@
 #include "../georeferencing.hpp"
 #include "../rasterizer.hpp"
 
+#include "imgprocmodule.hpp"
 #include "zbuffer.hpp"
 #include "numpy.hpp"
 

@@ -1,6 +1,7 @@
 set(pyimgproc_DEPENDS
   imgproc=${MODULE_imgproc_VERSION}
-  Boost_THREAD Boost_SYSTEM Boost_PYTHON PYTHONLIBS)
+  pysupport>=1.3
+  Boost_THREAD Boost_SYSTEM)
 
 set(pyimgproc_SOURCES
   imgprocmodule.hpp
