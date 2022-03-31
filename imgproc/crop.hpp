@@ -35,10 +35,12 @@
 
 #include <iostream>
 
+#if !(defined(_MSC_VER) && defined(__CUDACC__))
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/qi_match.hpp>
 #include <boost/spirit/include/qi_match_auto.hpp>
 #include <boost/spirit/include/qi_alternative.hpp>
+#endif
 
 #include "math/geometry_core.hpp"
 
@@ -115,6 +117,7 @@ operator<<(std::basic_ostream<CharT, Traits> &os, const Crop2_<T> &v)
     return os;
 }
 
+#if !(defined(_MSC_VER) && defined(__CUDACC__))
 template<typename CharT, typename Traits, typename T>
 inline std::basic_istream<CharT, Traits>&
 operator>>(std::basic_istream<CharT, Traits> &is, Crop2_<T> &v)
@@ -135,6 +138,7 @@ operator>>(std::basic_istream<CharT, Traits> &is, Crop2_<T> &v)
     if (sign2 == '-') { v.y = -v.y; }
     return is;
 }
+#endif
 
 } // namespace imgproc
 
