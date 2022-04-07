@@ -1,5 +1,5 @@
 # bump version here
-set(imgproc_VERSION 1.32)
+set(imgproc_VERSION 1.33)
 
 set(imgproc_DEPENDS math>=1.8 utility>=1.26 dbglog>=1.4 Boost)
 set(imgproc_DEFINITIONS)

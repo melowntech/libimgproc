@@ -35,7 +35,11 @@
 
 #include "dbglog/dbglog.hpp"
 
+#undef PYSUPPORT_MODULE_IMPORT_API
+#define PYSUPPORT_MODULE_IMPORT_API 2
 #include "pysupport/package.hpp"
+#undef PYSUPPORT_MODULE_IMPORT_API
+
 #include "pysupport/class.hpp"
 
 #include "../georeferencing.hpp"
