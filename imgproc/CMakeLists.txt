@@ -120,7 +120,7 @@ else()
   message(STATUS "imgproc: compiling without GIF support")
 endif()
 
-if(Boost_IOSTREAMS_FOUND AND NOT WIN32)
+if(Boost_IOSTREAMS_FOUND)
   message(STATUS "imgproc: compiling in iostreams support")
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_IOSTREAMS=1)
 
