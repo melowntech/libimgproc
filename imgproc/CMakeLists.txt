@@ -163,13 +163,9 @@ set(imgproc_SOURCES
   png-size.cpp
 
   imagesize.hpp imagesize.cpp
-  )
 
-if (NOT WIN32)
-  list(APPEND imgproc_SOURCES
-    rastermask/mappedqtree.hpp rastermask/mappedqtree.cpp
-  )
-endif()
+  rastermask/mappedqtree.hpp rastermask/mappedqtree.cpp
+)
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_EXIF_SOURCES}
