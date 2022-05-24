@@ -121,7 +121,9 @@ struct ReconstructResult
     <ConstRaster
      , typename std::enable_if<has_undefined<ConstRaster>::value>::type>
 {
-    typedef decltype(static_cast<ConstRaster*>(nullptr)->undefined()) type;
+    // g++11 with enabled -Werror=nonnull issues an error in unevaluated
+    // expressions -> use some nonzero pointer...
+    typedef decltype(reinterpret_cast<ConstRaster*>(0x1)->undefined()) type;
 };
 
 } // namespace detail
