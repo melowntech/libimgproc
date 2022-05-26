@@ -120,7 +120,7 @@ else()
   message(STATUS "imgproc: compiling without GIF support")
 endif()
 
-if(Boost_IOSTREAMS_FOUND AND NOT WIN32)
+if(Boost_IOSTREAMS_FOUND)
   message(STATUS "imgproc: compiling in iostreams support")
   list(APPEND imgproc_DEFINITIONS IMGPROC_HAS_IOSTREAMS=1)
 
@@ -163,13 +163,9 @@ set(imgproc_SOURCES
   png-size.cpp
 
   imagesize.hpp imagesize.cpp
-  )
 
-if (NOT WIN32)
-  list(APPEND imgproc_SOURCES
-    rastermask/mappedqtree.hpp rastermask/mappedqtree.cpp
-  )
-endif()
+  rastermask/mappedqtree.hpp rastermask/mappedqtree.cpp
+)
 
 add_library(imgproc STATIC ${imgproc_SOURCES}
   ${imgproc_EXIF_SOURCES}
