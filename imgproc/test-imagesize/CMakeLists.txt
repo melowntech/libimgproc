@@ -9,5 +9,5 @@ set(imagesize_SOURCES
 
 add_executable(imgproc-imagesize ${imagesize_SOURCES})
 target_link_libraries(imgproc-imagesize ${MODULE_LIBRARIES})
-buildsys_target_compile_definitions(imgproc-imagesize PRIVATE ${MODULE_DEFINITIONS})
+target_compile_definitions(imgproc-imagesize PRIVATE ${MODULE_DEFINITIONS})
 buildsys_binary(imgproc-imagesize)

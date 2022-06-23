@@ -1,7 +1,7 @@
 # bump version here
-set(imgproc_VERSION 1.33)
+set(imgproc_VERSION 1.34)
 
-set(imgproc_DEPENDS math>=1.8 utility>=1.26 dbglog>=1.4 Boost)
+set(imgproc_DEPENDS math>=1.8 utility>=1.41 dbglog>=1.7 Boost)
 set(imgproc_DEFINITIONS)
 
 if(EXIF_FOUND)
@@ -180,7 +180,7 @@ add_library(imgproc STATIC ${imgproc_SOURCES}
   )
 buildsys_library(imgproc)
 target_link_libraries(imgproc ${MODULE_LIBRARIES})
-buildsys_target_compile_definitions(imgproc ${MODULE_DEFINITIONS})
+target_compile_definitions(imgproc PRIVATE ${MODULE_DEFINITIONS})
 
 # test programs
 if(MODULE_service_FOUND)

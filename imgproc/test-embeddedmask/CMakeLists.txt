@@ -9,7 +9,7 @@ set(dump-embeddedmask_SOURCES
 
 add_executable(dump-embeddedmask ${dump-embeddedmask_SOURCES})
 target_link_libraries(dump-embeddedmask ${MODULE_LIBRARIES})
-buildsys_target_compile_definitions(dump-embeddedmask PRIVATE ${MODULE_DEFINITIONS}
+target_compile_definitions(dump-embeddedmask PRIVATE ${MODULE_DEFINITIONS}
   IMGPROC_VERSION="${MODULE_imgproc_VERSION}")
 buildsys_binary(dump-embeddedmask)
 
@@ -20,6 +20,6 @@ set(copy-embeddedmask_SOURCES
 
 add_executable(copy-embeddedmask ${copy-embeddedmask_SOURCES})
 target_link_libraries(copy-embeddedmask ${MODULE_LIBRARIES})
-buildsys_target_compile_definitions(copy-embeddedmask PRIVATE ${MODULE_DEFINITIONS}
+target_compile_definitions(copy-embeddedmask PRIVATE ${MODULE_DEFINITIONS}
   IMGPROC_VERSION="${MODULE_imgproc_VERSION}")
 buildsys_binary(copy-embeddedmask)
