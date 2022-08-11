@@ -156,10 +156,10 @@ void laplaceInterpolate(cv::Mat &data, const imgproc::RasterMask &mask, double t
             }
             else // neighbor is a free point
             {
-                coefs.emplace_back(k, t, -1.0);
+                coefs.emplace_back(k, t, T_OPT(-1.0));
             }
         }
-        coefs.emplace_back(k, k, nNeighs);
+        coefs.emplace_back(k, k, T_OPT(nNeighs));
     }
 
     SparseMatrix mat(n, n);
