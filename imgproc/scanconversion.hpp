@@ -61,7 +61,7 @@ template<typename Operation>
 void processScanline(const Scanline& sl, int xmin, int xmax, Operation op)
 {
     float x = ceil(sl.x1);
-    if (x < xmin) x = xmin;
+    if (x < xmin) x = static_cast<float>(xmin);
 
     float dz = (sl.z2 - sl.z1) / (sl.x2 - sl.x1);
     float z = sl.z1 + dz*(x - sl.x1);
@@ -114,7 +114,7 @@ void dda(const math::Point2 & p1, const math::Point2 &p2, Operation op)
     float dp = math::length(d)/math::length(p2-p1);
 
     int steps = std::max(std::abs(end[0]-begin[0]),std::abs(end[1]-begin[1]));
-    
+
     math::Point2 cursor(begin);
     for(int i=0;i<steps+1; ++i){
         op(std::round(cursor[0]), std::round(cursor[1]), p);
