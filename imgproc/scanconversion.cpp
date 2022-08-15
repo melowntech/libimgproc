@@ -92,7 +92,7 @@ void scanConvertTriangle(const cv::Point3f pt[3], int ymin, int ymax,
 
     while (y < pt[mid].y)
     {
-        scanlines.emplace_back(y, x1, x2, z1, z2);
+        scanlines.emplace_back(static_cast<int>(y), x1, x2, z1, z2);
 
         y += 1.0f;
         if (y >= ymax) return;
@@ -106,7 +106,7 @@ void scanConvertTriangle(const cv::Point3f pt[3], int ymin, int ymax,
 
     while (y < pt[bot].y)
     {
-        scanlines.emplace_back(y, x1, x2, z1, z2);
+        scanlines.emplace_back(static_cast<int>(y), x1, x2, z1, z2);
 
         y += 1.0f;
         if (y >= ymax) return;
