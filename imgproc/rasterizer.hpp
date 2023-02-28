@@ -37,7 +37,14 @@
 
 namespace imgproc {
 
-class Rasterizer {
+/**
+ * Converts triangles to pixels.
+ *
+ * NOTE: one instance of Rasterizer should be reused to process many
+ * triangles, to avoid reallocating 'scanlines_' many times.
+ */
+class Rasterizer
+{
 public:
     Rasterizer(const math::Extents2i &extents)
         : extents_(extents)
@@ -47,9 +54,16 @@ public:
         : extents_(0, 0, size.width, size.height)
     {}
 
+    Rasterizer(const cv::Size2i &size)
+        : extents_(0, 0, size.width, size.height)
+    {}
+
     Rasterizer(int width, int height)
         : extents_(0, 0, width, height)
     {}
+
+    Rasterizer() = delete;
+    Rasterizer(const Rasterizer &) = default;
 
     template <typename T, typename Operation>
     void operator()(const math::Point2_<T> &a, const math::Point2_<T> &b
