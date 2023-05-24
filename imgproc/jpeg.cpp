@@ -80,7 +80,7 @@ math::Size2 jpegSize(const void *data, std::size_t size
     } dc;
 
     ::jpeg_mem_src(&dc.cinfo, (unsigned char*)(data), size);
-    auto res(::jpeg_read_header(&dc.cinfo, TRUE));
+    auto res(::jpeg_read_header(&dc.cinfo, static_cast<boolean>(true)));
 
     if (res != JPEG_HEADER_OK) {
         LOGTHROW(err4, std::runtime_error)
