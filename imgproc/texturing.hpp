@@ -115,6 +115,7 @@ public:
 
         Rect() = default;
         Rect(const Rect&) = default;
+        Rect& operator=(const Rect& other) = default;
         Rect(const UvPatch &uvPatch);
 
         /** Manual rectangle creation.
