@@ -158,7 +158,6 @@ operator<<(std::basic_ostream<CharT, Traits> &os, const Exif::Entry &e)
     }
 
     case EXIF_FORMAT_ASCII: {
-        const char *ptr();
         os.write(&e.data<char>(), e.size());
     }
 
